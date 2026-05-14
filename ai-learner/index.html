@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Learner 🤖</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: 'Comic Sans MS', 'Chalkboard SE', system-ui, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #b3e0ff 0%, #ffe4f1 100%);
+    overflow: hidden;
+    user-select: none;
+  }
+  #app { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .screen {
+    width: 100%; max-width: 900px; height: 100%; max-height: 100vh;
+    padding: 20px; display: flex; flex-direction: column; align-items: center;
+    overflow-y: auto;
+  }
+  h1 { font-size: clamp(2rem, 6vw, 3.5rem); color: #6A1B9A; text-shadow: 3px 3px 0 #fff; margin: 10px 0; text-align: center; }
+  h2 { font-size: clamp(1.3rem, 4vw, 2rem); color: #2E86AB; text-align: center; margin: 10px 0; }
+  h3 { font-size: clamp(1.1rem, 3vw, 1.5rem); color: #444; text-align: center; margin: 8px 0; }
+  p { line-height: 1.5; }
+
+  .big-btn {
+    font-family: inherit; font-weight: bold;
+    font-size: clamp(1.1rem, 3vw, 1.6rem);
+    padding: 16px 28px;
+    border: 4px solid #fff; border-radius: 24px;
+    cursor: pointer; color: white;
+    background: #9B59B6;
+    box-shadow: 0 6px 0 #5e3470, 0 8px 16px rgba(0,0,0,0.2);
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin: 6px;
+  }
+  .big-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #5e3470, 0 4px 8px rgba(0,0,0,0.2); }
+  .big-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+  .big-btn.green { background: #4CAF50; box-shadow: 0 6px 0 #2e7031, 0 8px 16px rgba(0,0,0,0.2); }
+  .big-btn.blue  { background: #2E86AB; box-shadow: 0 6px 0 #1c5670, 0 8px 16px rgba(0,0,0,0.2); }
+  .big-btn.orange{ background: #FF6B35; box-shadow: 0 6px 0 #c44a1f, 0 8px 16px rgba(0,0,0,0.2); }
+  .big-btn.gray  { background: #888;     box-shadow: 0 6px 0 #555;     font-size: 1rem; padding: 10px 18px; }
+
+  .top-bar {
+    width: 100%; display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px; background: rgba(255,255,255,0.75); border-radius: 16px;
+    margin-bottom: 12px; max-width: 900px;
+  }
+  .stars-display { font-size: 1.3rem; font-weight: bold; color: #FFA500; }
+  .progress-bar { background: #ddd; border-radius: 10px; height: 14px; width: 140px; overflow: hidden; }
+  .progress-fill { background: #4CAF50; height: 100%; transition: width 0.3s; border-radius: 10px; }
+
+  .card {
+    background: white; border-radius: 28px; padding: 24px; margin: 12px 0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    width: 100%; max-width: 760px;
+  }
+  .robot-emoji { font-size: clamp(3rem, 8vw, 5rem); animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  @keyframes pop  { 0% { transform: scale(0.5); opacity:0; } 100% { transform: scale(1); opacity:1; } }
+  @keyframes shake-wrong { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+  @keyframes glow { 0%,100% { box-shadow: 0 0 0 rgba(76,175,80,0); } 50% { box-shadow: 0 0 24px rgba(76,175,80,0.6); } }
+
+  .age-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 14px; width: 100%; max-width: 720px; }
+  .age-card {
+    background: white; border-radius: 24px; padding: 22px; text-align: center;
+    cursor: pointer; border: 5px solid transparent;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.08);
+    transition: transform 0.15s, border-color 0.2s;
+  }
+  .age-card:active { transform: scale(0.97); }
+  .age-card.selected { border-color: #4CAF50; animation: glow 1.5s infinite; }
+  .age-emoji { font-size: clamp(2.5rem, 7vw, 4rem); }
+  .age-label { font-weight: bold; font-size: clamp(1rem, 3vw, 1.3rem); color: #333; margin-top: 6px; }
+  .age-range { font-size: 0.95rem; color: #777; }
+
+  .lesson-list { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 12px; }
+  .lesson-card {
+    background: white; border-radius: 22px; padding: 18px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex; align-items: center; gap: 16px; cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .lesson-card:active { transform: scale(0.98); }
+  .lesson-card .emoji { font-size: 2.5rem; }
+  .lesson-card .body  { flex: 1; }
+  .lesson-card .title { font-size: 1.2rem; font-weight: bold; color: #333; }
+  .lesson-card .tag   { font-size: 0.95rem; color: #666; margin-top: 2px; }
+  .lesson-card .badge { font-size: 1.6rem; }
+
+  .item-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 16px 0; }
+  .item-tile {
+    font-size: clamp(2rem, 6vw, 3rem);
+    padding: 14px 18px; background: #FFF8E7;
+    border: 3px solid #FFB347; border-radius: 18px;
+    cursor: pointer; min-width: 70px; text-align: center;
+    transition: transform 0.15s;
+  }
+  .item-tile.selected { background: #C8E6C9; border-color: #4CAF50; transform: scale(1.05); }
+  .item-tile.muted    { opacity: 0.4; }
+  .item-tile .label   { display: block; font-size: 0.85rem; color: #555; margin-top: 4px; }
+
+  .bucket-row { display: flex; gap: 16px; justify-content: center; margin: 18px 0; flex-wrap: wrap; }
+  .bucket {
+    flex: 1; min-width: 140px; max-width: 240px; min-height: 110px;
+    border: 4px dashed; border-radius: 22px; padding: 14px; text-align: center;
+    font-weight: bold; font-size: 1.2rem;
+  }
+  .bucket.green { border-color: #4CAF50; background: #E8F5E9; color: #2e7031; }
+  .bucket.red   { border-color: #E74C3C; background: #FFEBEE; color: #962d22; }
+  .bucket .stash { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 6px; min-height: 40px; }
+  .bucket .stash span { font-size: 1.5rem; animation: pop 0.3s; }
+
+  .choice-grid { display: grid; grid-template-columns: 1fr; gap: 10px; max-width: 600px; margin: 16px auto; }
+  .choice-btn {
+    font-family: inherit;
+    font-size: clamp(1rem, 2.8vw, 1.2rem);
+    padding: 14px 18px;
+    border: 3px solid #ccc; border-radius: 16px;
+    background: white; color: #333; cursor: pointer;
+    text-align: left; line-height: 1.4;
+    transition: background 0.15s;
+  }
+  .choice-btn:hover  { background: #f5f5f5; }
+  .choice-btn:active { transform: scale(0.98); }
+  .choice-btn.correct { background: #C8E6C9; border-color: #4CAF50; }
+  .choice-btn.wrong   { background: #FFCDD2; border-color: #E74C3C; animation: shake-wrong 0.4s; }
+
+  .feedback { font-size: clamp(1.2rem, 3.5vw, 1.6rem); font-weight: bold; margin: 14px 0; min-height: 40px; text-align: center; }
+  .feedback.good { color: #4CAF50; animation: pop 0.4s; }
+  .feedback.bad  { color: #E74C3C; }
+
+  .narration {
+    background: #FFF8E7; border: 3px dashed #FFB347; border-radius: 18px;
+    padding: 16px; font-size: clamp(1rem, 3vw, 1.25rem); line-height: 1.5; margin: 12px 0;
+  }
+  .narration b { color: #6A1B9A; }
+
+  .robot-says {
+    background: #E3F2FD; border: 3px solid #2E86AB; border-radius: 18px;
+    padding: 14px; margin: 12px 0; font-size: clamp(1rem, 3vw, 1.2rem);
+  }
+  .robot-says::before { content: "🤖 "; }
+
+  .feature-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.95rem; }
+  .feature-table th, .feature-table td { padding: 8px 10px; text-align: center; border-bottom: 1px solid #eee; }
+  .feature-table th { background: #f5f5f5; }
+  .feature-toggle {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    padding: 8px 14px; border-radius: 14px; background: #eee; font-weight: bold;
+    margin: 4px; transition: background 0.15s;
+  }
+  .feature-toggle.on  { background: #C8E6C9; color: #2e7031; }
+  .feature-toggle.off { background: #FFCDD2; color: #962d22; }
+
+  .accuracy-bar {
+    background: #ddd; border-radius: 14px; height: 28px; overflow: hidden;
+    margin: 10px 0; position: relative;
+  }
+  .accuracy-fill { background: #4CAF50; height: 100%; transition: width 0.4s, background 0.4s; border-radius: 14px; }
+  .accuracy-label {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; color: #333;
+  }
+
+  .slider-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+  .slider-row label { min-width: 130px; font-weight: bold; }
+  .slider-row input[type=range] { flex: 1; }
+  .slider-row .value { min-width: 40px; text-align: right; font-family: monospace; }
+
+  .dataset-pick { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .dataset-card {
+    flex: 1; min-width: 240px; max-width: 320px;
+    background: white; border: 4px solid #ccc; border-radius: 18px;
+    padding: 16px; cursor: pointer;
+    transition: transform 0.15s, border-color 0.2s;
+  }
+  .dataset-card:active { transform: scale(0.97); }
+  .dataset-card.chosen { border-color: #4CAF50; background: #E8F5E9; }
+  .dataset-card .emoji-row { font-size: 2rem; margin: 8px 0; }
+
+  .prompt-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0; }
+  .chip {
+    padding: 8px 14px; border-radius: 20px; background: #eee; cursor: pointer;
+    font-size: 0.95rem; border: 2px solid transparent;
+    transition: background 0.15s;
+  }
+  .chip.on { background: #FFE082; border-color: #FF6B35; color: #c44a1f; font-weight: bold; }
+
+  .dashboard-card {
+    background: white; border-radius: 18px; padding: 16px; margin: 8px 0;
+    width: 100%; max-width: 720px;
+  }
+  .dash-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; gap: 8px; align-items: center; }
+  .dash-row .name { font-weight: bold; }
+  .dash-row .stats { font-size: 0.9rem; color: #666; }
+
+  .reflect-box {
+    background: linear-gradient(135deg, #FFE082 0%, #FFB347 100%);
+    border-radius: 22px; padding: 20px; margin: 12px 0;
+    font-size: clamp(1.05rem, 3vw, 1.3rem); line-height: 1.6;
+    color: #5d3a00;
+  }
+  .reflect-box::before { content: "🌟 "; font-size: 1.6rem; }
+
+  .small-text { font-size: 0.9rem; color: #666; text-align: center; margin: 8px; }
+
+  .step-pill {
+    display: inline-block; padding: 4px 10px; background: #eee; border-radius: 12px;
+    font-size: 0.85rem; color: #555; margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ============================================================================
+// AI LEARNER — A kid-friendly intro to AI for ages 5-13
+// ============================================================================
+//
+// Same understanding-validation philosophy as math-quest:
+//   1. PREDICT-THEN-REVEAL: before showing what the AI does, the kid predicts.
+//      Correct prediction is the strongest signal of understanding.
+//   2. FAILURE-MODE CHECKS: comprehension questions that ask WHY the AI got
+//      something wrong, with plausible distractors. Rote answers won't pass.
+//   3. APPLY-TO-NEW: extend the concept to a fresh scenario the kid hasn't
+//      seen yet.
+//   4. PARENT DASHBOARD shows predictions-correct + comprehension-checks
+//      passed per lesson, so adults can tell what's actually understood vs
+//      what's just clicked through.
+// ============================================================================
+
+const STATE = {
+  ageGroup: null,      // 'sprouts' | 'explorers' | 'builders'
+  buddy: '🤖',
+  stars: 0,
+  // progress[lessonId] = { predictionsTotal, predictionsRight, checksTotal, checksRight, completed }
+  progress: {},
+  // ephemeral lesson state
+  lessonId: null,
+  stepIdx: 0,
+  ctx: {},
+};
+
+const AGES = {
+  sprouts:   { label: 'Sprouts',   range: '5–7',   emoji: '🌱', color: '#4CAF50' },
+  explorers: { label: 'Explorers', range: '8–10',  emoji: '🔍', color: '#2E86AB' },
+  builders:  { label: 'Builders',  range: '11–13', emoji: '🔧', color: '#9B59B6' },
+};
+
+// ---------------------------------------------------------------------------
+// LESSON DATA (kept declarative so kids/teachers/me can extend easily)
+// ---------------------------------------------------------------------------
+const LESSONS = {
+  sprouts: [
+    {
+      id: 'sprouts-teach',
+      title: 'Teach the Robot',
+      tag: 'Robot learns from your examples',
+      emoji: '🤖',
+      steps: [
+        { type: 'intro', text: "Robot wants to learn which fruits are <b>RED</b>. You're the teacher!" },
+        { type: 'sort-bucket',
+          instruction: "Tap each fruit, then tap RED or NOT RED to put it in a bucket.",
+          items: [
+            { e: '🍎', label: 'apple',      truth: 'red' },
+            { e: '🍓', label: 'strawberry', truth: 'red' },
+            { e: '🍒', label: 'cherry',     truth: 'red' },
+            { e: '🍌', label: 'banana',     truth: 'not_red' },
+            { e: '🥬', label: 'lettuce',    truth: 'not_red' },
+            { e: '🍇', label: 'grapes',     truth: 'not_red' },
+          ],
+        },
+        { type: 'narrate',
+          text: "Robot learned from your examples! Now let's test it on <b>NEW</b> fruits." },
+        { type: 'predict-reveal',
+          tests: [
+            { e: '🍅', label: 'tomato',   robotSays: 'RED',     correctTruth: 'RED',
+              note: "Robot got it! 🎉 Tomato is red just like the apples." },
+            { e: '🥕', label: 'carrot',   robotSays: 'RED',     correctTruth: 'NOT RED',
+              note: "Whoops! Robot was wrong. Carrots are <b>orange</b>, but Robot has never seen orange — it just knows red and not-red." },
+            { e: '🥦', label: 'broccoli', robotSays: 'NOT RED', correctTruth: 'NOT RED',
+              note: "Yes! Like the lettuce." },
+          ],
+          options: ['RED', 'NOT RED'],
+        },
+        { type: 'check',
+          q: "Why did Robot say a CARROT is red?",
+          options: [
+            { text: "Robot is broken",                                                correct: false },
+            { text: "Robot only learned red and not-red — orange looks kinda red!",    correct: true },
+            { text: "Carrots are actually red",                                        correct: false },
+          ],
+        },
+        { type: 'reflect',
+          text: "You taught Robot using <b>EXAMPLES</b>. The more (and more different) examples you give an AI, the smarter it gets. AI doesn't 'know' — it learns from what you show it!" },
+      ],
+    },
+    {
+      id: 'sprouts-pattern',
+      title: 'Find the Pattern',
+      tag: 'AI looks for clues in pictures',
+      emoji: '😊',
+      steps: [
+        { type: 'intro', text: "Robot Eye looks at faces and tries to guess which ones are <b>HAPPY</b>." },
+        { type: 'narrate', text: "Robot saw these 3 faces and was told they are HAPPY:",
+          show: ['😊','😄','😁'] },
+        { type: 'predict-reveal',
+          tests: [
+            { e: '🙂', label: '',  robotSays: 'HAPPY',     correctTruth: 'HAPPY',
+              note: "Robot saw a smile shape — it learned that pattern!" },
+            { e: '😢', label: '',  robotSays: 'NOT HAPPY', correctTruth: 'NOT HAPPY',
+              note: "Robot noticed the mouth is different (and there are tears)." },
+            { e: '😬', label: '',  robotSays: 'HAPPY',     correctTruth: 'NOT HAPPY',
+              note: "Whoops! 😬 has teeth showing like a smile, so Robot was tricked. It only looks at the <b>shape</b> of the mouth." },
+          ],
+          options: ['HAPPY', 'NOT HAPPY'],
+        },
+        { type: 'check',
+          q: "What does Robot Eye actually look at to guess HAPPY?",
+          options: [
+            { text: "It feels feelings, like us",                                correct: false },
+            { text: "It looks at PARTS of the picture (like the mouth shape)",   correct: true },
+            { text: "It guesses randomly",                                       correct: false },
+          ],
+        },
+        { type: 'reflect',
+          text: "AI looks at <b>patterns</b> it can see — like the shape of a mouth. It can be tricked when something LOOKS like the pattern but isn't really the same thing!" },
+      ],
+    },
+  ],
+
+  explorers: [
+    {
+      id: 'explorers-features',
+      title: 'Feature Detective',
+      tag: 'Pick the right CLUES (features) for the AI',
+      emoji: '🕵️',
+      steps: [
+        { type: 'intro', text: "AI is trying to guess: <b>'Is this animal a BIRD?'</b> You decide which clues (called <b>features</b>) the AI gets to look at." },
+        { type: 'features',
+          // Each animal has features and a truth.
+          animals: [
+            { e: '🐦', name: 'sparrow',  has_wings: 1, lives_in_water: 0, fur: 0, color: 'brown', is_bird: 1 },
+            { e: '🦉', name: 'owl',      has_wings: 1, lives_in_water: 0, fur: 0, color: 'brown', is_bird: 1 },
+            { e: '🦅', name: 'eagle',    has_wings: 1, lives_in_water: 0, fur: 0, color: 'brown', is_bird: 1 },
+            { e: '🐶', name: 'dog',      has_wings: 0, lives_in_water: 0, fur: 1, color: 'brown', is_bird: 0 },
+            { e: '🐠', name: 'fish',     has_wings: 0, lives_in_water: 1, fur: 0, color: 'orange',is_bird: 0 },
+            { e: '🐱', name: 'cat',      has_wings: 0, lives_in_water: 0, fur: 1, color: 'gray',  is_bird: 0 },
+          ],
+          features: ['has_wings','lives_in_water','fur','color'],
+          target: 'is_bird',
+        },
+        { type: 'check',
+          q: "Suppose you give the AI ONLY 'color' as a clue. Why does it do badly?",
+          options: [
+            { text: "Birds and non-birds can be the same color — color isn't a useful clue here",   correct: true },
+            { text: "AI is bad at colors",                                                          correct: false },
+            { text: "There aren't enough colors in the world",                                      correct: false },
+          ],
+        },
+        { type: 'predict-quiz',
+          q: "If the AI uses ONLY 'has_wings' as its clue, what will it say about a 🦇 BAT?",
+          options: [
+            { text: "It's a bird (because it has wings)", correct: true,
+              feedback: "Right! AI just looks at the clue. A bat has wings → AI says 'bird'. But bats are mammals — clues alone can fool AI!" },
+            { text: "It's not a bird (AI knows bats)", correct: false,
+              feedback: "AI doesn't 'know' — it only uses the clues you give it. With just 'has wings', it'll say bird." },
+          ],
+        },
+        { type: 'reflect',
+          text: "AI uses <b>features</b> (clues) to decide. Pick the WRONG clues, and even smart AI gets confused. Picking GOOD features is one of the hardest parts of building AI!" },
+      ],
+    },
+    {
+      id: 'explorers-bias',
+      title: 'Bias Lab',
+      tag: 'See how training data shapes the AI',
+      emoji: '⚖️',
+      steps: [
+        { type: 'intro', text: "AI only knows what it was <b>trained</b> on. Let's see what happens when training data is one-sided." },
+        { type: 'pick-dataset',
+          q: "Pick which set of fruits to train the AI on:",
+          options: [
+            { id: 'red-only',
+              title: 'Only Red Fruits 🔴',
+              emojis: ['🍎','🍓','🍒','🍅','🍎','🍓'],
+              note: 'AI sees ONLY red fruits' },
+            { id: 'mixed',
+              title: 'Mixed Fruits 🌈',
+              emojis: ['🍎','🍌','🍇','🍓','🥝','🍊'],
+              note: 'AI sees many colors' },
+          ],
+        },
+        { type: 'bias-test',
+          tests: [
+            { e: '🍎', label: 'red apple', expectByDataset: { 'red-only': 'fruit', 'mixed': 'fruit' } },
+            { e: '🍌', label: 'banana',    expectByDataset: { 'red-only': 'NOT fruit (never saw yellow!)', 'mixed': 'fruit' } },
+            { e: '🫐', label: 'blueberry', expectByDataset: { 'red-only': 'NOT fruit (never saw blue!)',   'mixed': 'fruit' } },
+            { e: '🥝', label: 'kiwi',      expectByDataset: { 'red-only': 'NOT fruit (never saw green!)',  'mixed': 'fruit' } },
+          ],
+        },
+        { type: 'check',
+          q: "Why did the 'red-only' AI fail on a banana?",
+          options: [
+            { text: "Bananas aren't fruits",                                            correct: false },
+            { text: "It only learned 'fruit = red'. Yellow doesn't match the pattern.", correct: true },
+            { text: "AI doesn't like bananas",                                          correct: false },
+          ],
+        },
+        { type: 'predict-quiz',
+          q: "A face-recognition AI is only trained on adult faces. What might happen with a kid's face?",
+          options: [
+            { text: "It might not recognize the kid well — never saw kid faces",  correct: true,
+              feedback: "Yes! That's real <b>bias</b> in AI. Lopsided training data → lopsided results." },
+            { text: "It'll work great because faces are faces",                   correct: false,
+              feedback: "Faces of different ages have different patterns. Untrained AI struggles with what it never saw." },
+          ],
+        },
+        { type: 'reflect',
+          text: "<b>Bias</b> in AI usually comes from one-sided <b>training data</b>. If the data only shows one kind of thing, the AI only knows one kind of thing — even if real life is way more varied." },
+      ],
+    },
+  ],
+
+  builders: [
+    {
+      id: 'builders-brain',
+      title: 'Tiny Brain',
+      tag: 'Tune the WEIGHTS inside an AI',
+      emoji: '🧠',
+      steps: [
+        { type: 'intro', text: "Inside an AI is a 'brain' with knobs called <b>weights</b>. Each weight tells the AI how much to care about one clue. Let's tune them to recognize <b>cats</b>." },
+        { type: 'narrate',
+          text: "We'll use 3 features: <b>pointy ears</b>, <b>whiskers</b>, <b>has tail</b>. The AI computes a 'cat score' = sum of (feature × weight). If the score crosses a threshold, AI says CAT." },
+        { type: 'tiny-brain',
+          animals: [
+            { e: '🐱', name: 'cat',    pointy_ears: 1, whiskers: 1, has_tail: 1, is_cat: 1 },
+            { e: '🐶', name: 'dog',    pointy_ears: 0, whiskers: 1, has_tail: 1, is_cat: 0 },
+            { e: '🐠', name: 'fish',   pointy_ears: 0, whiskers: 0, has_tail: 1, is_cat: 0 },
+            { e: '🐰', name: 'rabbit', pointy_ears: 1, whiskers: 1, has_tail: 0, is_cat: 0 },
+            { e: '🐯', name: 'tiger',  pointy_ears: 1, whiskers: 1, has_tail: 1, is_cat: 1 },
+          ],
+        },
+        { type: 'check',
+          q: "Why doesn't 'has_tail' alone tell us if it's a cat?",
+          options: [
+            { text: "Cats don't have tails",                                              correct: false },
+            { text: "Lots of non-cats also have tails (dog, fish) — feature isn't unique", correct: true },
+            { text: "AI hates tails",                                                     correct: false },
+          ],
+        },
+        { type: 'predict-quiz',
+          q: "Real neural networks have MILLIONS of these weights. How do they get tuned?",
+          options: [
+            { text: "By hand, one knob at a time",                                                  correct: false,
+              feedback: "Way too many. There must be another way!" },
+            { text: "Automatically, by showing the AI examples and adjusting weights when it's wrong", correct: true,
+              feedback: "Exactly — that's <b>training</b>. The AI guesses, gets corrected, and tweaks its own weights." },
+          ],
+        },
+        { type: 'reflect',
+          text: "Real AIs (like ChatGPT) have <b>billions</b> of weights tuned this way. The whole 'training' process is just slowly turning those knobs to make better guesses." },
+      ],
+    },
+    {
+      id: 'builders-prompts',
+      title: 'Prompt Lab + Hallucination Hunter',
+      tag: 'Talk to an LLM, then catch its mistakes',
+      emoji: '💬',
+      steps: [
+        { type: 'intro', text: "LLMs (like ChatGPT) respond to your <b>prompt</b>. The same question can get very different answers depending on how you ask." },
+        { type: 'prompt-lab',
+          basePrompt: "Tell me about dogs.",
+          chips: [
+            { id: 'kid',   label: 'for a 5-year-old' },
+            { id: 'short', label: 'in 1 sentence' },
+            { id: 'poem',  label: 'as a poem' },
+            { id: 'sci',   label: 'like a scientist' },
+          ],
+          // Canned responses keyed by sorted chip combos
+          responses: {
+            '':              "Dogs are domesticated mammals from the family Canidae. They were the first species to be domesticated by humans, over 15,000 years ago, and they have since become one of the most popular pets worldwide. Dogs come in many breeds, each with different temperaments, sizes, and coat types. They communicate through barking, body language, and scent.",
+            'kid':           "Dogs are furry friends! 🐶 They love to play, fetch sticks, and wag their tails when they're happy. Dogs come in lots of sizes — tiny ones and HUGE ones! They can sniff way better than people can.",
+            'short':         "Dogs are loyal, friendly mammals that have lived alongside humans for thousands of years.",
+            'poem':          "A waggy tail, a soft warm nose,\nA paw to shake wherever you go.\nA loyal heart that's true and kind,\nA friend like no one else you'll find.",
+            'sci':           "Canis lupus familiaris is a domesticated descendant of the gray wolf, with phenotypic diversity unmatched among mammals due to ~15,000 years of selective breeding.",
+            'kid,short':     "Dogs are super friendly furry friends who love to play!",
+            'kid,poem':      "Doggies are silly, doggies are sweet,\nThey wag their tails and lick your feet!",
+            'sci,short':     "Canis lupus familiaris is a domesticated canid with high phenotypic diversity from selective breeding.",
+            'short,poem':    "Loyal companions, soft and bright,\nA friend who's there both day and night.",
+          },
+        },
+        { type: 'check',
+          q: "Why does the SAME question give different answers when you change the prompt?",
+          options: [
+            { text: "AI is moody",                                                              correct: false },
+            { text: "AI generates words that fit the style/instructions in your prompt",        correct: true },
+            { text: "It's a totally different AI each time",                                    correct: false },
+          ],
+        },
+        { type: 'narrate',
+          text: "Now let's hunt for a <b>hallucination</b> — when an AI confidently makes something up that sounds true." },
+        { type: 'hallucination',
+          context: "An AI was asked: <i>'Tell me 3 facts about the Moon.'</i>",
+          summary: [
+            "1. The Moon orbits Earth roughly once every 27 days.",
+            "2. The Moon's surface gravity is about 1/6th of Earth's.",
+            "3. The Moon has a thick atmosphere of pure oxygen, which is why early astronauts could remove their helmets briefly during the Apollo missions.",
+          ],
+          hallucinationIdx: 2,
+          why: "The Moon has almost <b>no</b> atmosphere — it's a near-vacuum. No astronaut ever removed a helmet on the Moon. The AI strung together plausible-sounding words without checking facts.",
+        },
+        { type: 'check',
+          q: "Why do AIs hallucinate?",
+          options: [
+            { text: "They lie on purpose",                                                                                       correct: false },
+            { text: "They predict 'plausible-sounding' next words — they don't actually check if anything is true",              correct: true },
+            { text: "Bad internet connection",                                                                                   correct: false },
+          ],
+        },
+        { type: 'reflect',
+          text: "LLMs are <b>great writers</b>, but they can be <b>terrible fact-checkers</b>. Always verify important claims with a real source — especially when the AI sounds super confident." },
+      ],
+    },
+  ],
+};
+
+// ---------------------------------------------------------------------------
+// PERSISTENCE
+// ---------------------------------------------------------------------------
+function save() {
+  try { localStorage.setItem('ailearner', JSON.stringify({
+    ageGroup: STATE.ageGroup, buddy: STATE.buddy, stars: STATE.stars, progress: STATE.progress,
+  })); } catch (e) {}
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem('ailearner') || '{}');
+    Object.assign(STATE, s);
+    if (!STATE.progress) STATE.progress = {};
+  } catch (e) {}
+}
+
+function progressOf(lessonId) {
+  if (!STATE.progress[lessonId]) {
+    STATE.progress[lessonId] = { predictionsTotal: 0, predictionsRight: 0, checksTotal: 0, checksRight: 0, completed: false };
+  }
+  return STATE.progress[lessonId];
+}
+
+// ---------------------------------------------------------------------------
+// SOUND
+// ---------------------------------------------------------------------------
+let audioCtx = null;
+function beep(freq, dur, type = 'sine') {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.value = 0.12;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  } catch(e) {}
+}
+function ding() { beep(660, 0.1); setTimeout(() => beep(880, 0.16), 90); }
+function buzz() { beep(220, 0.22, 'square'); }
+function fanfare() { beep(660,0.1); setTimeout(()=>beep(880,0.1),90); setTimeout(()=>beep(1100,0.2),180); }
+
+// ===========================================================================
+// SCREENS
+// ===========================================================================
+const app = document.getElementById('app');
+function render(html) { app.innerHTML = `<div class="screen">${html}</div>`; }
+
+// ---------- WELCOME / AGE PICKER ----------
+function screenWelcome() {
+  render(`
+    <h1>🤖 AI Learner 🤖</h1>
+    <h2>How AI works — for kids</h2>
+    <p style="text-align:center;margin:10px;color:#555;font-size:1.1rem;">Pick your age group:</p>
+    <div class="age-grid">
+      ${Object.entries(AGES).map(([k, a]) => `
+        <div class="age-card ${STATE.ageGroup === k ? 'selected' : ''}" onclick="window.pickAge('${k}')">
+          <div class="age-emoji">${a.emoji}</div>
+          <div class="age-label">${a.label}</div>
+          <div class="age-range">Ages ${a.range}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+      ${['🤖','🦊','🐼','🦁','🐸','🦄'].map(e => `
+        <span style="font-size:2rem;cursor:pointer;padding:6px;border-radius:12px;${STATE.buddy === e ? 'background:#FFE082;border:2px solid #FF6B35;' : ''}" onclick="window.pickBuddy('${e}')">${e}</span>
+      `).join('')}
+    </div>
+    <button class="big-btn green" onclick="window.go('home')" ${!STATE.ageGroup ? 'disabled' : ''}>
+      ${STATE.ageGroup ? 'Start! ▶' : 'Pick an age first'}
+    </button>
+    <button class="big-btn gray" onclick="window.go('dashboard')">For Grown-Ups 👨‍👩‍👧</button>
+    <div class="small-text">${STATE.stars > 0 ? `⭐ ${STATE.stars} stars earned` : ''}</div>
+  `);
+}
+window.pickAge   = (k) => { STATE.ageGroup = k; save(); screenWelcome(); };
+window.pickBuddy = (e) => { STATE.buddy    = e; save(); screenWelcome(); };
+
+// ---------- HOME / LESSON LIST ----------
+function screenHome() {
+  if (!STATE.ageGroup) return screenWelcome();
+  const age = AGES[STATE.ageGroup];
+  const lessons = LESSONS[STATE.ageGroup];
+  render(`
+    <div class="top-bar">
+      <button class="big-btn gray" onclick="window.go('welcome')">← Change Age</button>
+      <div style="font-weight:bold;color:${age.color};">${age.emoji} ${age.label} (${age.range})</div>
+      <div class="stars-display">⭐ ${STATE.stars}</div>
+    </div>
+    <h1>Pick a Lesson</h1>
+    <div class="lesson-list">
+      ${lessons.map(L => {
+        const p = progressOf(L.id);
+        const badge = p.completed ? '✅' : '✨';
+        return `
+          <div class="lesson-card" onclick="window.startLesson('${L.id}')">
+            <div class="emoji">${L.emoji}</div>
+            <div class="body">
+              <div class="title">${L.title}</div>
+              <div class="tag">${L.tag}</div>
+            </div>
+            <div class="badge">${badge}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <button class="big-btn gray" onclick="window.go('dashboard')">For Grown-Ups</button>
+  `);
+}
+
+// ---------- LESSON RUNNER ----------
+function findLesson(id) {
+  for (const group of Object.values(LESSONS)) {
+    const L = group.find(l => l.id === id);
+    if (L) return L;
+  }
+  return null;
+}
+
+window.startLesson = (id) => {
+  STATE.lessonId = id;
+  STATE.stepIdx = 0;
+  STATE.ctx = {};
+  runStep();
+};
+
+function runStep() {
+  const L = findLesson(STATE.lessonId);
+  if (!L) return screenHome();
+  if (STATE.stepIdx >= L.steps.length) {
+    progressOf(L.id).completed = true;
+    save();
+    return screenComplete(L);
+  }
+  const step = L.steps[STATE.stepIdx];
+  const r = renderers[step.type];
+  if (!r) {
+    console.error('Unknown step type:', step.type);
+    nextStep(); return;
+  }
+  r(L, step);
+}
+function nextStep() { STATE.stepIdx++; runStep(); }
+
+function lessonTopBar(L) {
+  const total = L.steps.length;
+  const pct = Math.round((STATE.stepIdx / total) * 100);
+  return `
+    <div class="top-bar">
+      <button class="big-btn gray" onclick="window.go('home')">← Lessons</button>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="stars-display">⭐ ${STATE.stars}</div>
+    </div>
+  `;
+}
+
+// ----- Step renderers ------------------------------------------------------
+const renderers = {};
+
+renderers.intro = (L, s) => {
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card" style="text-align:center;">
+      <div class="robot-emoji">${L.emoji}</div>
+      <h2>${L.title}</h2>
+      <div class="narration">${s.text}</div>
+      <button class="big-btn green" onclick="window.nextStep()">Let's go! ▶</button>
+    </div>
+  `);
+};
+
+renderers.narrate = (L, s) => {
+  const showRow = s.show ? `<div class="item-row">${s.show.map(e => `<div class="item-tile" style="cursor:default;">${e}</div>`).join('')}</div>` : '';
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <div class="step-pill">${STATE.buddy} Robot says</div>
+      <div class="narration">${s.text}</div>
+      ${showRow}
+      <div style="text-align:center;"><button class="big-btn green" onclick="window.nextStep()">Continue ▶</button></div>
+    </div>
+  `);
+};
+
+renderers.reflect = (L, s) => {
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card" style="text-align:center;">
+      <div class="reflect-box">${s.text}</div>
+      <button class="big-btn green" onclick="window.nextStep()">Got it! ▶</button>
+    </div>
+  `);
+};
+
+// SORT-BUCKET: tap item, tap bucket. Tracks user's labels (used to show robot trained on them).
+renderers['sort-bucket'] = (L, s) => {
+  if (!STATE.ctx.sortBuckets) STATE.ctx.sortBuckets = { red: [], not_red: [] };
+  if (STATE.ctx.sortSelected === undefined) STATE.ctx.sortSelected = null;
+  const placed = STATE.ctx.sortBuckets.red.concat(STATE.ctx.sortBuckets.not_red).map(x => x.label);
+  const remaining = s.items.filter(it => !placed.includes(it.label));
+
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <h3>Train the Robot 🤖</h3>
+      <div class="narration">${s.instruction}</div>
+      <div class="item-row">
+        ${remaining.map((it, i) => `
+          <div class="item-tile ${STATE.ctx.sortSelected === i ? 'selected' : ''}"
+               onclick="window.sortPick(${i})">
+            ${it.e}<span class="label">${it.label}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="bucket-row">
+        <div class="bucket red"  onclick="window.sortDrop('red')">RED ✅
+          <div class="stash">${STATE.ctx.sortBuckets.red.map(it => `<span>${it.e}</span>`).join('')}</div>
+        </div>
+        <div class="bucket green" style="border-color:#9E9E9E;background:#F5F5F5;color:#555;" onclick="window.sortDrop('not_red')">NOT RED ❌
+          <div class="stash">${STATE.ctx.sortBuckets.not_red.map(it => `<span>${it.e}</span>`).join('')}</div>
+        </div>
+      </div>
+      ${remaining.length === 0 ? `<div style="text-align:center;"><button class="big-btn green" onclick="window.nextStep()">All sorted! ▶</button></div>` : `<div class="small-text">Pick a fruit, then tap a bucket. ${remaining.length} left.</div>`}
+    </div>
+  `);
+  window.sortPick = (i) => { STATE.ctx.sortSelected = i; renderers['sort-bucket'](L, s); };
+  window.sortDrop = (bucket) => {
+    if (STATE.ctx.sortSelected === null || STATE.ctx.sortSelected === undefined) return;
+    const placed2 = STATE.ctx.sortBuckets.red.concat(STATE.ctx.sortBuckets.not_red).map(x => x.label);
+    const remaining2 = s.items.filter(it => !placed2.includes(it.label));
+    const it = remaining2[STATE.ctx.sortSelected];
+    if (!it) return;
+    STATE.ctx.sortBuckets[bucket].push(it);
+    STATE.ctx.sortSelected = null;
+    ding();
+    renderers['sort-bucket'](L, s);
+  };
+};
+
+// PREDICT-REVEAL: kid predicts what robot will say BEFORE seeing the answer.
+renderers['predict-reveal'] = (L, s) => {
+  if (!STATE.ctx.predictIdx) STATE.ctx.predictIdx = 0;
+  const i = STATE.ctx.predictIdx;
+  const t = s.tests[i];
+  const totalTests = s.tests.length;
+
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <div class="step-pill">Test ${i+1} of ${totalTests} · 🔮 PREDICT first!</div>
+      <h3>What will Robot say about this?</h3>
+      <div class="item-row"><div class="item-tile" style="cursor:default;font-size:4rem;">${t.e}${t.label ? `<span class="label">${t.label}</span>` : ''}</div></div>
+      <div class="choice-grid">
+        ${s.options.map(opt => `<button class="choice-btn" data-opt="${opt}">${opt}</button>`).join('')}
+      </div>
+      <div id="reveal" style="display:none;">
+        <div class="robot-says" id="robot-line"></div>
+        <div class="narration" id="note-line"></div>
+        <div style="text-align:center;"><button class="big-btn green" onclick="window.predNext()">Next ▶</button></div>
+      </div>
+      <div class="feedback" id="fb"></div>
+    </div>
+  `);
+
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.onclick = () => {
+      const picked = btn.dataset.opt;
+      const robotPicked = t.robotSays;
+      const kidGuessedRobot = picked === robotPicked;
+      const p = progressOf(L.id);
+      p.predictionsTotal++;
+      if (kidGuessedRobot) p.predictionsRight++;
+      save();
+      document.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; if (b.dataset.opt === robotPicked) b.classList.add('correct'); });
+      const fb = document.getElementById('fb');
+      if (kidGuessedRobot) {
+        fb.className = 'feedback good'; fb.textContent = '🎯 You predicted Robot correctly!';
+        ding(); STATE.stars++; save();
+      } else {
+        btn.classList.add('wrong');
+        fb.className = 'feedback bad'; fb.textContent = `Robot actually said: ${robotPicked}`;
+        buzz();
+      }
+      const wasRobotRight = robotPicked === t.correctTruth;
+      document.getElementById('robot-line').innerHTML = `Robot said <b>${robotPicked}</b>. Truth: <b>${t.correctTruth}</b>. ${wasRobotRight ? '✅ Robot was right.' : '❌ Robot was WRONG!'}`;
+      document.getElementById('note-line').innerHTML = t.note;
+      document.getElementById('reveal').style.display = 'block';
+    };
+  });
+
+  window.predNext = () => {
+    STATE.ctx.predictIdx++;
+    if (STATE.ctx.predictIdx >= totalTests) {
+      STATE.ctx.predictIdx = 0;
+      nextStep();
+    } else {
+      renderers['predict-reveal'](L, s);
+    }
+  };
+};
+
+// CHECK: comprehension multiple choice — counts toward checksRight
+renderers.check = (L, s) => {
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <div class="step-pill">🤔 Check your understanding</div>
+      <h3>${s.q}</h3>
+      <div class="choice-grid">
+        ${s.options.map((o, i) => `<button class="choice-btn" data-i="${i}">${o.text}</button>`).join('')}
+      </div>
+      <div class="feedback" id="fb"></div>
+      <div style="text-align:center;"><button class="big-btn green" id="cont" style="display:none;" onclick="window.nextStep()">Continue ▶</button></div>
+    </div>
+  `);
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.onclick = () => {
+      const i = +btn.dataset.i;
+      const opt = s.options[i];
+      const p = progressOf(L.id);
+      p.checksTotal++;
+      if (opt.correct) p.checksRight++;
+      save();
+      document.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; if (s.options[+b.dataset.i].correct) b.classList.add('correct'); });
+      const fb = document.getElementById('fb');
+      if (opt.correct) {
+        fb.className = 'feedback good'; fb.textContent = '✅ Right!'; ding(); STATE.stars++; save();
+      } else {
+        btn.classList.add('wrong');
+        fb.className = 'feedback bad'; fb.textContent = '❌ The right answer is highlighted in green.'; buzz();
+      }
+      document.getElementById('cont').style.display = '';
+    };
+  });
+};
+
+// PREDICT-QUIZ: like check, but framed as predicting AI behavior in a new scenario.
+renderers['predict-quiz'] = (L, s) => {
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <div class="step-pill">🔮 Predict</div>
+      <h3>${s.q}</h3>
+      <div class="choice-grid">
+        ${s.options.map((o, i) => `<button class="choice-btn" data-i="${i}">${o.text}</button>`).join('')}
+      </div>
+      <div class="feedback" id="fb"></div>
+      <div class="narration" id="explain" style="display:none;"></div>
+      <div style="text-align:center;"><button class="big-btn green" id="cont" style="display:none;" onclick="window.nextStep()">Continue ▶</button></div>
+    </div>
+  `);
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.onclick = () => {
+      const i = +btn.dataset.i;
+      const opt = s.options[i];
+      const p = progressOf(L.id);
+      p.predictionsTotal++;
+      if (opt.correct) p.predictionsRight++;
+      save();
+      document.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; if (s.options[+b.dataset.i].correct) b.classList.add('correct'); });
+      const fb = document.getElementById('fb');
+      if (opt.correct) { fb.className = 'feedback good'; fb.textContent = '✅ Great prediction!'; ding(); STATE.stars++; save(); }
+      else { btn.classList.add('wrong'); fb.className = 'feedback bad'; fb.textContent = '🤔 Look at the green answer.'; buzz(); }
+      const ex = document.getElementById('explain');
+      ex.innerHTML = opt.feedback || s.options.find(o => o.correct).feedback || '';
+      ex.style.display = ex.innerHTML ? 'block' : 'none';
+      document.getElementById('cont').style.display = '';
+    };
+  });
+};
+
+// ----- Explorers: features ------------------------------------------------
+renderers.features = (L, s) => {
+  if (!STATE.ctx.featOn) STATE.ctx.featOn = {};
+  const animals = s.animals;
+  const features = s.features;
+  const target = s.target;
+
+  // Simple model: AI predicts is_bird=1 iff majority of "on" features match the average pattern of birds
+  function predict(animal) {
+    const onFeats = features.filter(f => STATE.ctx.featOn[f]);
+    if (onFeats.length === 0) return Math.random() < 0.5 ? 1 : 0;
+    // For each on-feature, find if majority of birds have that value
+    let votes = 0;
+    onFeats.forEach(f => {
+      const birdAvg = animals.filter(a => a[target] === 1).reduce((s,a) => s + (a[f] === animal[f] ? 1 : 0), 0) / animals.filter(a => a[target] === 1).length;
+      if (birdAvg > 0.5) votes++;
+    });
+    return votes > onFeats.length / 2 ? 1 : 0;
+  }
+  // For categorical (color), compare equality with the bird average of being same color
+  // We'll keep it simple: if a feature is "color", predict 1 iff animal's color matches majority bird color
+  function predictV2(animal) {
+    const onFeats = features.filter(f => STATE.ctx.featOn[f]);
+    if (onFeats.length === 0) return -1; // no prediction
+    let birdScore = 0, totalChecks = 0;
+    onFeats.forEach(f => {
+      // Find how strongly this feature value associates with target=1
+      const matchingBirds   = animals.filter(a => a[target] === 1 && a[f] === animal[f]).length;
+      const totalBirds      = animals.filter(a => a[target] === 1).length;
+      const matchingNonBirds = animals.filter(a => a[target] === 0 && a[f] === animal[f]).length;
+      const totalNonBirds   = animals.filter(a => a[target] === 0).length;
+      const birdRate    = totalBirds    ? matchingBirds    / totalBirds    : 0;
+      const nonBirdRate = totalNonBirds ? matchingNonBirds / totalNonBirds : 0;
+      birdScore += (birdRate - nonBirdRate);
+      totalChecks++;
+    });
+    return birdScore > 0 ? 1 : 0;
+  }
+  // Compute accuracy
+  const onFeats = features.filter(f => STATE.ctx.featOn[f]);
+  let correct = 0;
+  if (onFeats.length > 0) {
+    animals.forEach(a => { if (predictV2(a) === a[target]) correct++; });
+  }
+  const acc = onFeats.length === 0 ? 0 : Math.round(correct / animals.length * 100);
+  const accColor = acc >= 80 ? '#4CAF50' : acc >= 50 ? '#FFA500' : '#E74C3C';
+
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <h3>Pick the clues (features) you'll let the AI use:</h3>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;">
+        ${features.map(f => `
+          <span class="feature-toggle ${STATE.ctx.featOn[f] ? 'on' : 'off'}" onclick="window.toggleFeat('${f}')">
+            ${STATE.ctx.featOn[f] ? '✅' : '❌'} ${f.replace(/_/g,' ')}
+          </span>
+        `).join('')}
+      </div>
+      <h3 style="margin-top:14px;">AI's accuracy on these animals:</h3>
+      <div class="accuracy-bar">
+        <div class="accuracy-fill" style="width:${acc}%;background:${accColor};"></div>
+        <div class="accuracy-label">${onFeats.length === 0 ? 'No features on yet — pick some!' : acc + '%'}</div>
+      </div>
+      <table class="feature-table">
+        <tr><th>Animal</th>${features.map(f => `<th>${f.replace(/_/g,' ')}</th>`).join('')}<th>truth</th><th>AI guess</th></tr>
+        ${animals.map(a => {
+          const guess = onFeats.length > 0 ? predictV2(a) : null;
+          const right = guess === a[target];
+          return `<tr>
+            <td style="font-size:1.4rem;">${a.e}</td>
+            ${features.map(f => `<td style="${STATE.ctx.featOn[f] ? '' : 'opacity:0.3;'}">${a[f]}</td>`).join('')}
+            <td>${a[target] ? 'BIRD' : 'no'}</td>
+            <td>${guess === null ? '?' : (guess ? 'BIRD' : 'no')} ${guess === null ? '' : (right ? '✅' : '❌')}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+      <div class="small-text">Try turning features on/off and watch the accuracy change!</div>
+      <div style="text-align:center;margin-top:10px;">
+        <button class="big-btn green" onclick="window.nextStep()" ${onFeats.length === 0 ? 'disabled' : ''}>
+          ${onFeats.length === 0 ? 'Try at least one feature' : 'Continue ▶'}
+        </button>
+      </div>
+    </div>
+  `);
+  window.toggleFeat = (f) => { STATE.ctx.featOn[f] = !STATE.ctx.featOn[f]; renderers.features(L, s); };
+};
+
+// ----- Explorers: pick-dataset --------------------------------------------
+renderers['pick-dataset'] = (L, s) => {
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <h3>${s.q}</h3>
+      <div class="dataset-pick">
+        ${s.options.map(opt => `
+          <div class="dataset-card ${STATE.ctx.datasetId === opt.id ? 'chosen' : ''}" onclick="window.pickDataset('${opt.id}')">
+            <h3>${opt.title}</h3>
+            <div class="emoji-row">${opt.emojis.join(' ')}</div>
+            <div class="small-text">${opt.note}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="text-align:center;margin-top:10px;">
+        <button class="big-btn green" onclick="window.nextStep()" ${!STATE.ctx.datasetId ? 'disabled' : ''}>
+          ${STATE.ctx.datasetId ? 'Train the AI ▶' : 'Pick one'}
+        </button>
+      </div>
+    </div>
+  `);
+  window.pickDataset = (id) => { STATE.ctx.datasetId = id; renderers['pick-dataset'](L, s); };
+};
+
+// ----- Explorers: bias-test -----------------------------------------------
+renderers['bias-test'] = (L, s) => {
+  const dataset = STATE.ctx.datasetId || 'mixed';
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <h3>AI was trained on: <b>${dataset === 'red-only' ? 'Only Red Fruits' : 'Mixed Fruits'}</b></h3>
+      <div class="narration">Now test it on new fruits. What does the AI say?</div>
+      <table class="feature-table">
+        <tr><th>Fruit</th><th>AI's verdict</th></tr>
+        ${s.tests.map(t => {
+          const verdict = t.expectByDataset[dataset];
+          const wrong = verdict.includes('NOT');
+          return `<tr>
+            <td style="font-size:1.6rem;">${t.e} <span style="font-size:0.9rem;color:#555;">${t.label}</span></td>
+            <td style="color:${wrong ? '#E74C3C' : '#4CAF50'};font-weight:bold;">${verdict}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+      <div class="reflect-box" style="font-size:1rem;">${dataset === 'red-only' ? "Notice: with one-sided training data, the AI fails on anything new!" : "Mixed data → AI handles new fruits well."}</div>
+      <div style="text-align:center;"><button class="big-btn green" onclick="window.nextStep()">Continue ▶</button></div>
+    </div>
+  `);
+};
+
+// ----- Builders: tiny-brain (sliders) -------------------------------------
+renderers['tiny-brain'] = (L, s) => {
+  if (STATE.ctx.weights === undefined) STATE.ctx.weights = { pointy_ears: 1, whiskers: 1, has_tail: 0 };
+  if (STATE.ctx.threshold === undefined) STATE.ctx.threshold = 1.5;
+  const animals = s.animals;
+  function score(a) { return a.pointy_ears * STATE.ctx.weights.pointy_ears + a.whiskers * STATE.ctx.weights.whiskers + a.has_tail * STATE.ctx.weights.has_tail; }
+  let correct = 0;
+  animals.forEach(a => { const guess = score(a) >= STATE.ctx.threshold ? 1 : 0; if (guess === a.is_cat) correct++; });
+  const acc = Math.round(correct / animals.length * 100);
+  const accColor = acc >= 80 ? '#4CAF50' : acc >= 50 ? '#FFA500' : '#E74C3C';
+
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <h3>Tune the weights to recognize CATS 🐱</h3>
+      <div class="narration">Move the sliders. AI predicts CAT when the score is at least the threshold.</div>
+      ${['pointy_ears','whiskers','has_tail'].map(k => `
+        <div class="slider-row">
+          <label>${k.replace(/_/g,' ')}:</label>
+          <input type="range" min="-2" max="2" step="0.1" value="${STATE.ctx.weights[k]}" oninput="window.setWeight('${k}', this.value)">
+          <span class="value">${STATE.ctx.weights[k].toFixed(1)}</span>
+        </div>
+      `).join('')}
+      <div class="slider-row">
+        <label>threshold:</label>
+        <input type="range" min="-1" max="4" step="0.1" value="${STATE.ctx.threshold}" oninput="window.setThreshold(this.value)">
+        <span class="value">${STATE.ctx.threshold.toFixed(1)}</span>
+      </div>
+      <h3 style="margin-top:12px;">Accuracy:</h3>
+      <div class="accuracy-bar">
+        <div class="accuracy-fill" style="width:${acc}%;background:${accColor};"></div>
+        <div class="accuracy-label">${acc}% (${correct}/${animals.length})</div>
+      </div>
+      <table class="feature-table">
+        <tr><th>Animal</th><th>ears</th><th>whisk</th><th>tail</th><th>score</th><th>AI guess</th><th>truth</th></tr>
+        ${animals.map(a => {
+          const sc = score(a);
+          const g = sc >= STATE.ctx.threshold ? 1 : 0;
+          return `<tr>
+            <td style="font-size:1.4rem;">${a.e}</td>
+            <td>${a.pointy_ears}</td><td>${a.whiskers}</td><td>${a.has_tail}</td>
+            <td><b>${sc.toFixed(1)}</b></td>
+            <td>${g === a.is_cat ? '✅' : '❌'} ${g ? 'CAT' : 'no'}</td>
+            <td>${a.is_cat ? 'CAT' : 'no'}</td>
+          </tr>`;
+        }).join('')}
+      </table>
+      <div class="small-text">Try to get 100%! Hint: cats have all three features, but dogs/rabbits share some.</div>
+      <div style="text-align:center;margin-top:10px;">
+        <button class="big-btn green" onclick="window.nextStep()" ${acc < 80 ? 'disabled' : ''}>
+          ${acc < 80 ? `Get ≥80% to continue (now ${acc}%)` : 'Continue ▶'}
+        </button>
+      </div>
+    </div>
+  `);
+  window.setWeight    = (k, v) => { STATE.ctx.weights[k] = +v; renderers['tiny-brain'](L, s); };
+  window.setThreshold = (v)    => { STATE.ctx.threshold = +v; renderers['tiny-brain'](L, s); };
+};
+
+// ----- Builders: prompt-lab -----------------------------------------------
+renderers['prompt-lab'] = (L, s) => {
+  if (!STATE.ctx.chips) STATE.ctx.chips = {};
+  const onChips = s.chips.filter(c => STATE.ctx.chips[c.id]).map(c => c.id).sort();
+  const key = onChips.join(',');
+  const response = s.responses[key] || s.responses[''];
+  const fullPrompt = s.basePrompt + (onChips.length ? ' (' + onChips.map(id => s.chips.find(c=>c.id===id).label).join(', ') + ')' : '');
+
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <h3>💬 Prompt Lab</h3>
+      <div class="narration"><b>Base prompt:</b> "${s.basePrompt}"</div>
+      <div class="prompt-chips">
+        ${s.chips.map(c => `<span class="chip ${STATE.ctx.chips[c.id] ? 'on' : ''}" onclick="window.toggleChip('${c.id}')">${c.label}</span>`).join('')}
+      </div>
+      <div class="small-text">Tap chips to add instructions. Try combos!</div>
+      <div class="narration" style="font-style:italic;">Final prompt: ${fullPrompt}</div>
+      <div class="robot-says" style="white-space:pre-wrap;">${response}</div>
+      <div style="text-align:center;margin-top:10px;">
+        <button class="big-btn green" onclick="window.nextStep()">Continue ▶</button>
+      </div>
+    </div>
+  `);
+  window.toggleChip = (id) => { STATE.ctx.chips[id] = !STATE.ctx.chips[id]; renderers['prompt-lab'](L, s); };
+};
+
+// ----- Builders: hallucination ---------------------------------------------
+renderers.hallucination = (L, s) => {
+  render(`
+    ${lessonTopBar(L)}
+    <div class="card">
+      <div class="narration">${s.context}</div>
+      <h3>🕵️ Spot the made-up fact:</h3>
+      <div class="choice-grid">
+        ${s.summary.map((line, i) => `<button class="choice-btn" data-i="${i}">${line}</button>`).join('')}
+      </div>
+      <div class="feedback" id="fb"></div>
+      <div class="narration" id="why" style="display:none;"></div>
+      <div style="text-align:center;"><button class="big-btn green" id="cont" style="display:none;" onclick="window.nextStep()">Continue ▶</button></div>
+    </div>
+  `);
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.onclick = () => {
+      const i = +btn.dataset.i;
+      const right = i === s.hallucinationIdx;
+      const p = progressOf(L.id);
+      p.predictionsTotal++;
+      if (right) p.predictionsRight++;
+      save();
+      document.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; if (+b.dataset.i === s.hallucinationIdx) b.classList.add('correct'); });
+      const fb = document.getElementById('fb');
+      if (right) { fb.className = 'feedback good'; fb.textContent = '🎯 Found the hallucination!'; ding(); STATE.stars++; save(); }
+      else { btn.classList.add('wrong'); fb.className = 'feedback bad'; fb.textContent = 'The made-up one is highlighted in green.'; buzz(); }
+      const why = document.getElementById('why');
+      why.innerHTML = '<b>Why it\'s a hallucination:</b> ' + s.why;
+      why.style.display = 'block';
+      document.getElementById('cont').style.display = '';
+    };
+  });
+};
+
+// ---------- LESSON COMPLETE ----------
+function screenComplete(L) {
+  const p = progressOf(L.id);
+  const predScore = p.predictionsTotal ? Math.round(p.predictionsRight / p.predictionsTotal * 100) : 0;
+  const checkScore = p.checksTotal ? Math.round(p.checksRight / p.checksTotal * 100) : 0;
+  const stars = (predScore >= 70 ? 1 : 0) + (checkScore >= 70 ? 1 : 0) + (predScore >= 90 && checkScore >= 90 ? 1 : 0);
+  fanfare();
+  render(`
+    <div class="card" style="text-align:center;max-width:600px;">
+      <div class="robot-emoji">${L.emoji}</div>
+      <h1>Lesson Complete!</h1>
+      <h2>${L.title}</h2>
+      <div style="font-size:3rem;margin:14px;">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
+      <div class="dashboard-card" style="margin:auto;">
+        <div class="dash-row"><span>🔮 Predictions correct:</span><b>${p.predictionsRight}/${p.predictionsTotal} (${predScore}%)</b></div>
+        <div class="dash-row"><span>🤔 Comprehension checks:</span><b>${p.checksRight}/${p.checksTotal} (${checkScore}%)</b></div>
+      </div>
+      <div class="reflect-box" style="font-size:1rem;text-align:left;">${stars >= 2 ? "You're really getting it! Try the next lesson." : "Try this lesson again — you'll learn even more the second time."}</div>
+      <button class="big-btn green" onclick="window.startLesson('${L.id}')">Replay 🔁</button>
+      <button class="big-btn blue"  onclick="window.go('home')">More lessons ▶</button>
+    </div>
+  `);
+}
+
+// ---------- PARENT DASHBOARD ----------
+function screenDashboard() {
+  render(`
+    <h1 style="font-size:2rem;">Parent Dashboard</h1>
+    <div class="dashboard-card">
+      <div class="small-text" style="text-align:left;">
+        <b>How understanding is measured:</b><br>
+        • <b>Predictions</b>: before showing what the AI does, the kid predicts. Correct prediction = mental model is forming.<br>
+        • <b>Checks</b>: comprehension MCQs. Wrong choices are designed as plausible misconceptions, so a high score means the kid can rule them out.<br>
+        • A lesson is real "mastery" when both scores are ≥70%.
+      </div>
+    </div>
+    ${Object.entries(LESSONS).map(([groupKey, lessons]) => {
+      const age = AGES[groupKey];
+      return `
+        <div class="dashboard-card">
+          <h2 style="text-align:left;color:${age.color};">${age.emoji} ${age.label} (${age.range})</h2>
+          ${lessons.map(L => {
+            const p = STATE.progress[L.id];
+            if (!p) return `<div class="dash-row"><span class="name">${L.emoji} ${L.title}</span><span class="stats">Not started</span></div>`;
+            const predScore = p.predictionsTotal ? Math.round(p.predictionsRight / p.predictionsTotal * 100) : 0;
+            const checkScore = p.checksTotal ? Math.round(p.checksRight / p.checksTotal * 100) : 0;
+            const mastered = predScore >= 70 && checkScore >= 70 && p.completed;
+            return `
+              <div class="dash-row">
+                <span class="name">${L.emoji} ${L.title}</span>
+                <span class="stats">
+                  ${mastered ? '✅ Mastered' : (p.completed ? '🟡 Completed' : '⏳ In progress')}<br>
+                  <span style="font-size:0.8rem;">predict: ${p.predictionsRight}/${p.predictionsTotal} (${predScore}%) · checks: ${p.checksRight}/${p.checksTotal} (${checkScore}%)</span>
+                </span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }).join('')}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+      <button class="big-btn blue" onclick="window.go('welcome')">← Back</button>
+      <button class="big-btn gray" onclick="window.resetAll()">Reset Progress</button>
+    </div>
+  `);
+}
+window.resetAll = () => { if (confirm('Reset all stars and progress?')) { STATE.stars = 0; STATE.progress = {}; save(); screenDashboard(); } };
+
+// ---------- ROUTER ----------
+window.go = (s) => {
+  if (s === 'welcome')   screenWelcome();
+  else if (s === 'home') screenHome();
+  else if (s === 'dashboard') screenDashboard();
+};
+window.nextStep = nextStep;
+
+// BOOT
+load();
+screenWelcome();
+</script>
+</body>
+</html>

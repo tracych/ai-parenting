@@ -14,11 +14,29 @@ each fact in multiple formats (numeric, visual, word problem) and only marking
 it "mastered" once the child has demonstrated it in at least two ways. Ships
 with a parent dashboard showing per-fact mastery.
 
-Single-file HTML, no build, no dependencies → just open
-[`math-quest/index.html`](./math-quest/index.html) in a browser.
+Open [`math-quest/index.html`](./math-quest/index.html). Details in
+[math-quest/README.md](./math-quest/README.md).
 
-See [math-quest/README.md](./math-quest/README.md) for details.
+### 🤖 [ai-learner](./ai-learner/) — How AI works, for kids ages 5–13
+
+Three age tracks (🌱 Sprouts 5–7, 🔍 Explorers 8–10, 🔧 Builders 11–13), each
+with hands-on lessons that teach the basics of AI: training from examples,
+features, bias, weights, prompts, and hallucinations. Built around
+**predict-then-reveal** interactions — the child predicts what the AI will do
+*before* seeing it, so the parent dashboard can show whether they actually have
+a working mental model of the system.
+
+Open [`ai-learner/index.html`](./ai-learner/index.html). Details in
+[ai-learner/README.md](./ai-learner/README.md).
 
 ---
 
-More projects coming as the parenting throws new problems at us. 🙂
+## Shared design philosophy
+
+All projects here follow the same principle: a kid clicking the right answer
+isn't proof of understanding. Each app is designed so the activities themselves
+generate evidence of comprehension — through multi-representation, prediction,
+failure-mode reasoning, or application to new cases — and surfaces that
+evidence in a parent dashboard.
+
+Single-file HTML, no build, no dependencies. Just open in a browser.
