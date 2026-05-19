@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Conversation Spark — questions that get real answers</title>
+<style>
+  :root {
+    --cream: #fdf6ec;
+    --cream-2: #f7ecd9;
+    --coral: #ef6f5e;
+    --coral-soft: #ffd9d2;
+    --teal: #2c8e8e;
+    --teal-soft: #c5e6e6;
+    --ink: #2b2a33;
+    --ink-soft: #5a5867;
+    --gold: #e9b949;
+    --shadow: 0 4px 14px rgba(43, 42, 51, 0.08);
+    --shadow-lift: 0 10px 28px rgba(43, 42, 51, 0.14);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+  }
+  header {
+    padding: 28px 20px 12px;
+    text-align: center;
+    background: linear-gradient(180deg, var(--cream-2) 0%, var(--cream) 100%);
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 1.9rem;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+  }
+  header h1 .spark { color: var(--coral); }
+  header p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 1rem;
+  }
+  .streak-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 14px;
+    background: var(--coral-soft);
+    color: #8a3528;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  nav.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 16px auto 0;
+    flex-wrap: wrap;
+    padding: 0 12px;
+    max-width: 720px;
+  }
+  nav.tabs button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--ink-soft);
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.95rem;
+    transition: all 0.15s ease;
+  }
+  nav.tabs button:hover { background: var(--cream-2); }
+  nav.tabs button.active {
+    background: var(--teal);
+    color: white;
+    font-weight: 600;
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 18px 16px 80px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .filters {
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 18px;
+  }
+  .filters h2 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    color: var(--ink-soft);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .filter-group {
+    margin-bottom: 14px;
+  }
+  .filter-group:last-child { margin-bottom: 0; }
+  .filter-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    background: var(--cream-2);
+    border: 1px solid transparent;
+    color: var(--ink);
+    padding: 7px 13px;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.88rem;
+    transition: all 0.12s ease;
+  }
+  .chip:hover { background: var(--coral-soft); }
+  .chip.selected {
+    background: var(--coral);
+    color: white;
+    border-color: var(--coral);
+  }
+  .chip.depth.selected { background: var(--teal); border-color: var(--teal); }
+  .chip.theme.selected { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    flex: 1 1 auto;
+    min-width: 130px;
+    background: var(--coral);
+    color: white;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
+  }
+  .btn:hover { box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.secondary {
+    background: white;
+    color: var(--ink);
+    border: 1px solid var(--cream-2);
+  }
+  .btn.secondary:hover { background: var(--cream-2); }
+
+  .cards {
+    display: grid;
+    gap: 14px;
+    margin-top: 6px;
+  }
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 22px 20px 16px;
+    box-shadow: var(--shadow);
+    animation: flipIn 0.45s cubic-bezier(.2,.9,.3,1.3);
+    border-top: 4px solid var(--coral);
+  }
+  .card.theme-friendship { border-top-color: #e9b949; }
+  .card.theme-fears { border-top-color: #8a7fb5; }
+  .card.theme-gratitude { border-top-color: #6cb87c; }
+  .card.theme-dreams { border-top-color: #6aa3d3; }
+  .card.theme-school { border-top-color: #ef6f5e; }
+  .card.theme-family { border-top-color: #d77b8a; }
+  .card.theme-world { border-top-color: #2c8e8e; }
+  .card.theme-creativity { border-top-color: #c97bd7; }
+  .card.theme-mistakes { border-top-color: #b88a5a; }
+  .card.theme-kindness { border-top-color: #5ac4b1; }
+
+  @keyframes flipIn {
+    0% { transform: rotateX(-60deg) translateY(10px); opacity: 0; }
+    100% { transform: rotateX(0deg) translateY(0); opacity: 1; }
+  }
+  .card .meta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .card .tag {
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    background: var(--cream-2);
+    padding: 3px 9px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+  }
+  .card .q {
+    font-size: 1.18rem;
+    color: var(--ink);
+    margin: 6px 0 14px;
+    line-height: 1.4;
+  }
+  .card .card-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .card .card-actions button {
+    background: var(--cream);
+    border: 1px solid var(--cream-2);
+    color: var(--ink);
+    padding: 7px 11px;
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85rem;
+    transition: background 0.12s ease;
+  }
+  .card .card-actions button:hover { background: var(--cream-2); }
+  .card .card-actions button.saved { background: var(--coral-soft); color: #8a3528; }
+  .card .card-actions button.used { background: var(--teal-soft); color: #1f5b5b; }
+
+  .empty {
+    background: white;
+    border-radius: 14px;
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--ink-soft);
+    box-shadow: var(--shadow);
+  }
+  .empty p { margin: 6px 0; }
+
+  .byo-toggle {
+    margin-top: 22px;
+    text-align: center;
+  }
+  .byo-toggle button {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .byo-panel {
+    margin-top: 12px;
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    display: none;
+  }
+  .byo-panel.open { display: block; }
+  .byo-panel h3 { margin: 0 0 6px; font-size: 1rem; }
+  .byo-panel p.note {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin: 0 0 12px;
+  }
+  .byo-panel input, .byo-panel textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--cream-2);
+    border-radius: 8px;
+    font: inherit;
+    background: var(--cream);
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .byo-panel textarea { min-height: 60px; resize: vertical; }
+  .byo-panel .byo-status {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    min-height: 1.2em;
+  }
+
+  .saved-list, .used-list {
+    display: grid;
+    gap: 10px;
+  }
+  .list-item {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .list-item .q-text {
+    flex: 1;
+    font-size: 0.98rem;
+  }
+  .list-item .when {
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .list-item button {
+    background: var(--cream-2);
+    border: none;
+    border-radius: 6px;
+    padding: 5px 9px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+  .list-item button:hover { background: var(--coral-soft); color: #8a3528; }
+
+  footer {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    padding: 22px 16px 30px;
+  }
+
+  @media (min-width: 640px) {
+    .cards { grid-template-columns: repeat(3, 1fr); }
+    header h1 { font-size: 2.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Conversation <span class="spark">Spark</span></h1>
+  <p>Questions that get real answers — instead of "fine."</p>
+  <div class="streak-badge" id="streakBadge">🔥 Connected 0 days in a row</div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="play">Start</button>
+    <button class="tab-btn" data-tab="saved">💛 Favorites</button>
+    <button class="tab-btn" data-tab="used">✅ Used recently</button>
+  </nav>
+</header>
+
+<main>
+  <section class="panel active" id="panel-play">
+    <div class="filters">
+      <h2>Pick your moment</h2>
+      <div class="filter-group">
+        <label>Kid's age</label>
+        <div class="chip-row" id="ageRow"></div>
+      </div>
+      <div class="filter-group">
+        <label>Situation</label>
+        <div class="chip-row" id="situationRow"></div>
+      </div>
+      <div class="filter-group">
+        <label>Depth (optional)</label>
+        <div class="chip-row" id="depthRow"></div>
+      </div>
+      <div class="filter-group">
+        <label>Theme (optional)</label>
+        <div class="chip-row" id="themeRow"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="drawBtn">✨ Spark 3 questions</button>
+        <button class="btn secondary" id="reshuffleBtn">🔄 Reshuffle</button>
+      </div>
+    </div>
+
+    <div id="cardsArea" class="cards"></div>
+    <div id="emptyState" class="empty" style="display:none;">
+      <p><strong>No fresh matches right now.</strong></p>
+      <p>Try a different situation, loosen the depth/theme filter, or check back tomorrow — we hold questions for 14 days before repeating.</p>
+    </div>
+
+    <div class="byo-toggle">
+      <button id="byoToggle">⚙️ Optional: custom question from your own context</button>
+    </div>
+    <div class="byo-panel" id="byoPanel">
+      <h3>Custom spark</h3>
+      <p class="note">Paste a one-line context (e.g. "kid had a rough day at recess"). Uses your own Anthropic API key, stored only in this browser. Tool works fully without this.</p>
+      <input type="password" id="byoKey" placeholder="sk-ant-... (your Anthropic API key)" autocomplete="off" />
+      <textarea id="byoContext" placeholder="One line about what's going on..."></textarea>
+      <button class="btn" id="byoGo">Generate a question</button>
+      <div class="byo-status" id="byoStatus"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-saved">
+    <h2 style="color:var(--ink-soft); font-size:1rem; letter-spacing:0.3px; text-transform:uppercase;">Saved favorites</h2>
+    <div id="savedList" class="saved-list"></div>
+    <div id="savedEmpty" class="empty" style="display:none;">
+      <p>No favorites yet. Tap 💛 Save on a question to keep it handy.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-used">
+    <h2 style="color:var(--ink-soft); font-size:1rem; letter-spacing:0.3px; text-transform:uppercase;">Recently used</h2>
+    <div id="usedList" class="used-list"></div>
+    <div id="usedEmpty" class="empty" style="display:none;">
+      <p>Nothing here yet. Mark a question ✅ Used today after you actually ask it.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Made with care for everyday parents. No accounts, no servers — your data stays in this browser.
+</footer>
+
+<script>
+/* ============================================================
+   CONVERSATION SPARK
+   Curated bank of ~300 conversation-starter questions.
+   Tags: age (4-6, 7-9, 10-12, 13-16),
+         situation (car, dinner, bedtime, hard, lazy, walk, before, after, any),
+         depth (light, medium, deep),
+         theme (friendship, fears, gratitude, dreams, school, family, world, creativity, mistakes, kindness)
+   ============================================================ */
+
+const Q = [];
+function q(id, ages, sits, depth, theme, text) {
+  Q.push({id, ages, sits, depth, theme, text});
+}
+
+/* ---------- AGES 4-6 (LIGHT) ---------- */
+q(1,["4-6"],["any","car","dinner","lazy"],"light","creativity","If you could only eat one color of food forever, what color would you pick?");
+q(2,["4-6"],["any","car","dinner"],"light","creativity","If your stuffed animals had a secret party at night, what snacks would they serve?");
+q(3,["4-6"],["any","car","walk"],"light","creativity","What sound does a cloud make if you listen really close?");
+q(4,["4-6"],["any","dinner","lazy"],"light","creativity","If you could turn into any animal for one hour, what would you do first?");
+q(5,["4-6"],["any","car","walk"],"light","world","What's the silliest name you could give a tree?");
+q(6,["4-6"],["any","bedtime","lazy"],"light","creativity","What would your bed do if it could walk around the house?");
+q(7,["4-6"],["any","car","dinner"],"light","creativity","If you opened the freezer and a tiny dragon was inside, what would you say to it?");
+q(8,["4-6"],["any","walk","lazy"],"light","world","What's the best puddle you've ever seen?");
+q(9,["4-6"],["any","dinner","bedtime"],"light","creativity","If your shoes could talk, what would they complain about?");
+q(10,["4-6"],["any","car","walk"],"light","world","What color is happy? What color is sleepy?");
+q(11,["4-6"],["any","lazy","dinner"],"light","creativity","If you ran a restaurant, what would only-kids-can-order be on the menu?");
+q(12,["4-6"],["any","bedtime"],"light","dreams","If you could fly anywhere in your dreams tonight, where would you go?");
+q(13,["4-6"],["any","car","walk"],"light","creativity","What's a great hiding spot you've discovered lately?");
+q(14,["4-6"],["any","dinner"],"light","creativity","If a vegetable had superpowers, which one and what power?");
+q(15,["4-6"],["any","car","dinner","lazy"],"light","creativity","If you could invent a new ice cream flavor, what would be in it?");
+q(16,["4-6"],["any","walk"],"light","world","Which is better — a really big puddle or a really tall slide?");
+q(17,["4-6"],["any","bedtime","lazy"],"light","dreams","What's the funniest dream you remember?");
+q(18,["4-6"],["any","car","dinner"],"light","creativity","If our pet could go to school, what would they be best at?");
+q(19,["4-6"],["any","walk","lazy"],"light","world","If a bug came up to you and said hi, what would you say back?");
+q(20,["4-6"],["any","dinner"],"light","creativity","What food would you NEVER serve at a birthday party?");
+q(21,["4-6"],["any","lazy"],"light","creativity","If you could build a fort out of anything in the house, what would you use?");
+q(22,["4-6"],["any","car"],"light","creativity","If our car could go anywhere — even pretend places — where today?");
+q(23,["4-6"],["any","bedtime"],"light","dreams","What's the coziest thing you can think of?");
+q(24,["4-6"],["any","walk","dinner"],"light","world","What's the loudest thing you heard today?");
+q(25,["4-6"],["any","car","walk"],"light","creativity","If you had a robot friend, what's the first thing you'd teach it?");
+
+/* ---------- AGES 4-6 (MEDIUM) ---------- */
+q(26,["4-6"],["any","dinner","bedtime"],"medium","gratitude","What was your favorite part of today?");
+q(27,["4-6"],["any","dinner","bedtime"],"medium","gratitude","What's something that made you smile today?");
+q(28,["4-6"],["any","bedtime","hard"],"medium","friendship","Who did you play with today, and what did you play?");
+q(29,["4-6"],["any","dinner","bedtime"],"medium","school","What was something new you learned today?");
+q(30,["4-6"],["any","dinner","car"],"medium","kindness","Did you do something nice for someone today? How did they react?");
+q(31,["4-6"],["any","bedtime","hard"],"medium","friendship","Was anyone in your class extra fun to be around today?");
+q(32,["4-6"],["any","dinner","walk"],"medium","family","What's something you wish we did together more?");
+q(33,["4-6"],["any","car","dinner"],"medium","school","What's your favorite spot at school and why?");
+q(34,["4-6"],["any","bedtime"],"medium","gratitude","What was the best snack you had today?");
+q(35,["4-6"],["any","dinner","bedtime"],"medium","friendship","Did anyone make you laugh today? What did they do?");
+q(36,["4-6"],["any","car","walk"],"medium","kindness","If someone at school looked sad, what could you do?");
+q(37,["4-6"],["any","dinner"],"medium","family","What's something you love about being part of our family?");
+q(38,["4-6"],["any","bedtime","hard"],"medium","fears","What's a worry you have, even a tiny one?");
+q(39,["4-6"],["any","walk","car"],"medium","creativity","If you were the teacher tomorrow, what would the class do?");
+q(40,["4-6"],["any","dinner","bedtime"],"medium","mistakes","Did you spill or drop or mess up anything today? What happened?");
+q(41,["4-6"],["any","bedtime"],"medium","gratitude","What's something cozy you're thankful for tonight?");
+q(42,["4-6"],["any","car","walk"],"medium","world","What's something you saw today that was interesting?");
+q(43,["4-6"],["any","dinner"],"medium","school","Was there a moment today when you were really proud of yourself?");
+q(44,["4-6"],["any","bedtime","hard"],"medium","friendship","Was there anyone you wished you played with today, but didn't?");
+q(45,["4-6"],["any","dinner","car"],"medium","kindness","What does being a good friend mean to you?");
+
+/* ---------- AGES 4-6 (DEEP) ---------- */
+q(46,["4-6"],["any","bedtime","walk"],"deep","dreams","What do you want to be when you're as big as me?");
+q(47,["4-6"],["any","bedtime","hard"],"deep","fears","What helps you feel brave when you're scared?");
+q(48,["4-6"],["any","dinner","walk"],"deep","family","What's the best thing about being a kid?");
+q(49,["4-6"],["any","bedtime"],"deep","kindness","If someone is being mean, what's the right thing to do?");
+q(50,["4-6"],["any","car","walk"],"deep","world","What's something grown-ups do that you don't get?");
+q(51,["4-6"],["any","dinner","bedtime"],"deep","gratitude","Who is someone in your life that makes you feel really safe?");
+q(52,["4-6"],["any","hard","bedtime"],"deep","mistakes","If you make a mistake, what would you want a grown-up to say to you?");
+q(53,["4-6"],["any","walk"],"deep","dreams","What's a magical thing you wish were real?");
+q(54,["4-6"],["any","bedtime","dinner"],"deep","friendship","What makes someone a really good friend?");
+q(55,["4-6"],["any","bedtime"],"deep","family","What's something you love about our home?");
+
+/* ---------- AGES 7-9 (LIGHT) ---------- */
+q(56,["7-9"],["any","car","dinner"],"light","creativity","If you could invent a new holiday, what would it celebrate and how would we party?");
+q(57,["7-9"],["any","car","walk"],"light","creativity","If you had to teach a class on something you're good at, what would it be?");
+q(58,["7-9"],["any","dinner"],"light","world","What's the weirdest food combination you'd actually try?");
+q(59,["7-9"],["any","car","dinner"],"light","creativity","If our pet could text you, what would they message most often?");
+q(60,["7-9"],["any","lazy","dinner"],"light","creativity","If you could swap rooms with anyone for a day, who and why?");
+q(61,["7-9"],["any","walk","car"],"light","world","What's the best smell you've experienced in the last week?");
+q(62,["7-9"],["any","bedtime","lazy"],"light","creativity","If you could have any superpower but only on Tuesdays, what would you pick?");
+q(63,["7-9"],["any","car","dinner"],"light","creativity","If you were a YouTuber, what would your channel be about?");
+q(64,["7-9"],["any","dinner","bedtime"],"light","creativity","If our family had a theme song, what should it sound like?");
+q(65,["7-9"],["any","walk","car"],"light","creativity","If you could rename our street, what would you call it?");
+q(66,["7-9"],["any","lazy"],"light","creativity","What's the best snack invention you could put together right now?");
+q(67,["7-9"],["any","car","walk"],"light","world","Coolest cloud you've ever seen — what did it look like?");
+q(68,["7-9"],["any","dinner"],"light","creativity","If your lunchbox could choose its own food, what would it pack?");
+q(69,["7-9"],["any","bedtime"],"light","dreams","If you could sleep anywhere tonight — like, ANYWHERE — where?");
+q(70,["7-9"],["any","car","dinner"],"light","creativity","If you could trade lives with a character from a book or show for one day, who?");
+q(71,["7-9"],["any","walk"],"light","world","If you were a tiny detective in the backyard, what would you investigate first?");
+q(72,["7-9"],["any","car","lazy"],"light","creativity","What's a totally useless invention you'd love to design?");
+q(73,["7-9"],["any","dinner"],"light","creativity","If you had to wear one outfit for a whole year, what would it be?");
+q(74,["7-9"],["any","bedtime","lazy"],"light","dreams","What's the weirdest dream you've had lately?");
+q(75,["7-9"],["any","car","walk"],"light","creativity","If animals had jobs, what job would suit a squirrel best?");
+
+/* ---------- AGES 7-9 (MEDIUM) ---------- */
+q(76,["7-9"],["dinner","any"],"medium","kindness","What's something a kid in your class did this week that you thought was kind?");
+q(77,["7-9"],["any","car","dinner"],"medium","school","What was the best part of today, and what was the trickiest?");
+q(78,["7-9"],["any","bedtime","hard"],"medium","friendship","Who did you sit with at lunch? How did that feel?");
+q(79,["7-9"],["any","dinner"],"medium","school","What's something at school you wish were different?");
+q(80,["7-9"],["any","walk","car"],"medium","gratitude","What's something tiny today that made you happy?");
+q(81,["7-9"],["any","dinner","bedtime"],"medium","kindness","Was anyone left out today? What did you notice?");
+q(82,["7-9"],["any","car","walk"],"medium","creativity","If you could pick what we did this weekend, what would it be?");
+q(83,["7-9"],["any","bedtime","hard"],"medium","mistakes","Was there something today you wish you could redo?");
+q(84,["7-9"],["any","dinner"],"medium","school","What's a teacher you really like, and what makes them good?");
+q(85,["7-9"],["any","bedtime"],"medium","gratitude","Name three things from today you're glad happened.");
+q(86,["7-9"],["any","car","walk"],"medium","friendship","Who's the easiest person in your class to make laugh?");
+q(87,["7-9"],["any","dinner"],"medium","family","What's something I do that's helpful? What's something I could do better?");
+q(88,["7-9"],["any","bedtime","hard"],"medium","fears","What's something that's been on your mind lately?");
+q(89,["7-9"],["any","car","walk"],"medium","creativity","If you could be in charge of one thing in our house, what would you choose?");
+q(90,["7-9"],["any","dinner"],"medium","school","What was something today that surprised you?");
+q(91,["7-9"],["any","bedtime"],"medium","gratitude","What's something you wouldn't want to live without?");
+q(92,["7-9"],["any","car"],"medium","friendship","Has a friendship changed lately? In what way?");
+q(93,["7-9"],["any","dinner","walk"],"medium","kindness","If a new kid started at your school tomorrow, what would you do?");
+q(94,["7-9"],["any","bedtime","hard"],"medium","mistakes","Has anyone said sorry to you recently? Has it been hard to say sorry to anyone?");
+q(95,["7-9"],["any","dinner"],"medium","school","What's something you're working on getting better at?");
+q(96,["7-9"],["any","walk","car"],"medium","creativity","If you could teach me one thing, what would you teach me?");
+q(97,["7-9"],["any","dinner","bedtime"],"medium","family","What's a memory from when you were little that you still love?");
+q(98,["7-9"],["any","bedtime","hard"],"medium","friendship","Was there a moment today when you felt seen?");
+q(99,["7-9"],["any","car","walk"],"medium","world","What's something you've heard about lately that you wonder about?");
+q(100,["7-9"],["any","dinner"],"medium","kindness","What's the nicest thing someone's done for you this month?");
+
+/* ---------- AGES 7-9 (DEEP) ---------- */
+q(101,["7-9"],["any","walk","car"],"deep","dreams","If you could be really good at anything in the world, what would you pick?");
+q(102,["7-9"],["any","bedtime","hard"],"deep","fears","What scares you, even a little, that you don't talk about much?");
+q(103,["7-9"],["any","dinner","walk"],"deep","world","If you could change one thing about your school, what would it be?");
+q(104,["7-9"],["any","car","walk"],"deep","family","What do you think makes our family OURS — different from other families?");
+q(105,["7-9"],["any","bedtime","hard"],"deep","mistakes","When you mess up, what helps you feel better?");
+q(106,["7-9"],["any","walk"],"deep","kindness","What does fair mean to you?");
+q(107,["7-9"],["any","dinner","bedtime"],"deep","friendship","What do you look for in a friend?");
+q(108,["7-9"],["any","walk","car"],"deep","world","What's something grown-ups worry about that maybe they shouldn't?");
+q(109,["7-9"],["any","bedtime"],"deep","gratitude","Who in your life would you really miss if they were gone for a long time?");
+q(110,["7-9"],["any","walk","car"],"deep","dreams","If you could meet your future self, what would you want to ask them?");
+
+/* ---------- AGES 10-12 (LIGHT) ---------- */
+q(111,["10-12"],["any","car","dinner"],"light","creativity","If your life were a movie, what would the title be this week?");
+q(112,["10-12"],["any","car","walk"],"light","creativity","What's a weirdly specific skill you'd love to be famous for?");
+q(113,["10-12"],["any","dinner","lazy"],"light","world","If you could pick anyone (real or fictional) to host dinner tomorrow, who?");
+q(114,["10-12"],["any","car","lazy"],"light","creativity","If you could time-travel for one afternoon, when and where?");
+q(115,["10-12"],["any","dinner","walk"],"light","world","What's the most overrated trend right now?");
+q(116,["10-12"],["any","car","dinner"],"light","creativity","If you could design a new emoji that the world really needs, what is it?");
+q(117,["10-12"],["any","walk","lazy"],"light","creativity","What's a hobby you'd try if money/time weren't a thing?");
+q(118,["10-12"],["any","car","dinner"],"light","world","What's a song you've had stuck in your head lately?");
+q(119,["10-12"],["any","dinner","bedtime"],"light","creativity","If you could make one rule that everyone at school had to follow, what would it be?");
+q(120,["10-12"],["any","car","walk"],"light","creativity","If you could rebrand yourself with a different name for a week, what name?");
+q(121,["10-12"],["any","lazy","dinner"],"light","creativity","What's the most unhinged but actually-good idea you've had this month?");
+q(122,["10-12"],["any","car"],"light","world","What's a question you'd ask if you could interview any one person?");
+q(123,["10-12"],["any","dinner","walk"],"light","creativity","If your room were a museum, what's the most important exhibit?");
+q(124,["10-12"],["any","bedtime","lazy"],"light","dreams","If you could wake up tomorrow with one new ability, what would you pick?");
+q(125,["10-12"],["any","walk","car"],"light","world","What's the best place near here that more people should know about?");
+
+/* ---------- AGES 10-12 (MEDIUM) ---------- */
+q(126,["10-12"],["any","dinner","car"],"medium","school","What was the highlight of today, and what was the low point?");
+q(127,["10-12"],["any","walk","car"],"medium","friendship","Has anything shifted between you and your friends lately?");
+q(128,["10-12"],["any","bedtime","hard"],"medium","school","Is there a part of the day you've been kind of dreading lately?");
+q(129,["10-12"],["any","dinner","walk"],"medium","kindness","Who's someone at school who's having a tough time, that you've noticed?");
+q(130,["10-12"],["any","car","dinner"],"medium","creativity","If you could redesign the school day, what would you change?");
+q(131,["10-12"],["any","bedtime","hard"],"medium","fears","What's something you've been thinking about a lot, but haven't said out loud?");
+q(132,["10-12"],["any","dinner","bedtime"],"medium","gratitude","Who's a person who really gets you right now?");
+q(133,["10-12"],["any","car","walk"],"medium","school","What's a class that you actually look forward to?");
+q(134,["10-12"],["any","dinner"],"medium","family","What's something I do as a parent that drives you a little nuts? (Honest answers welcome.)");
+q(135,["10-12"],["any","bedtime","hard"],"medium","mistakes","Was there a moment today you'd handle differently if you could?");
+q(136,["10-12"],["any","car","dinner"],"medium","friendship","Who's been a really good friend to you lately?");
+q(137,["10-12"],["any","walk","car"],"medium","creativity","What's something you've been making, building, or working on?");
+q(138,["10-12"],["any","dinner"],"medium","school","What's a topic you wish your teachers would actually talk about?");
+q(139,["10-12"],["any","bedtime"],"medium","gratitude","What made today not-totally-terrible?");
+q(140,["10-12"],["any","walk","car"],"medium","world","What's something happening in the world you wish you understood better?");
+q(141,["10-12"],["any","dinner","bedtime"],"medium","kindness","When was the last time someone went out of their way for you?");
+q(142,["10-12"],["any","bedtime","hard"],"medium","friendship","Was there a moment today when you felt seen?");
+q(143,["10-12"],["any","dinner"],"medium","family","What's something we used to do as a family that you'd want to bring back?");
+q(144,["10-12"],["any","car","walk"],"medium","mistakes","What's something you used to like that you're kind of over now?");
+q(145,["10-12"],["any","dinner","bedtime"],"medium","school","Tell me about a teacher who's had an impact on you.");
+q(146,["10-12"],["any","walk","car"],"medium","creativity","If you could spend a whole Saturday doing exactly one thing, what?");
+q(147,["10-12"],["any","bedtime"],"medium","gratitude","What's something small but really good about your life right now?");
+q(148,["10-12"],["any","dinner"],"medium","kindness","What's the kindest thing you've done lately that nobody noticed?");
+q(149,["10-12"],["any","car","walk"],"medium","world","If you ran your school for a week, what would you change first?");
+q(150,["10-12"],["any","dinner","bedtime"],"medium","friendship","Is there anyone you wish you were closer to?");
+
+/* ---------- AGES 10-12 (DEEP) ---------- */
+q(151,["10-12"],["walk","any","car"],"deep","world","If you could change one rule in the world, what would it be and why?");
+q(152,["10-12"],["any","walk","car"],"deep","dreams","What kind of person do you want to be when you're 16?");
+q(153,["10-12"],["any","bedtime","hard"],"deep","fears","What's something that worries you about getting older?");
+q(154,["10-12"],["any","walk","dinner"],"deep","mistakes","When was the last time you changed your mind about something?");
+q(155,["10-12"],["any","walk","car"],"deep","world","What do you think is the biggest thing your generation will have to deal with?");
+q(156,["10-12"],["any","bedtime","hard"],"deep","family","What's something you wish I understood about your life right now?");
+q(157,["10-12"],["any","dinner","walk"],"deep","kindness","What does respect mean to you?");
+q(158,["10-12"],["any","walk","car"],"deep","friendship","What makes someone trustworthy?");
+q(159,["10-12"],["any","bedtime","hard"],"deep","gratitude","What's a thing about yourself you actually like?");
+q(160,["10-12"],["any","walk"],"deep","dreams","If you could spend a year doing anything — no school, no rules — what would you do?");
+q(161,["10-12"],["any","dinner","walk"],"deep","family","What's a value you think our family really lives by?");
+q(162,["10-12"],["any","bedtime","hard"],"deep","mistakes","What's something you've forgiven someone for, even quietly?");
+
+/* ---------- AGES 13-16 (LIGHT) ---------- */
+q(163,["13-16"],["any","car","lazy"],"light","creativity","What's a hill you'd absolutely die on right now?");
+q(164,["13-16"],["any","car","dinner"],"light","world","What's a trend you actively can't stand?");
+q(165,["13-16"],["any","lazy","car"],"light","creativity","If your life had a soundtrack this month, what's the opening song?");
+q(166,["13-16"],["any","car","walk"],"light","creativity","What's something you'd absolutely refuse to do for a million dollars?");
+q(167,["13-16"],["any","dinner","car"],"light","world","Best meme of the year so far?");
+q(168,["13-16"],["any","lazy"],"light","creativity","What's a hobby you'd pick up if you had unlimited time?");
+q(169,["13-16"],["any","car","dinner"],"light","creativity","If you could design your dream room from scratch, what's in it?");
+q(170,["13-16"],["any","walk","car"],"light","creativity","If you had to teach a TED talk tomorrow, what would your topic be?");
+q(171,["13-16"],["any","car","dinner"],"light","world","Most underrated movie / show / album right now?");
+q(172,["13-16"],["any","lazy","car"],"light","creativity","What's a small thing you do that feels weirdly satisfying?");
+q(173,["13-16"],["any","dinner","walk"],"light","creativity","If you could pick a city to live in for one year, anywhere — which?");
+q(174,["13-16"],["any","car"],"light","world","Is there a piece of pop culture you used to love and now find embarrassing?");
+q(175,["13-16"],["any","lazy","dinner"],"light","creativity","What would your villain origin story be?");
+
+/* ---------- AGES 13-16 (MEDIUM) ---------- */
+q(176,["13-16"],["any","car","dinner"],"medium","school","What's been the most interesting thing in any of your classes lately?");
+q(177,["13-16"],["any","car","dinner"],"medium","friendship","Who in your life is really easy to be around right now?");
+q(178,["13-16"],["any","bedtime","hard"],"medium","fears","What's something on your mind that you're tired of carrying alone?");
+q(179,["13-16"],["any","dinner","walk"],"medium","school","Is there a class that's stretching you in a good way?");
+q(180,["13-16"],["any","car","walk"],"medium","mistakes","What's something you used to believe that you don't anymore?");
+q(181,["13-16"],["any","dinner","car"],"medium","kindness","Who at school is having a tougher year than people realize?");
+q(182,["13-16"],["any","bedtime","hard"],"medium","friendship","Has any friendship surprised you lately — for better or worse?");
+q(183,["13-16"],["any","walk","dinner"],"medium","school","Is there pressure you're feeling that I should know about?");
+q(184,["13-16"],["any","car","walk"],"medium","creativity","What's something you've made or are making that you're proud of?");
+q(185,["13-16"],["any","dinner"],"medium","family","What's something I do that's actually helpful, and what's not landing?");
+q(186,["13-16"],["any","bedtime","hard"],"medium","gratitude","Is there anything that's been a small bright spot lately?");
+q(187,["13-16"],["any","car","dinner"],"medium","world","What's something happening in the world that you'd like to talk about?");
+q(188,["13-16"],["any","walk","dinner"],"medium","friendship","Is there someone you wish you knew better?");
+q(189,["13-16"],["any","dinner"],"medium","school","Has a teacher said something this year that stuck with you?");
+q(190,["13-16"],["any","car","walk"],"medium","mistakes","What's something you wish you'd handled differently this month?");
+q(191,["13-16"],["any","bedtime"],"medium","gratitude","What's something small you'd actually miss if it disappeared from your life?");
+q(192,["13-16"],["any","dinner","walk"],"medium","kindness","When was the last time someone made you feel really respected?");
+q(193,["13-16"],["any","car","walk"],"medium","creativity","If you had a free Saturday — no obligations — how would you spend it?");
+q(194,["13-16"],["any","bedtime","hard"],"medium","friendship","Was there a moment today when you felt seen?");
+q(195,["13-16"],["any","dinner"],"medium","family","What's something about growing up in our family you appreciate? Anything that's been hard?");
+q(196,["13-16"],["any","car","dinner"],"medium","school","What's a topic school doesn't teach that you think it should?");
+q(197,["13-16"],["any","walk"],"medium","mistakes","What's something you've apologized for that mattered to you?");
+q(198,["13-16"],["any","dinner","bedtime"],"medium","gratitude","Who's a person outside our family who's been good for you?");
+q(199,["13-16"],["any","car","walk"],"medium","kindness","What's the kindest thing you've witnessed lately?");
+q(200,["13-16"],["any","dinner"],"medium","world","Is there a cause or topic you've gotten more interested in lately?");
+
+/* ---------- AGES 13-16 (DEEP) ---------- */
+q(201,["13-16"],["car","any"],"deep","mistakes","When was the last time you changed your mind about something? What did it?");
+q(202,["13-16"],["any","walk","car"],"deep","dreams","What kind of adult do you actually want to be — beyond a job?");
+q(203,["13-16"],["any","walk","bedtime"],"deep","world","What's a value of yours that you think you'd hold even if it was unpopular?");
+q(204,["13-16"],["any","bedtime","hard"],"deep","family","What's something you wish I knew about your inner life right now?");
+q(205,["13-16"],["any","walk","car"],"deep","fears","What's a fear you have about the future that feels real?");
+q(206,["13-16"],["any","dinner","walk"],"deep","friendship","What does loyalty mean to you now, vs a couple of years ago?");
+q(207,["13-16"],["any","walk"],"deep","mistakes","Is there something you'd want to apologize for, even quietly?");
+q(208,["13-16"],["any","car","walk"],"deep","world","What's something the adults around you get wrong, and how would you do it differently?");
+q(209,["13-16"],["any","bedtime","hard"],"deep","gratitude","What's something you appreciate about yourself that you'd never put on social media?");
+q(210,["13-16"],["any","walk","dinner"],"deep","dreams","If you could shape the next year of your life, what would it look like?");
+q(211,["13-16"],["any","walk","car"],"deep","family","What's a part of who you are that I might not see as clearly as I think I do?");
+q(212,["13-16"],["any","bedtime","hard"],"deep","kindness","Is there someone you've been quietly carrying compassion for?");
+q(213,["13-16"],["any","walk","car"],"deep","friendship","What kind of friend do you want to be — and how does that feel different from how you actually are right now?");
+q(214,["13-16"],["any","walk"],"deep","world","If you had to teach a younger kid one thing about being a person, what would it be?");
+
+/* ---------- ANY AGE / HARD DAY (medium/deep) ---------- */
+q(215,["4-6","7-9","10-12","13-16"],["hard","bedtime"],"medium","gratitude","Was there a moment today when you felt seen?");
+q(216,["4-6","7-9","10-12","13-16"],["hard","bedtime"],"medium","kindness","Was anyone kind to you today, even in a small way?");
+q(217,["7-9","10-12","13-16"],["hard","bedtime","walk"],"medium","fears","What's the heaviest thing you carried today?");
+q(218,["4-6","7-9","10-12","13-16"],["hard","bedtime"],"medium","family","Is there something I could do tomorrow that would make the day easier?");
+q(219,["7-9","10-12","13-16"],["hard","walk","bedtime"],"deep","mistakes","Did something happen today you wish you could rewind?");
+q(220,["7-9","10-12","13-16"],["hard","walk"],"medium","friendship","Was there anyone today who made things harder? Anyone who made things easier?");
+q(221,["4-6","7-9","10-12","13-16"],["hard","bedtime"],"light","gratitude","What's one tiny good thing from today, even a really small one?");
+q(222,["7-9","10-12","13-16"],["hard","bedtime"],"deep","fears","Is there something you're worried about tomorrow?");
+q(223,["7-9","10-12","13-16"],["hard","walk","bedtime"],"medium","kindness","If you could be extra gentle with someone tomorrow, who would you pick?");
+q(224,["4-6","7-9","10-12","13-16"],["hard","bedtime"],"medium","gratitude","Did anything today not totally suck?");
+
+/* ---------- BEFORE A BIG EVENT ---------- */
+q(225,["4-6","7-9"],["before"],"light","creativity","If today goes really well, what would the best part be?");
+q(226,["4-6","7-9","10-12"],["before"],"medium","fears","Is there anything you're nervous about? Even a little?");
+q(227,["7-9","10-12","13-16"],["before"],"medium","gratitude","What's one thing you're looking forward to today?");
+q(228,["10-12","13-16"],["before"],"deep","dreams","What would 'going well' even look like for you?");
+q(229,["7-9","10-12","13-16"],["before","car"],"medium","mistakes","If it doesn't go great, what would still be okay?");
+q(230,["10-12","13-16"],["before","walk"],"deep","fears","What's the scariest part of this for you?");
+q(231,["4-6","7-9"],["before"],"light","creativity","What's a silly thing you can think about if you start to feel nervous?");
+q(232,["10-12","13-16"],["before","car"],"medium","gratitude","Who's in your corner today?");
+
+/* ---------- AFTER A BIG EVENT ---------- */
+q(233,["4-6","7-9","10-12","13-16"],["after"],"medium","gratitude","What's a part of it you'll want to remember?");
+q(234,["7-9","10-12","13-16"],["after","car"],"medium","mistakes","Anything you'd do differently if you got a do-over?");
+q(235,["10-12","13-16"],["after","walk"],"deep","dreams","Did it change how you think about yourself, even a little?");
+q(236,["4-6","7-9"],["after","car"],"light","creativity","What was the silliest moment?");
+q(237,["7-9","10-12","13-16"],["after"],"medium","friendship","Who was the best person to be around during it?");
+q(238,["10-12","13-16"],["after","bedtime","walk"],"deep","mistakes","What surprised you about how you felt?");
+q(239,["4-6","7-9","10-12"],["after","dinner"],"medium","gratitude","If you had to give it a score out of 10, what would it get?");
+q(240,["7-9","10-12","13-16"],["after"],"medium","kindness","Was anyone unexpectedly nice to you during it?");
+
+/* ---------- WALK TOGETHER (general) ---------- */
+q(241,["4-6","7-9"],["walk"],"light","world","Let's count something we see — what should we count?");
+q(242,["7-9","10-12"],["walk"],"medium","creativity","If you could turn this walk into an adventure story, where are we headed?");
+q(243,["10-12","13-16"],["walk"],"deep","gratitude","What's something you've been quietly grateful for lately?");
+q(244,["7-9","10-12","13-16"],["walk"],"medium","world","What's a thing you've noticed about our neighborhood that no one talks about?");
+q(245,["10-12","13-16"],["walk"],"deep","family","What's a tradition we have that you'd want to keep going as you get older?");
+
+/* ---------- LAZY MORNING ---------- */
+q(246,["4-6","7-9"],["lazy"],"light","creativity","If today could be exactly the way you want it, what would we do first?");
+q(247,["7-9","10-12"],["lazy","dinner"],"medium","dreams","What's a perfect Saturday in your head?");
+q(248,["10-12","13-16"],["lazy"],"light","creativity","If you had a totally free day with no expectations, how would you spend it?");
+q(249,["13-16"],["lazy"],"medium","gratitude","What's a kind of rest that actually feels restful to you?");
+
+/* ---------- BEDTIME / WIND-DOWN ---------- */
+q(250,["4-6","7-9"],["bedtime"],"light","dreams","What do you hope you dream about tonight?");
+q(251,["4-6","7-9","10-12"],["bedtime"],"medium","gratitude","What were the three best moments of today?");
+q(252,["7-9","10-12","13-16"],["bedtime"],"medium","friendship","Who's someone you're glad was in your day?");
+q(253,["10-12","13-16"],["bedtime"],"deep","mistakes","Is there anything from today you want to let go of before sleep?");
+q(254,["4-6","7-9","10-12","13-16"],["bedtime","hard"],"medium","family","What can I do tonight to make you feel cozy?");
+
+/* ---------- DINNER (general) ---------- */
+q(255,["4-6","7-9"],["dinner"],"light","creativity","If we made a brand-new dinner tradition starting tonight, what would it be?");
+q(256,["7-9","10-12"],["dinner"],"medium","gratitude","Roses (best thing today), thorn (hardest), bud (something you're looking forward to)?");
+q(257,["10-12","13-16"],["dinner"],"medium","friendship","Who's the most interesting person you talked to this week?");
+q(258,["7-9","10-12","13-16"],["dinner"],"medium","world","What's something you read, watched, or heard recently that's been stuck in your head?");
+q(259,["10-12","13-16"],["dinner"],"deep","family","What's a story from your day that you almost didn't share?");
+
+/* ---------- CAR RIDES (general) ---------- */
+q(260,["4-6","7-9"],["car"],"light","creativity","Make up a silly story about that car next to us.");
+q(261,["7-9","10-12"],["car"],"medium","creativity","If we could detour anywhere right now, where to?");
+q(262,["10-12","13-16"],["car"],"medium","school","What's been on your mind that I haven't asked about?");
+q(263,["10-12","13-16"],["car"],"deep","dreams","What's a version of your future that excites you?");
+q(264,["7-9","10-12","13-16"],["car","walk"],"medium","kindness","Who's a person you'd want to write a thank-you note to right now?");
+
+/* ---------- More variety to fill buckets ---------- */
+q(265,["7-9","10-12"],["any","dinner","walk"],"medium","creativity","What's a creative project you'd start tomorrow if I said yes to anything?");
+q(266,["4-6","7-9"],["any","car","lazy"],"light","world","Best animal you'd want to see in real life?");
+q(267,["10-12","13-16"],["any","walk","car"],"medium","fears","What's a worry that comes back to you sometimes?");
+q(268,["4-6","7-9"],["any","dinner","bedtime"],"medium","mistakes","Did you do anything today that was a little tricky to figure out?");
+q(269,["10-12","13-16"],["any","walk","car","dinner"],"deep","kindness","When have you done the kind thing even when it wasn't easy?");
+q(270,["7-9","10-12"],["any","car","dinner","walk"],"medium","school","Who's the funniest person in your class? What do they do?");
+q(271,["4-6","7-9"],["any","bedtime","lazy"],"light","creativity","If we built a treehouse, what's the one thing it absolutely has to have?");
+q(272,["10-12","13-16"],["any","walk","dinner"],"medium","world","What's something you don't get about the way grown-ups handle things?");
+q(273,["7-9","10-12"],["any","bedtime","hard"],"medium","gratitude","If you could replay one good minute from today, which one?");
+q(274,["4-6","7-9","10-12"],["any","car","dinner"],"light","creativity","If our family had a flag, what would be on it?");
+q(275,["10-12","13-16"],["any","walk","car","bedtime"],"deep","dreams","What's something you've never told anyone you wish you could try?");
+q(276,["4-6","7-9"],["any","dinner","car"],"medium","friendship","Who in your class is really good at sharing?");
+q(277,["7-9","10-12"],["any","walk","car"],"medium","world","What's something you noticed today that nobody else seemed to?");
+q(278,["10-12","13-16"],["any","walk","dinner"],"deep","family","What's a way you're a lot like me? A way you're really not?");
+q(279,["4-6"],["any","walk","dinner","bedtime"],"medium","kindness","Did you help anyone today, even with something small?");
+q(280,["7-9","10-12","13-16"],["any","dinner","walk"],"medium","kindness","What does being a good sibling/cousin/friend look like to you these days?");
+q(281,["10-12","13-16"],["any","walk","car"],"deep","world","What's a question you'd ask the world if it had to answer honestly?");
+q(282,["4-6","7-9"],["any","bedtime"],"light","dreams","If you could fall asleep anywhere magical tonight, where?");
+q(283,["7-9","10-12","13-16"],["any","dinner","car"],"medium","gratitude","What's one good thing today that you'd want me to know about?");
+q(284,["10-12","13-16"],["any","walk","car"],"deep","mistakes","Is there a part of yourself you've outgrown lately?");
+q(285,["4-6","7-9"],["any","walk","car"],"light","creativity","If we made a brand-new game right now, what would the rules be?");
+q(286,["7-9","10-12"],["any","car","walk"],"medium","creativity","If you could swap one thing about your day with mine, what would you swap?");
+q(287,["10-12","13-16"],["any","walk","bedtime"],"deep","gratitude","Who's a person whose belief in you actually shapes how you see yourself?");
+q(288,["4-6","7-9","10-12"],["any","dinner","walk"],"medium","family","What's a really good memory of us together?");
+q(289,["7-9","10-12","13-16"],["any","walk","car"],"medium","creativity","What's a problem you'd love to solve if you had the tools?");
+q(290,["10-12","13-16"],["any","walk","dinner"],"deep","friendship","Has anyone made you feel small lately? How did you handle it?");
+q(291,["4-6","7-9"],["any","car","walk"],"light","world","If clouds had flavors, what would today's clouds taste like?");
+q(292,["7-9","10-12"],["any","dinner","bedtime"],"medium","mistakes","Did you have to say sorry today? Did anyone say sorry to you?");
+q(293,["10-12","13-16"],["any","walk","bedtime"],"deep","fears","What's a fear you've outgrown — and what helped?");
+q(294,["4-6","7-9"],["any","bedtime"],"light","gratitude","What's a thing about today you want to remember tomorrow?");
+q(295,["7-9","10-12","13-16"],["any","walk","car","dinner"],"medium","world","If you could ask anyone in the world a question, who and what?");
+q(296,["10-12","13-16"],["any","walk","car"],"deep","dreams","If you imagine yourself in five years and you're really happy — what's happening?");
+q(297,["4-6","7-9"],["any","car","dinner","walk"],"light","friendship","Who would you want on a desert island with you (besides me)?");
+q(298,["7-9","10-12"],["any","dinner","walk"],"medium","school","If your favorite teacher invented a new class just for you, what would it be?");
+q(299,["10-12","13-16"],["any","walk","dinner"],"deep","kindness","Is there someone who deserves more credit in your life than they get?");
+q(300,["4-6","7-9","10-12","13-16"],["any","walk","bedtime"],"medium","gratitude","What's something good you're carrying out of today, even from the hard parts?");
+
+/* ============================================================
+   STATE & STORAGE
+   ============================================================ */
+const STORE_KEY = "convspark.v1";
+const defaultState = {
+  favorites: [],       // [{id, savedAt}]
+  used: [],            // [{id, usedAt}]
+  recent: [],          // [{id, shownAt}] for 14-day recency
+  streak: { count: 0, lastDay: null },
+  filters: { age: "7-9", situation: "any", depth: null, theme: null }
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return JSON.parse(JSON.stringify(defaultState));
+    const s = JSON.parse(raw);
+    return Object.assign(JSON.parse(JSON.stringify(defaultState)), s);
+  } catch(e) {
+    return JSON.parse(JSON.stringify(defaultState));
+  }
+}
+function saveState() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
+let state = loadState();
+
+/* Prune recency older than 14 days */
+function pruneRecent() {
+  const cutoff = Date.now() - 14*24*60*60*1000;
+  state.recent = state.recent.filter(r => r.shownAt >= cutoff);
+}
+pruneRecent();
+
+/* ============================================================
+   STREAK
+   ============================================================ */
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
+}
+function daysBetween(a, b) {
+  if (!a || !b) return null;
+  const [ay,am,ad] = a.split("-").map(Number);
+  const [by,bm,bd] = b.split("-").map(Number);
+  const da = new Date(ay, am-1, ad);
+  const db = new Date(by, bm-1, bd);
+  return Math.round((db - da) / (24*60*60*1000));
+}
+function bumpStreakIfNeeded() {
+  const today = todayStr();
+  if (state.streak.lastDay === today) return;
+  const gap = daysBetween(state.streak.lastDay, today);
+  if (gap === 1) state.streak.count += 1;
+  else if (gap === null || gap > 1) state.streak.count = 1;
+  state.streak.lastDay = today;
+  saveState();
+}
+function renderStreak() {
+  const c = state.streak.count;
+  const badge = document.getElementById("streakBadge");
+  if (c <= 0) badge.textContent = "🔥 Start a streak — ask one today";
+  else if (c === 1) badge.textContent = "🔥 Connected 1 day — keep going";
+  else badge.textContent = "🔥 Connected " + c + " days in a row";
+}
+
+/* ============================================================
+   FILTERS UI
+   ============================================================ */
+const AGES = ["4-6","7-9","10-12","13-16"];
+const SITUATIONS = [
+  {id:"any", label:"Any"},
+  {id:"car", label:"Car ride"},
+  {id:"dinner", label:"Dinner"},
+  {id:"bedtime", label:"Bedtime"},
+  {id:"hard", label:"Hard day"},
+  {id:"lazy", label:"Lazy morning"},
+  {id:"walk", label:"Walk together"},
+  {id:"before", label:"Before a big event"},
+  {id:"after", label:"After a big event"}
+];
+const DEPTHS = [
+  {id:"light", label:"Light"},
+  {id:"medium", label:"Medium"},
+  {id:"deep", label:"Deep"}
+];
+const THEMES = ["friendship","fears","gratitude","dreams","school","family","world","creativity","mistakes","kindness"];
+
+function buildChips(container, items, getId, getLabel, kind, currentValue, onPick, allowNull) {
+  container.innerHTML = "";
+  items.forEach(it => {
+    const id = getId(it);
+    const btn = document.createElement("button");
+    btn.className = "chip " + kind;
+    btn.textContent = getLabel(it);
+    if (currentValue === id) btn.classList.add("selected");
+    btn.onclick = () => {
+      if (allowNull && currentValue === id) onPick(null);
+      else onPick(id);
+    };
+    container.appendChild(btn);
+  });
+}
+
+function renderFilters() {
+  buildChips(
+    document.getElementById("ageRow"),
+    AGES, a=>a, a=>a, "",
+    state.filters.age,
+    v => { state.filters.age = v || "7-9"; saveState(); renderFilters(); },
+    false
+  );
+  buildChips(
+    document.getElementById("situationRow"),
+    SITUATIONS, s=>s.id, s=>s.label, "",
+    state.filters.situation,
+    v => { state.filters.situation = v || "any"; saveState(); renderFilters(); },
+    false
+  );
+  buildChips(
+    document.getElementById("depthRow"),
+    DEPTHS, d=>d.id, d=>d.label, "depth",
+    state.filters.depth,
+    v => { state.filters.depth = v; saveState(); renderFilters(); },
+    true
+  );
+  buildChips(
+    document.getElementById("themeRow"),
+    THEMES.map(t=>({id:t,label:t.charAt(0).toUpperCase()+t.slice(1)})),
+    t=>t.id, t=>t.label, "theme",
+    state.filters.theme,
+    v => { state.filters.theme = v; saveState(); renderFilters(); },
+    true
+  );
+}
+
+/* ============================================================
+   QUESTION SELECTION
+   ============================================================ */
+function matchesFilters(item, f, ignoreDepth, ignoreTheme) {
+  if (!item.ages.includes(f.age)) return false;
+  if (f.situation !== "any" && !item.sits.includes(f.situation) && !item.sits.includes("any")) {
+    // questions tagged "any" sit are universal
+    return false;
+  }
+  if (!ignoreDepth && f.depth && item.depth !== f.depth) return false;
+  if (!ignoreTheme && f.theme && item.theme !== f.theme) return false;
+  return true;
+}
+
+function getCandidates(f) {
+  const recentIds = new Set(state.recent.map(r=>r.id));
+  // Stage 1: strict + not recent
+  let pool = Q.filter(item => matchesFilters(item, f) && !recentIds.has(item.id));
+  if (pool.length >= 3) return pool;
+  // Stage 2: strict, allow recent
+  pool = Q.filter(item => matchesFilters(item, f));
+  if (pool.length >= 3) return pool;
+  // Stage 3: drop theme
+  pool = Q.filter(item => matchesFilters(item, f, false, true));
+  if (pool.length >= 3) return pool;
+  // Stage 4: drop depth + theme
+  pool = Q.filter(item => matchesFilters(item, f, true, true));
+  return pool;
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let currentDraw = []; // array of ids currently displayed
+
+function draw() {
+  const pool = getCandidates(state.filters);
+  if (pool.length === 0) {
+    currentDraw = [];
+    renderCards();
+    return;
+  }
+  const shuffled = shuffle(pool);
+  currentDraw = shuffled.slice(0, Math.min(3, shuffled.length)).map(q=>q.id);
+  // mark shown
+  const now = Date.now();
+  currentDraw.forEach(id => {
+    if (!state.recent.find(r=>r.id===id)) {
+      state.recent.push({id, shownAt: now});
+    } else {
+      state.recent = state.recent.map(r => r.id===id ? {id, shownAt: now} : r);
+    }
+  });
+  pruneRecent();
+  saveState();
+  renderCards();
+}
+
+function reshuffle() {
+  // try to pick new questions not in currentDraw
+  const exclude = new Set(currentDraw);
+  const recentIds = new Set(state.recent.map(r=>r.id));
+  let pool = Q.filter(item => matchesFilters(item, state.filters) && !recentIds.has(item.id) && !exclude.has(item.id));
+  if (pool.length < 3) {
+    pool = Q.filter(item => matchesFilters(item, state.filters) && !exclude.has(item.id));
+  }
+  if (pool.length < 3) {
+    pool = Q.filter(item => matchesFilters(item, state.filters, false, true) && !exclude.has(item.id));
+  }
+  if (pool.length < 3) {
+    draw();
+    return;
+  }
+  const shuffled = shuffle(pool);
+  currentDraw = shuffled.slice(0,3).map(q=>q.id);
+  const now = Date.now();
+  currentDraw.forEach(id => {
+    if (!state.recent.find(r=>r.id===id)) {
+      state.recent.push({id, shownAt: now});
+    } else {
+      state.recent = state.recent.map(r => r.id===id ? {id, shownAt: now} : r);
+    }
+  });
+  pruneRecent();
+  saveState();
+  renderCards();
+}
+
+/* ============================================================
+   RENDERERS
+   ============================================================ */
+function questionById(id) {
+  return Q.find(q=>q.id===id);
+}
+
+function renderCards() {
+  const area = document.getElementById("cardsArea");
+  const empty = document.getElementById("emptyState");
+  area.innerHTML = "";
+  if (currentDraw.length === 0) {
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+  currentDraw.forEach(id => {
+    const item = questionById(id);
+    if (!item) return;
+    const card = document.createElement("div");
+    card.className = "card theme-" + item.theme;
+    const sitLabels = item.sits.filter(s=>s!=="any").map(s=>{
+      const found = SITUATIONS.find(x=>x.id===s);
+      return found ? found.label : s;
+    });
+    const sitTag = sitLabels.length ? sitLabels.slice(0,2).join(" · ") : "Anytime";
+    const isSaved = state.favorites.find(f=>f.id===id);
+    const isUsed = state.used.find(u=>u.id===id);
+    card.innerHTML = `
+      <div class="meta">
+        <span class="tag">Age ${item.ages.length>1 ? item.ages[0]+"+" : item.ages[0]}</span>
+        <span class="tag">${item.depth}</span>
+        <span class="tag">${item.theme}</span>
+        <span class="tag">${sitTag}</span>
+      </div>
+      <div class="q">${escapeHtml(item.text)}</div>
+      <div class="card-actions">
+        <button data-act="save" data-id="${id}" class="${isSaved?'saved':''}">${isSaved?'💛 Saved':'💛 Save'}</button>
+        <button data-act="used" data-id="${id}" class="${isUsed?'used':''}">${isUsed?'✅ Used':'✅ Used today'}</button>
+        <button data-act="swap" data-id="${id}">↻ Swap this one</button>
+      </div>
+    `;
+    area.appendChild(card);
+  });
+  area.querySelectorAll("button[data-act]").forEach(btn => {
+    btn.onclick = () => {
+      const id = parseInt(btn.dataset.id, 10);
+      const act = btn.dataset.act;
+      if (act === "save") toggleSave(id);
+      else if (act === "used") markUsed(id);
+      else if (act === "swap") swapOne(id);
+    };
+  });
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+function toggleSave(id) {
+  const idx = state.favorites.findIndex(f=>f.id===id);
+  if (idx>=0) state.favorites.splice(idx,1);
+  else state.favorites.push({id, savedAt: Date.now()});
+  saveState();
+  renderCards();
+  renderSaved();
+}
+function markUsed(id) {
+  const idx = state.used.findIndex(u=>u.id===id);
+  if (idx>=0) {
+    state.used[idx] = {id, usedAt: Date.now()};
+  } else {
+    state.used.push({id, usedAt: Date.now()});
+  }
+  // cap to last 80
+  state.used.sort((a,b)=>b.usedAt-a.usedAt);
+  state.used = state.used.slice(0,80);
+  bumpStreakIfNeeded();
+  saveState();
+  renderCards();
+  renderUsed();
+  renderStreak();
+}
+function swapOne(id) {
+  const exclude = new Set(currentDraw);
+  const recentIds = new Set(state.recent.map(r=>r.id));
+  let pool = Q.filter(item => matchesFilters(item, state.filters) && !recentIds.has(item.id) && !exclude.has(item.id));
+  if (pool.length === 0) pool = Q.filter(item => matchesFilters(item, state.filters) && !exclude.has(item.id));
+  if (pool.length === 0) pool = Q.filter(item => matchesFilters(item, state.filters, false, true) && !exclude.has(item.id));
+  if (pool.length === 0) return;
+  const pick = shuffle(pool)[0];
+  const i = currentDraw.indexOf(id);
+  if (i>=0) currentDraw[i] = pick.id;
+  // mark shown
+  const now = Date.now();
+  const existing = state.recent.find(r=>r.id===pick.id);
+  if (existing) existing.shownAt = now;
+  else state.recent.push({id: pick.id, shownAt: now});
+  saveState();
+  renderCards();
+}
+
+function renderSaved() {
+  const list = document.getElementById("savedList");
+  const empty = document.getElementById("savedEmpty");
+  list.innerHTML = "";
+  const items = state.favorites.slice().sort((a,b)=>b.savedAt-a.savedAt);
+  if (items.length === 0) { empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  items.forEach(f => {
+    const item = questionById(f.id);
+    if (!item) return;
+    const row = document.createElement("div");
+    row.className = "list-item";
+    row.innerHTML = `
+      <div>
+        <div class="q-text">${escapeHtml(item.text)}</div>
+        <div class="when">${item.depth} · ${item.theme} · saved ${timeAgo(f.savedAt)}</div>
+      </div>
+      <button data-id="${f.id}">Remove</button>
+    `;
+    row.querySelector("button").onclick = () => { toggleSave(f.id); };
+    list.appendChild(row);
+  });
+}
+
+function renderUsed() {
+  const list = document.getElementById("usedList");
+  const empty = document.getElementById("usedEmpty");
+  list.innerHTML = "";
+  const items = state.used.slice().sort((a,b)=>b.usedAt-a.usedAt);
+  if (items.length === 0) { empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  items.forEach(u => {
+    const item = questionById(u.id);
+    if (!item) return;
+    const row = document.createElement("div");
+    row.className = "list-item";
+    row.innerHTML = `
+      <div>
+        <div class="q-text">${escapeHtml(item.text)}</div>
+        <div class="when">used ${timeAgo(u.usedAt)}</div>
+      </div>
+      <button data-id="${u.id}">Clear</button>
+    `;
+    row.querySelector("button").onclick = () => {
+      state.used = state.used.filter(x=>x.id!==u.id);
+      saveState();
+      renderUsed();
+    };
+    list.appendChild(row);
+  });
+}
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return "just now";
+  const m = Math.floor(s/60);
+  if (m < 60) return m + "m ago";
+  const h = Math.floor(m/60);
+  if (h < 24) return h + "h ago";
+  const d = Math.floor(h/24);
+  return d + "d ago";
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+    if (btn.dataset.tab === "saved") renderSaved();
+    if (btn.dataset.tab === "used") renderUsed();
+  };
+});
+
+/* ============================================================
+   BYO-KEY (optional)
+   ============================================================ */
+const BYO_KEY_STORE = "convspark.byokey";
+document.getElementById("byoToggle").onclick = () => {
+  const p = document.getElementById("byoPanel");
+  p.classList.toggle("open");
+  if (p.classList.contains("open")) {
+    document.getElementById("byoKey").value = localStorage.getItem(BYO_KEY_STORE) || "";
+  }
+};
+document.getElementById("byoGo").onclick = async () => {
+  const key = document.getElementById("byoKey").value.trim();
+  const context = document.getElementById("byoContext").value.trim();
+  const status = document.getElementById("byoStatus");
+  if (!key) { status.textContent = "Add your Anthropic API key first (saved only in this browser)."; return; }
+  if (!context) { status.textContent = "Add a one-line context about what's going on."; return; }
+  localStorage.setItem(BYO_KEY_STORE, key);
+  status.textContent = "Generating a custom question...";
+  const age = state.filters.age;
+  const depth = state.filters.depth || "medium";
+  const prompt = `You are helping a parent of a kid (age ${age}) start a real conversation. Context from the parent: "${context}". Write ONE conversation-starter question (not a list) at ${depth} depth. The question should be an invitation, never an interrogation. Warm, specific, kid-appropriate. Reply with only the question itself, no preamble.`;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-haiku-latest",
+        max_tokens: 200,
+        messages: [{role:"user", content: prompt}]
+      })
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      status.textContent = "API error: " + res.status + ". Check your key. (" + errText.slice(0,120) + ")";
+      return;
+    }
+    const data = await res.json();
+    const text = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : "";
+    if (!text) { status.textContent = "No question returned."; return; }
+    // Inject as a temporary card
+    const area = document.getElementById("cardsArea");
+    document.getElementById("emptyState").style.display = "none";
+    const card = document.createElement("div");
+    card.className = "card theme-creativity";
+    card.innerHTML = `
+      <div class="meta">
+        <span class="tag">Custom</span>
+        <span class="tag">Age ${age}</span>
+        <span class="tag">${depth}</span>
+      </div>
+      <div class="q">${escapeHtml(text)}</div>
+      <div class="card-actions">
+        <button data-act="usedcustom">✅ Used today</button>
+      </div>
+    `;
+    card.querySelector("button[data-act='usedcustom']").onclick = () => {
+      bumpStreakIfNeeded();
+      saveState();
+      renderStreak();
+      card.querySelector("button[data-act='usedcustom']").classList.add("used");
+      card.querySelector("button[data-act='usedcustom']").textContent = "✅ Used";
+    };
+    area.prepend(card);
+    status.textContent = "Done. Custom question added above.";
+  } catch (e) {
+    status.textContent = "Network error: " + (e.message || e);
+  }
+};
+
+/* ============================================================
+   INIT
+   ============================================================ */
+document.getElementById("drawBtn").onclick = draw;
+document.getElementById("reshuffleBtn").onclick = reshuffle;
+
+renderFilters();
+renderStreak();
+draw();
+renderSaved();
+renderUsed();
+</script>
+</body>
+</html>
