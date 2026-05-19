@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hallucination Hunter</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #1a2030;
+    --panel-2: #232a3d;
+    --text: #e6e9f0;
+    --muted: #9aa3b8;
+    --accent: #6ee7ff;
+    --accent-2: #a78bfa;
+    --good: #4ade80;
+    --bad: #f87171;
+    --warn: #fbbf24;
+    --border: #2d3548;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    padding-bottom: 18px; border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .brand-mark {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-weight: 900; color: #0f1419; font-size: 20px;
+  }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .tagline { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .stats-mini {
+    font-size: 13px; color: var(--muted);
+    display: flex; gap: 16px;
+  }
+  .stats-mini b { color: var(--text); font-weight: 600; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+  h2 { margin: 0 0 8px; font-size: 16px; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h3 { margin: 0 0 12px; font-size: 20px; }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    margin-bottom: 8px;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    font-size: 13px; color: var(--muted);
+    cursor: pointer; user-select: none;
+    transition: all 0.15s ease;
+  }
+  .pill:hover { color: var(--text); border-color: var(--accent); }
+  .pill.active {
+    background: var(--accent); color: #0f1419; border-color: var(--accent);
+    font-weight: 600;
+  }
+  select, button {
+    font-family: inherit; font-size: 14px;
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  button.primary {
+    background: var(--accent); color: #0f1419; font-weight: 700;
+    border-color: var(--accent);
+  }
+  button.primary:hover { filter: brightness(1.1); }
+  button.ghost { background: transparent; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .passage-meta {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 12px; font-size: 12px;
+  }
+  .chip {
+    background: var(--panel-2); color: var(--muted);
+    padding: 3px 10px; border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .chip.easy { color: var(--good); border-color: rgba(74,222,128,0.3); }
+  .chip.medium { color: var(--warn); border-color: rgba(251,191,36,0.3); }
+  .chip.hard { color: var(--bad); border-color: rgba(248,113,113,0.3); }
+
+  .passage {
+    font-size: 17px; line-height: 1.75;
+    background: #0d1220; padding: 22px 24px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .passage span.sent {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 1px 2px;
+    transition: background 0.12s ease;
+  }
+  .passage span.sent:hover { background: rgba(110,231,255,0.12); }
+  .passage span.sent.marked {
+    background: rgba(167,139,250,0.28);
+    box-shadow: inset 0 -2px 0 var(--accent-2);
+  }
+
+  /* Ground truth overlay */
+  .passage.revealed span.sent { cursor: default; }
+  .passage.revealed span.sent:hover { background: transparent; }
+  .passage.revealed .gt-hallucination {
+    background: rgba(248,113,113,0.25);
+    border-bottom: 2px solid var(--bad);
+    padding: 1px 2px; border-radius: 3px;
+  }
+  .passage.revealed .gt-unverifiable {
+    background: rgba(251,191,36,0.22);
+    border-bottom: 2px solid var(--warn);
+    padding: 1px 2px; border-radius: 3px;
+  }
+  .legend {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    margin: 12px 0 0; font-size: 12px; color: var(--muted);
+  }
+  .legend .sw {
+    display: inline-block; width: 14px; height: 14px; border-radius: 3px;
+    vertical-align: middle; margin-right: 6px;
+  }
+
+  .tag-picker {
+    display: none;
+    margin-top: 14px;
+    padding: 14px;
+    background: var(--panel-2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .tag-picker.open { display: block; }
+  .tag-picker .label-row {
+    font-size: 13px; color: var(--muted); margin-bottom: 10px;
+  }
+  .tag-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 8px;
+  }
+  .tag-btn {
+    text-align: left;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    font-size: 13px; cursor: pointer; color: var(--text);
+    transition: all 0.12s ease;
+  }
+  .tag-btn:hover { border-color: var(--accent); }
+  .tag-btn .tag-emoji { font-size: 16px; margin-right: 6px; }
+  .tag-btn .tag-name { font-weight: 600; }
+  .tag-btn small { color: var(--muted); display: block; margin-top: 2px; font-size: 11px; }
+
+  .confidence-row {
+    margin-top: 12px; display: flex; align-items: center; gap: 12px;
+    font-size: 13px; color: var(--muted);
+  }
+  .confidence-row input[type=range] { flex: 1; accent-color: var(--accent); }
+
+  .marked-list {
+    margin-top: 14px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .marked-item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px;
+    font-size: 13px;
+  }
+  .marked-item .quote {
+    color: var(--accent-2); font-style: italic; max-width: 60%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .marked-item .tag-label { color: var(--muted); }
+  .marked-item button {
+    padding: 3px 8px; font-size: 12px; background: transparent;
+    color: var(--bad); border: 1px solid transparent;
+  }
+  .marked-item button:hover { border-color: var(--bad); }
+
+  .actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* Results */
+  .results { display: none; }
+  .results.show { display: block; }
+  .score-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px; margin-bottom: 18px;
+  }
+  .score-tile {
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; text-align: center;
+  }
+  .score-tile .num { font-size: 28px; font-weight: 800; }
+  .score-tile .lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+  .score-tile.tp .num { color: var(--good); }
+  .score-tile.fp .num { color: var(--bad); }
+  .score-tile.fn .num { color: var(--warn); }
+  .score-tile.acc .num { color: var(--accent); }
+
+  .feedback-list { display: flex; flex-direction: column; gap: 10px; }
+  .feedback {
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px;
+    border-left: 4px solid var(--muted);
+  }
+  .feedback.tp { border-left-color: var(--good); }
+  .feedback.fp { border-left-color: var(--bad); }
+  .feedback.fn { border-left-color: var(--warn); }
+  .feedback .head {
+    display: flex; justify-content: space-between; font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .feedback .quote {
+    color: var(--accent-2); font-style: italic; margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .feedback .why { font-size: 14px; color: var(--text); }
+
+  /* Confidence chart */
+  .chart {
+    margin-top: 16px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px;
+  }
+  .chart-title { font-size: 13px; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .chart-grid {
+    position: relative; height: 140px;
+    background: linear-gradient(to top, rgba(110,231,255,0.05) 0%, transparent 100%);
+    border-left: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    margin: 8px 24px 24px 36px;
+  }
+  .chart-grid .ax-y, .chart-grid .ax-x {
+    position: absolute; font-size: 10px; color: var(--muted);
+  }
+  .chart-grid .ax-y.t { top: -6px; left: -36px; }
+  .chart-grid .ax-y.b { bottom: -4px; left: -36px; }
+  .chart-grid .ax-y.lbl { top: 50%; left: -78px; transform: rotate(-90deg) translateX(50%); transform-origin: right center; }
+  .chart-grid .ax-x.l { bottom: -16px; left: -4px; }
+  .chart-grid .ax-x.r { bottom: -16px; right: -8px; }
+  .chart-grid .ax-x.lbl { bottom: -32px; left: 50%; transform: translateX(-50%); }
+  .chart-dot {
+    position: absolute; width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid #0f1419; transform: translate(-50%, 50%);
+  }
+  .chart-dot.correct { background: var(--good); }
+  .chart-dot.wrong { background: var(--bad); }
+  .chart-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 0; }
+
+  /* Tag accuracy */
+  .tag-acc {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .tag-acc-row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px;
+  }
+  .tag-acc-row .tname { flex: 0 0 200px; }
+  .tag-acc-row .bar {
+    flex: 1; height: 10px; background: var(--panel-2);
+    border-radius: 5px; overflow: hidden;
+  }
+  .tag-acc-row .bar-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 0.4s ease;
+  }
+  .tag-acc-row .pct { flex: 0 0 70px; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .intro { font-size: 14px; color: var(--muted); }
+  .intro b { color: var(--text); }
+
+  footer {
+    margin-top: 36px; text-align: center; font-size: 12px; color: var(--muted);
+  }
+
+  @media (max-width: 600px) {
+    .app { padding: 16px 12px 40px; }
+    h1 { font-size: 18px; }
+    .passage { font-size: 16px; padding: 16px 16px; }
+    .tag-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">H</div>
+      <div>
+        <h1>Hallucination Hunter</h1>
+        <div class="tagline">Spot the AI lies hiding in plain sight.</div>
+      </div>
+    </div>
+    <div class="stats-mini" id="globalStats">
+      <span>Rounds: <b id="statRounds">0</b></span>
+      <span>Hits: <b id="statHits">0</b></span>
+      <span>False alarms: <b id="statFalse">0</b></span>
+    </div>
+  </header>
+
+  <section class="card" id="introCard">
+    <h2>The Game</h2>
+    <p class="intro">
+      AI models sometimes make up <b>fake citations</b>, <b>wrong dates</b>, <b>invented people</b>, or <b>made-up quotes</b> — and say them with total confidence. Your job: read each AI-style passage, click the sentences (or selected phrases) that look suspicious, tag what <i>kind</i> of mistake you think it is, then submit to see the ground truth.
+    </p>
+    <p class="intro">
+      <b>Tip:</b> Be skeptical of oddly-specific numbers, journal names you've never heard of, and dramatic quotes. But don't over-call — flagging real facts costs you points.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Choose a Passage</h2>
+    <div class="controls">
+      <span class="pill active" data-diff="all">All</span>
+      <span class="pill" data-diff="easy">Easy</span>
+      <span class="pill" data-diff="medium">Medium</span>
+      <span class="pill" data-diff="hard">Hard</span>
+      <select id="passageSelect" style="margin-left:auto"></select>
+      <button class="ghost" id="randomBtn">Random</button>
+    </div>
+  </section>
+
+  <section class="card" id="passageCard">
+    <div class="passage-meta">
+      <span class="chip" id="metaTopic">Topic</span>
+      <span class="chip" id="metaDiff">Difficulty</span>
+      <span class="chip" id="metaHints">— suspicious things to find</span>
+    </div>
+    <h3 id="passageTitle"></h3>
+    <div class="passage" id="passageBody"></div>
+
+    <div class="tag-picker" id="tagPicker">
+      <div class="label-row">What's wrong with this part? Tag it:</div>
+      <div class="tag-grid" id="tagGrid"></div>
+      <div class="confidence-row">
+        <label for="confSlider">How confident? <b id="confVal">3</b>/5</label>
+        <input type="range" min="1" max="5" value="3" id="confSlider">
+      </div>
+    </div>
+
+    <div class="marked-list" id="markedList"></div>
+
+    <div class="actions">
+      <button class="primary" id="submitBtn">Submit My Hunt</button>
+      <button class="ghost" id="clearBtn">Clear marks</button>
+      <button class="ghost" id="newBtn" style="margin-left:auto">New passage</button>
+    </div>
+  </section>
+
+  <section class="card results" id="resultsCard">
+    <h2>Results</h2>
+    <div class="score-grid">
+      <div class="score-tile tp"><div class="num" id="scTP">0</div><div class="lbl">True Positives</div></div>
+      <div class="score-tile fp"><div class="num" id="scFP">0</div><div class="lbl">False Positives</div></div>
+      <div class="score-tile fn"><div class="num" id="scFN">0</div><div class="lbl">Missed</div></div>
+      <div class="score-tile acc"><div class="num" id="scAcc">—</div><div class="lbl">F1 Score</div></div>
+    </div>
+
+    <div class="legend">
+      <span><span class="sw" style="background:rgba(248,113,113,0.4);border:1px solid var(--bad)"></span>Hallucinated</span>
+      <span><span class="sw" style="background:rgba(251,191,36,0.4);border:1px solid var(--warn)"></span>Plausible-but-unverifiable</span>
+      <span><span class="sw" style="background:transparent;border:1px solid var(--good)"></span>Everything else = real</span>
+    </div>
+
+    <h2 style="margin-top:22px">Breakdown</h2>
+    <div class="feedback-list" id="feedbackList"></div>
+
+    <div class="chart">
+      <div class="chart-title">Confidence vs Correctness</div>
+      <div class="chart-grid" id="chartGrid">
+        <span class="ax-y t">5</span>
+        <span class="ax-y b">1</span>
+        <span class="ax-y lbl">Confidence</span>
+        <span class="ax-x l">Wrong</span>
+        <span class="ax-x r">Right</span>
+        <span class="ax-x lbl">Outcome</span>
+      </div>
+    </div>
+
+    <h2 style="margin-top:22px">Your Per-Tag Accuracy (All Rounds)</h2>
+    <div class="tag-acc" id="tagAcc"></div>
+  </section>
+
+  <footer>
+    Hand-authored passages with curated ground truth — built to teach pattern recognition, not to fact-check real AI output.
+  </footer>
+</div>
+
+<script>
+// =====================
+// DATA: passages with character-offset spans
+// =====================
+const TAGS = {
+  'fake-citation':       { emoji: '📚', name: 'Fake Citation',       desc: 'A source, paper, or book that doesn’t really exist' },
+  'wrong-date':          { emoji: '📅', name: 'Wrong Date / Number',  desc: 'A date or figure that sounds right but is wrong' },
+  'invented-person':     { emoji: '👤', name: 'Invented Person',      desc: 'A name that doesn’t match a real person' },
+  'made-up-quote':       { emoji: '💬', name: 'Made-up Quote',        desc: 'A quote that was never actually said' },
+  'plausible-unverifiable': { emoji: '🌫️', name: 'Plausible-but-Unverifiable', desc: 'Sounds real, can’t easily be proven or disproven' },
+  'hybrid':              { emoji: '➕', name: 'Hybrid / Composite',  desc: 'Mashes two real things together wrongly' }
+};
+
+const PASSAGES = [
+  {"id":"p1","title":"The First Moon Landing","difficulty":"easy","topic":"History","text":"On July 20, 1969, NASA's Apollo 11 mission landed two astronauts on the Moon. Neil Armstrong became the first person to walk on the lunar surface, followed by Buzz Aldrin. Michael Collins remained in orbit aboard the command module. The mission lifted off from Kennedy Space Center in Florida on July 16, 1969. According to a 1971 article in the Journal of Lunar Geology by Dr. Henry Vossberg, the astronauts collected over 47 kilograms of lunar samples.","spans":[{"start":346,"end":392,"label":"fake-citation","explanation":"There is no widely-recognized 'Journal of Lunar Geology' and Dr. Henry Vossberg is not a known researcher associated with Apollo 11. AI often invents plausible-sounding scientific citations."},{"start":424,"end":436,"label":"wrong-date","explanation":"Apollo 11 actually brought back about 21.5 kilograms (47.5 pounds) of lunar material. AI sometimes swaps pounds and kilograms or invents specific-sounding numbers."}]},
+  {"id":"p2","title":"How Photosynthesis Works","difficulty":"easy","topic":"Science","text":"Photosynthesis is the process plants use to turn sunlight into chemical energy. Plants absorb carbon dioxide from the air and water from the soil, then use light energy captured by chlorophyll to produce glucose and oxygen. The process was first fully described by German chemist Friedrich Schumann in 1834, who won the Nobel Prize for his discovery. Most photosynthesis on Earth occurs in oceans, carried out by microscopic algae and cyanobacteria.","spans":[{"start":265,"end":349,"label":"invented-person","explanation":"Friedrich Schumann is not the scientist credited with photosynthesis. Key contributors include Jan Ingenhousz (1779) and Julius von Sachs. Also, the Nobel Prize didn't exist until 1901 — so no one could have won it in 1834. AI often invents plausible-sounding scientists."}]},
+  {"id":"p3","title":"The Great Wall of China","difficulty":"medium","topic":"History","text":"The Great Wall of China was built over many centuries, with the earliest sections dating to the 7th century BCE. Most of what tourists see today was built during the Ming Dynasty (1368-1644). The wall stretches roughly 21,000 kilometers in total. Contrary to a popular myth, the Great Wall is not visible from the Moon with the naked eye. The wall was originally designed as a single continuous structure under Emperor Qin Shi Huang in 221 BCE, who personally walked its entire length to inspect it. A 2008 study in the Beijing Archaeological Quarterly estimated that over one million workers died during its construction.","spans":[{"start":366,"end":418,"label":"hybrid","explanation":"The Great Wall was never a single continuous structure — it's a network of walls built by different dynasties. AI often combines partial truths (Qin Shi Huang did connect earlier walls) into a confidently wrong claim."},{"start":462,"end":507,"label":"plausible-unverifiable","explanation":"There is no credible historical record of Qin Shi Huang walking the entire wall. It sounds dramatic and human, which is exactly the kind of detail AI invents to make stories vivid."},{"start":511,"end":555,"label":"fake-citation","explanation":"No widely-cited journal by this name. AI commonly fabricates academic-sounding sources with realistic years and titles."},{"start":571,"end":598,"label":"plausible-unverifiable","explanation":"Estimates of deaths during construction vary wildly and most are educated guesses. Confident specific numbers about ancient labor deaths are usually unverifiable."}]},
+  {"id":"p4","title":"The Octopus Brain","difficulty":"medium","topic":"Science","text":"Octopuses are remarkably intelligent invertebrates. They have about 500 million neurons, two-thirds of which are located in their arms rather than their central brain. This means each arm can solve simple problems somewhat independently. Octopuses can change color and texture using specialized skin cells called chromatophores. Marine biologist Dr. Sylvia Earle proved in her 1994 paper that octopuses can recognize individual human faces. Some species, like the mimic octopus, can impersonate up to 15 different sea creatures. Octopuses have three hearts and blue blood due to a copper-based molecule called hemocyanin.","spans":[{"start":331,"end":437,"label":"fake-citation","explanation":"Sylvia Earle is a real, famous oceanographer — but she did not publish this specific paper. Studies on octopus face recognition came later (around 2010) and from different researchers. AI often borrows a real famous name and attaches a fake paper to it."},{"start":498,"end":529,"label":"wrong-date","explanation":"Mimic octopuses are documented to imitate around 15 species in some sources, but commonly-cited research lists closer to 8 confirmed mimicked species. The very specific number is often inflated by AI."}]},
+  {"id":"p5","title":"Shakespeare and Macbeth","difficulty":"medium","topic":"Literature","text":"William Shakespeare's Macbeth is one of his shortest tragedies. It was first performed around 1606 and is set in 11th-century Scotland. The play follows a Scottish general who, after hearing a prophecy from three witches, murders King Duncan to take the throne. Shakespeare wrote the play during a period when King James I was on the English throne, and many scholars believe it was written partly to flatter the king's interest in witchcraft. The famous line 'Out, damned spot!' is spoken by Macduff in Act 5. The play has 2,477 lines, making it Shakespeare's most concise tragedy.","spans":[{"start":451,"end":501,"label":"made-up-quote","explanation":"The line is real, but it is spoken by Lady Macbeth, not Macduff, during her sleepwalking scene. AI often gets the right quote but assigns it to the wrong character."},{"start":520,"end":531,"label":"plausible-unverifiable","explanation":"Exact line counts vary by edition. Confident, oddly-specific numbers like '2,477' are a classic AI tell — too precise to verify and probably made up."}]},
+  {"id":"p6","title":"The Periodic Table","difficulty":"easy","topic":"Science","text":"The modern periodic table was developed by Russian chemist Dmitri Mendeleev in 1869. He arranged the known elements by atomic weight and left gaps for elements that hadn't been discovered yet, correctly predicting the properties of several. Today's table organizes elements by atomic number — the number of protons in the nucleus. The table currently contains 118 confirmed elements, with the heaviest, oganesson, being officially added in 2016. Mendeleev was awarded the Nobel Prize in Chemistry in 1906 for his work.","spans":[{"start":442,"end":512,"label":"wrong-date","explanation":"Mendeleev was nominated for the 1906 Nobel Prize in Chemistry but did NOT win — it went to Henri Moissan. This is a classic 'almost true' hallucination: real person, real year, real prize, but the outcome is wrong."}]},
+  {"id":"p7","title":"The Internet's Origins","difficulty":"medium","topic":"Technology","text":"The internet evolved from ARPANET, a U.S. Department of Defense project launched in 1969. The first message ever sent was the word 'LOGIN', though the system crashed after just two letters. Tim Berners-Lee invented the World Wide Web at CERN in 1989, releasing the first web browser the following year. The first website ever published was about the WWW project itself and is still accessible today. According to a 1995 report by the Stanford Internet Research Group, there were exactly 4.2 million internet users worldwide that year. Email was invented by Ray Tomlinson in 1971, who chose the @ symbol because it was the only one on his keyboard that wasn't used in names.","spans":[{"start":412,"end":527,"label":"fake-citation","explanation":"There is no well-known 'Stanford Internet Research Group' report with this specific figure. The word 'exactly' before a round-ish number is a red flag — real statistics are rarely 'exact'."},{"start":265,"end":304,"label":"wrong-date","explanation":"Berners-Lee proposed the Web in 1989 but the first browser (WorldWideWeb) was released at the end of 1990 — close, but the way it's worded is misleading. AI often blurs timelines this way."}]},
+  {"id":"p8","title":"Ada Lovelace, the First Programmer","difficulty":"hard","topic":"Biography","text":"Ada Lovelace, born Augusta Ada Byron in 1815, is often called the world's first computer programmer. She was the daughter of the poet Lord Byron. Working with Charles Babbage on his proposed Analytical Engine, Lovelace wrote what is now considered the first algorithm intended for a machine — a method for calculating Bernoulli numbers. In her 1843 notes, she famously wrote that 'the Engine can think, just as a human can think,' anticipating modern AI debates. She corresponded extensively with mathematician Mary Somerville, who introduced her to Babbage at a dinner party in Cambridge in 1833. Lovelace died of cancer at age 36, the same age her father had died.","spans":[{"start":373,"end":423,"label":"made-up-quote","explanation":"Lovelace actually wrote almost the opposite — she explicitly said the Analytical Engine had 'no pretensions to originate anything' and could only do what it was told. AI sometimes inverts a famous person's real view into a fake quote."},{"start":561,"end":597,"label":"plausible-unverifiable","explanation":"Lovelace did meet Babbage around 1833 through Mary Somerville, but the specific 'dinner party in Cambridge' detail is invented. The meeting is more commonly described as taking place in London. Watch for confidently specific scene-setting."}]},
+  {"id":"p9","title":"The Amazon Rainforest","difficulty":"hard","topic":"Geography","text":"The Amazon rainforest covers approximately 5.5 million square kilometers across nine South American countries, with about 60% located in Brazil. It is home to an estimated 10% of all known species on Earth, including 2.5 million insect species, 40,000 plant species, and 2,200 fish species. The Amazon River, which runs through the forest, is the second-longest river in the world after the Nile, stretching 7,062 kilometers. A landmark 2019 study by the Brazilian Institute of Tropical Ecology found that the rainforest now releases more CO2 than it absorbs in certain regions. The forest is sometimes called the 'lungs of the planet,' though scientists like Dr. Carlos Nobre have pointed out that this nickname is misleading because the Amazon consumes most of the oxygen it produces.","spans":[{"start":347,"end":426,"label":"hybrid","explanation":"Whether the Amazon or the Nile is longer is genuinely debated, and some recent surveys argue the Amazon is actually longer. Stating it definitively as 'second' is a confident oversimplification. The 7,062 km figure is also higher than common estimates (~6,400 km)."},{"start":439,"end":491,"label":"fake-citation","explanation":"There IS real 2021 research (published in Nature) finding parts of the Amazon are a net carbon source, led by Luciana Gatti — but it wasn't from a 'Brazilian Institute of Tropical Ecology'. AI re-attributes real findings to fake institutions."}]},
+  {"id":"p10","title":"The Wright Brothers","difficulty":"medium","topic":"History","text":"Orville and Wilbur Wright achieved the first successful powered, controlled, and sustained flight on December 17, 1903, at Kitty Hawk, North Carolina. The flight lasted 12 seconds and covered 120 feet. The brothers ran a bicycle shop in Dayton, Ohio, before turning to aviation. They built their own lightweight gasoline engine because no existing engine was suitable. Their first patent was granted in 1906. Wilbur, the older brother, gave a famous speech to the U.S. Congress in 1910 in which he said, 'The airplane will end all wars, for no nation will dare attack another from the sky.' Orville lived until 1948 and witnessed both World Wars and the breaking of the sound barrier.","spans":[{"start":410,"end":597,"label":"made-up-quote","explanation":"Wilbur did not give this speech to Congress, and the quote is fabricated. Wilbur actually died in 1912 — so he couldn't have given a speech in 1910 to Congress on this topic. AI often invents 'famous' historical quotes that sound profound but never existed."}]},
+  {"id":"p11","title":"Black Holes","difficulty":"hard","topic":"Science","text":"A black hole is a region of spacetime where gravity is so strong that nothing — not even light — can escape. The boundary beyond which escape is impossible is called the event horizon. Black holes form when massive stars collapse at the end of their life cycles. The first image of a black hole was released by the Event Horizon Telescope collaboration in April 2019, showing the supermassive black hole at the center of the galaxy M87. The concept of a black hole was first proposed by English geologist John Michell in 1783. Stephen Hawking's 1974 paper in Nature predicted that black holes slowly evaporate by emitting thermal radiation, now called Hawking radiation. Hawking was awarded the Nobel Prize in Physics in 1988 for this discovery.","spans":[{"start":669,"end":740,"label":"wrong-date","explanation":"Stephen Hawking was never awarded the Nobel Prize. Hawking radiation has never been directly observed, which is one reason no Nobel was given. AI frequently invents Nobel Prizes for famous scientists who never actually won one."},{"start":487,"end":523,"label":"hybrid","explanation":"John Michell did propose 'dark stars' in 1783 — but he was an English clergyman and natural philosopher, not a geologist. AI sometimes swaps the profession of a real historical figure while keeping the date correct."}]},
+  {"id":"p12","title":"The Great Pyramid","difficulty":"hard","topic":"History","text":"The Great Pyramid of Giza was built as a tomb for the Fourth Dynasty pharaoh Khufu around 2560 BCE. It originally stood about 146 meters tall and was the tallest human-made structure in the world for over 3,800 years. The pyramid is made of an estimated 2.3 million stone blocks, each averaging 2.5 tons. The Greek historian Herodotus claimed in his Histories that 100,000 slaves built the pyramid over 20 years. Modern archaeology, however, has shown the workers were skilled paid laborers, not slaves. In 1925, French Egyptologist Pierre Lacau discovered hidden chambers beneath the pyramid using early X-ray technology, including a sealed room containing Khufu's personal library.","spans":[{"start":505,"end":679,"label":"invented-person","explanation":"Pierre Lacau was a real French Egyptologist of that era — but he did not make this discovery. X-ray technology could not scan through a pyramid in 1925. No 'Khufu's personal library' has ever been found. This blends a real name with completely fabricated events — a particularly tricky AI pattern."},{"start":374,"end":418,"label":"plausible-unverifiable","explanation":"Herodotus did claim something like this, but he wrote ~2,000 years after the pyramid was built and his numbers are widely considered exaggerated. Citing ancient figures as if they're solid facts is misleading."}]},
+  {"id":"p13","title":"Marie Curie","difficulty":"hard","topic":"Biography","text":"Marie Curie was a Polish-born physicist and chemist who conducted pioneering research on radioactivity, a term she coined. She was the first woman to win a Nobel Prize, and the first person ever to win Nobel Prizes in two different sciences — Physics in 1903 (shared with her husband Pierre and Henri Becquerel) and Chemistry in 1911. She discovered the elements polonium and radium. Curie founded the Radium Institute in Paris in 1914, which became a major center for cancer research. During World War I, she developed mobile X-ray units, nicknamed 'petites Curies,' and personally drove them to the front lines. In her 1923 autobiography 'A Life in Radiance,' she wrote that she regretted not patenting the radium isolation process. She died in 1934 of aplastic anemia caused by radiation exposure.","spans":[{"start":616,"end":734,"label":"fake-citation","explanation":"Marie Curie's autobiography is titled 'Autobiographical Notes' (published 1923), not 'A Life in Radiance.' She did believe radium should be free for scientific use, but the specific 'regret' quote is invented. AI loves to invent poetic-sounding book titles."}]},
+  {"id":"p14","title":"The Theory of Plate Tectonics","difficulty":"medium","topic":"Science","text":"Plate tectonics is the theory that Earth's outer shell is divided into large plates that slowly move over the mantle. The theory was developed in the 1960s, building on earlier ideas about continental drift proposed by German meteorologist Alfred Wegener in 1912. Wegener's ideas were initially rejected because he couldn't explain what force could move continents. Evidence from seafloor spreading, magnetic stripes on the ocean floor, and the distribution of fossils eventually confirmed the theory. There are currently 7 major tectonic plates and many smaller ones. The fastest-moving plate is the Pacific Plate, which moves at about 7 centimeters per year. The theory was officially recognized by the International Union of Geological Sciences in 1968 at their annual conference in Vienna.","spans":[{"start":664,"end":790,"label":"plausible-unverifiable","explanation":"Plate tectonics gained acceptance gradually through many papers in the late 1960s — there was no single 'official recognition' event. Scientific theories don't get 'officially recognized' at conferences like this. AI invents tidy origin moments for messy real processes."}]},
+  {"id":"p15","title":"The Mona Lisa","difficulty":"easy","topic":"Art","text":"The Mona Lisa was painted by Italian Renaissance artist Leonardo da Vinci between approximately 1503 and 1519. It is an oil painting on a poplar wood panel and is believed to depict Lisa Gherardini, the wife of a Florentine merchant. The painting is housed at the Louvre Museum in Paris, where it has been on permanent display since 1797. In 1911, the painting was stolen by an Italian handyman named Vincenzo Peruggia and recovered two years later. The Mona Lisa measures exactly 1 meter by 1 meter and was originally part of a larger triptych that included two other portraits, now lost.","spans":[{"start":462,"end":495,"label":"wrong-date","explanation":"The Mona Lisa is actually quite small — about 77 cm tall by 53 cm wide. The 'exactly 1 meter by 1 meter' figure is invented. Many people are surprised by how small the real painting is."},{"start":500,"end":585,"label":"plausible-unverifiable","explanation":"There is no historical evidence the Mona Lisa was part of a triptych. This is a completely invented backstory — a classic AI hallucination that adds dramatic 'lost art' mystery."}]}
+];
+
+// =====================
+// Runtime self-check: verify every span text matches
+// =====================
+(function validate() {
+  let bad = 0;
+  for (const p of PASSAGES) {
+    for (const s of p.spans) {
+      const slice = p.text.slice(s.start, s.end);
+      if (!slice || slice.length === 0) { console.error('Empty span in', p.id); bad++; }
+    }
+  }
+  if (bad) console.error('Span validation failed:', bad);
+})();
+
+// =====================
+// STATE
+// =====================
+const state = {
+  filter: 'all',
+  current: null,
+  marks: [],         // {start, end, label, confidence, text}
+  pendingSel: null,  // {start, end} awaiting tag
+  revealed: false,
+  perTag: {},        // {tag: {tp:0, fp:0, fn:0}}
+  rounds: 0, hits: 0, falses: 0,
+  confPoints: []     // {conf, correct}
+};
+
+// =====================
+// UTIL
+// =====================
+function $(id) { return document.getElementById(id); }
+function escapeHTML(s) {
+  return s.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+// Break passage text into sentence segments and return [{start,end,text},...]
+function splitSentences(text) {
+  const out = [];
+  // Match sentences ending with . ! ? followed by space or end
+  const regex = /[^.!?]+(?:[.!?](?=[\s—]|$)|$)/g;
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    const start = m.index;
+    let end = m.index + m[0].length;
+    out.push({ start, end, text: m[0] });
+  }
+  // Merge any zero-length / overlap issues
+  return out.filter(s => s.text.trim().length > 0);
+}
+
+// Filter passages
+function filteredPassages() {
+  return PASSAGES.filter(p => state.filter === 'all' || p.difficulty === state.filter);
+}
+
+// =====================
+// RENDER
+// =====================
+function renderSelect() {
+  const sel = $('passageSelect');
+  sel.innerHTML = '';
+  filteredPassages().forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.title}  (${p.difficulty}, ${p.topic})`;
+    sel.appendChild(opt);
+  });
+  if (sel.options.length > 0) {
+    sel.value = (state.current && filteredPassages().some(p => p.id === state.current.id))
+      ? state.current.id : sel.options[0].value;
+    loadPassage(sel.value);
+  }
+}
+
+function loadPassage(id) {
+  const p = PASSAGES.find(x => x.id === id);
+  if (!p) return;
+  state.current = p;
+  state.marks = [];
+  state.pendingSel = null;
+  state.revealed = false;
+  $('resultsCard').classList.remove('show');
+  $('tagPicker').classList.remove('open');
+  $('submitBtn').disabled = false;
+  $('metaTopic').textContent = p.topic;
+  const dc = $('metaDiff');
+  dc.textContent = p.difficulty;
+  dc.className = 'chip ' + p.difficulty;
+  $('metaHints').textContent = `${p.spans.length} suspicious thing${p.spans.length===1?'':'s'} to find`;
+  $('passageTitle').textContent = p.title;
+  renderPassage();
+  renderMarkedList();
+}
+
+function renderPassage() {
+  const p = state.current;
+  const body = $('passageBody');
+  body.classList.toggle('revealed', state.revealed);
+  const sentences = splitSentences(p.text);
+
+  if (!state.revealed) {
+    // Make each sentence clickable
+    body.innerHTML = sentences.map(s => {
+      const isMarked = state.marks.some(m => m.start === s.start && m.end === s.end);
+      const cls = 'sent' + (isMarked ? ' marked' : '');
+      return `<span class="${cls}" data-start="${s.start}" data-end="${s.end}">${escapeHTML(s.text)}</span>`;
+    }).join('');
+    body.querySelectorAll('span.sent').forEach(span => {
+      span.addEventListener('click', (e) => {
+        // If user selected a substring, prefer that
+        const sel = window.getSelection();
+        const selText = sel && sel.toString();
+        const baseStart = parseInt(span.dataset.start, 10);
+        const baseEnd = parseInt(span.dataset.end, 10);
+        let start = baseStart, end = baseEnd;
+        if (selText && selText.length > 4 && span.textContent.indexOf(selText) !== -1) {
+          const off = span.textContent.indexOf(selText);
+          start = baseStart + off;
+          end = start + selText.length;
+        }
+        // Toggle off if already marked
+        const existing = state.marks.findIndex(m => m.start === start && m.end === end);
+        if (existing >= 0) {
+          state.marks.splice(existing, 1);
+          state.pendingSel = null;
+          $('tagPicker').classList.remove('open');
+          renderPassage();
+          renderMarkedList();
+          return;
+        }
+        state.pendingSel = { start, end, text: p.text.slice(start, end) };
+        openTagPicker();
+        // highlight visually as pending
+        body.querySelectorAll('span.sent').forEach(s2 => s2.classList.remove('marked'));
+        span.classList.add('marked');
+        state.marks.forEach(m => {
+          body.querySelectorAll(`span.sent[data-start="${m.start}"]`).forEach(el => el.classList.add('marked'));
+        });
+      });
+    });
+  } else {
+    // Build with ground-truth highlights AND user marks overlaid
+    // We'll layer: produce a flat array of character classes, then group.
+    const len = p.text.length;
+    const charClass = new Array(len).fill('');
+    // ground truth
+    for (const s of p.spans) {
+      const cls = s.label === 'plausible-unverifiable' ? 'gt-unverifiable' : 'gt-hallucination';
+      for (let i = s.start; i < s.end; i++) charClass[i] = cls;
+    }
+    let html = '';
+    let i = 0;
+    while (i < len) {
+      const cur = charClass[i];
+      let j = i;
+      while (j < len && charClass[j] === cur) j++;
+      const chunk = escapeHTML(p.text.slice(i, j));
+      if (cur) html += `<span class="${cur}">${chunk}</span>`;
+      else html += chunk;
+      i = j;
+    }
+    body.innerHTML = html;
+  }
+}
+
+function openTagPicker() {
+  const grid = $('tagGrid');
+  grid.innerHTML = '';
+  Object.entries(TAGS).forEach(([key, t]) => {
+    const btn = document.createElement('button');
+    btn.className = 'tag-btn';
+    btn.innerHTML = `<span class="tag-emoji">${t.emoji}</span><span class="tag-name">${t.name}</span><small>${t.desc}</small>`;
+    btn.addEventListener('click', () => commitMark(key));
+    grid.appendChild(btn);
+  });
+  $('tagPicker').classList.add('open');
+  $('confSlider').value = 3;
+  $('confVal').textContent = '3';
+}
+
+function commitMark(tagKey) {
+  if (!state.pendingSel) return;
+  const conf = parseInt($('confSlider').value, 10);
+  state.marks.push({
+    start: state.pendingSel.start,
+    end: state.pendingSel.end,
+    text: state.pendingSel.text,
+    label: tagKey,
+    confidence: conf
+  });
+  state.pendingSel = null;
+  $('tagPicker').classList.remove('open');
+  renderPassage();
+  renderMarkedList();
+}
+
+function renderMarkedList() {
+  const list = $('markedList');
+  if (state.marks.length === 0) {
+    list.innerHTML = `<div style="font-size:13px;color:var(--muted);padding:6px 4px">No marks yet. Click any sentence (or highlight a phrase, then click) to flag it.</div>`;
+    return;
+  }
+  list.innerHTML = '';
+  state.marks.forEach((m, idx) => {
+    const t = TAGS[m.label];
+    const div = document.createElement('div');
+    div.className = 'marked-item';
+    div.innerHTML = `
+      <span class="quote">"${escapeHTML(m.text.length > 70 ? m.text.slice(0,67)+'…' : m.text)}"</span>
+      <span class="tag-label">${t.emoji} ${t.name} <small>(conf ${m.confidence}/5)</small></span>
+      <button data-idx="${idx}">Remove</button>`;
+    list.appendChild(div);
+  });
+  list.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      const i = parseInt(b.dataset.idx, 10);
+      state.marks.splice(i, 1);
+      renderPassage();
+      renderMarkedList();
+    });
+  });
+}
+
+// =====================
+// SUBMIT / SCORING
+// =====================
+function overlaps(a, b) {
+  return a.start < b.end && b.start < a.end;
+}
+
+function submit() {
+  if (state.revealed) return;
+  const p = state.current;
+  state.revealed = true;
+  $('submitBtn').disabled = true;
+
+  const truths = p.spans.map(s => ({ ...s, matched: false }));
+  const tp = [], fp = [], fn = [];
+
+  for (const m of state.marks) {
+    // find best overlapping truth that isn't yet matched
+    let best = -1;
+    let bestOverlap = 0;
+    for (let i = 0; i < truths.length; i++) {
+      const t = truths[i];
+      if (t.matched) continue;
+      if (overlaps(m, t)) {
+        const ov = Math.min(m.end, t.end) - Math.max(m.start, t.start);
+        if (ov > bestOverlap) { bestOverlap = ov; best = i; }
+      }
+    }
+    if (best >= 0) {
+      truths[best].matched = true;
+      const t = truths[best];
+      const tagCorrect = (m.label === t.label);
+      tp.push({ mark: m, truth: t, tagCorrect });
+      // per-tag (credit attempt for the user's tag)
+      state.perTag[m.label] = state.perTag[m.label] || { tp:0, fp:0, fn:0 };
+      state.perTag[m.label].tp++;
+      state.confPoints.push({ conf: m.confidence, correct: true });
+    } else {
+      fp.push({ mark: m });
+      state.perTag[m.label] = state.perTag[m.label] || { tp:0, fp:0, fn:0 };
+      state.perTag[m.label].fp++;
+      state.confPoints.push({ conf: m.confidence, correct: false });
+    }
+  }
+  for (const t of truths) {
+    if (!t.matched) {
+      fn.push({ truth: t });
+      state.perTag[t.label] = state.perTag[t.label] || { tp:0, fp:0, fn:0 };
+      state.perTag[t.label].fn++;
+    }
+  }
+
+  // Global stats
+  state.rounds++;
+  state.hits += tp.length;
+  state.falses += fp.length;
+  $('statRounds').textContent = state.rounds;
+  $('statHits').textContent = state.hits;
+  $('statFalse').textContent = state.falses;
+
+  // Render results
+  $('scTP').textContent = tp.length;
+  $('scFP').textContent = fp.length;
+  $('scFN').textContent = fn.length;
+  const precision = (tp.length + fp.length) > 0 ? tp.length / (tp.length + fp.length) : 0;
+  const recall    = (tp.length + fn.length) > 0 ? tp.length / (tp.length + fn.length) : 0;
+  const f1 = (precision + recall) > 0 ? (2 * precision * recall) / (precision + recall) : 0;
+  $('scAcc').textContent = (tp.length + fp.length + fn.length === 0) ? '—' : (f1 * 100).toFixed(0) + '%';
+
+  // Feedback list
+  const fb = $('feedbackList');
+  fb.innerHTML = '';
+
+  tp.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'feedback tp';
+    const correctTag = TAGS[item.truth.label];
+    const userTag = TAGS[item.mark.label];
+    const tagNote = item.tagCorrect
+      ? `Tagged correctly as ${userTag.emoji} ${userTag.name}.`
+      : `You tagged it ${userTag.emoji} ${userTag.name}, but the cleanest category is ${correctTag.emoji} ${correctTag.name}.`;
+    div.innerHTML = `
+      <div class="head"><span>Caught it</span><span>Confidence: ${item.mark.confidence}/5</span></div>
+      <div class="quote">"${escapeHTML(p.text.slice(item.truth.start, item.truth.end))}"</div>
+      <div class="why"><b>${tagNote}</b> ${escapeHTML(item.truth.explanation)}</div>`;
+    fb.appendChild(div);
+  });
+
+  fp.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'feedback fp';
+    const userTag = TAGS[item.mark.label];
+    div.innerHTML = `
+      <div class="head"><span>False alarm</span><span>Confidence: ${item.mark.confidence}/5</span></div>
+      <div class="quote">"${escapeHTML(item.mark.text)}"</div>
+      <div class="why"><b>This part is actually accurate.</b> You tagged it ${userTag.emoji} ${userTag.name}, but it doesn't match any planted hallucination in this passage. Calibration matters — being skeptical is good, but flagging everything makes your hunting less useful.</div>`;
+    fb.appendChild(div);
+  });
+
+  fn.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'feedback fn';
+    const t = TAGS[item.truth.label];
+    div.innerHTML = `
+      <div class="head"><span>Missed</span><span>${t.emoji} ${t.name}</span></div>
+      <div class="quote">"${escapeHTML(p.text.slice(item.truth.start, item.truth.end))}"</div>
+      <div class="why">${escapeHTML(item.truth.explanation)}</div>`;
+    fb.appendChild(div);
+  });
+
+  if (tp.length + fp.length + fn.length === 0) {
+    fb.innerHTML = `<div class="feedback">No marks and no hallucinations missed? You may want to actually try this one.</div>`;
+  }
+
+  renderChart();
+  renderTagAcc();
+  renderPassage();
+  $('resultsCard').classList.add('show');
+  $('resultsCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderChart() {
+  const grid = $('chartGrid');
+  // remove existing dots
+  grid.querySelectorAll('.chart-dot').forEach(n => n.remove());
+  if (state.confPoints.length === 0) {
+    if (!grid.querySelector('.chart-empty')) {
+      const e = document.createElement('div');
+      e.className = 'chart-empty';
+      e.textContent = 'Make some marks to populate this chart.';
+      grid.appendChild(e);
+    }
+    return;
+  }
+  const empty = grid.querySelector('.chart-empty');
+  if (empty) empty.remove();
+
+  // Buckets: each point has conf (1-5) and correct(true/false)
+  // X: 25% (wrong) or 75% (right) with slight jitter; Y: (conf-1)/4 from bottom.
+  state.confPoints.forEach((pt, idx) => {
+    const dot = document.createElement('div');
+    dot.className = 'chart-dot ' + (pt.correct ? 'correct' : 'wrong');
+    const baseX = pt.correct ? 75 : 25;
+    const jitter = ((idx * 13) % 11 - 5) * 1.2; // -6..6
+    const x = Math.max(4, Math.min(96, baseX + jitter));
+    const y = (pt.conf - 1) / 4 * 100; // 0..100 from bottom
+    dot.style.left = x + '%';
+    dot.style.bottom = y + '%';
+    grid.appendChild(dot);
+  });
+}
+
+function renderTagAcc() {
+  const wrap = $('tagAcc');
+  wrap.innerHTML = '';
+  Object.entries(TAGS).forEach(([key, t]) => {
+    const s = state.perTag[key] || { tp:0, fp:0, fn:0 };
+    const total = s.tp + s.fp + s.fn;
+    const acc = total > 0 ? s.tp / total : 0;
+    const row = document.createElement('div');
+    row.className = 'tag-acc-row';
+    row.innerHTML = `
+      <div class="tname">${t.emoji} ${t.name}</div>
+      <div class="bar"><div class="bar-fill" style="width:${(acc*100).toFixed(0)}%"></div></div>
+      <div class="pct">${total === 0 ? '—' : (acc*100).toFixed(0)+'%'} <small style="opacity:0.6">(${s.tp}/${total})</small></div>`;
+    wrap.appendChild(row);
+  });
+}
+
+// =====================
+// EVENTS
+// =====================
+document.querySelectorAll('.pill[data-diff]').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.pill[data-diff]').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    state.filter = p.dataset.diff;
+    renderSelect();
+  });
+});
+$('passageSelect').addEventListener('change', e => loadPassage(e.target.value));
+$('randomBtn').addEventListener('click', () => {
+  const fp = filteredPassages();
+  if (fp.length === 0) return;
+  const pick = fp[Math.floor(Math.random() * fp.length)];
+  $('passageSelect').value = pick.id;
+  loadPassage(pick.id);
+});
+$('newBtn').addEventListener('click', () => {
+  const fp = filteredPassages();
+  const curId = state.current ? state.current.id : null;
+  const others = fp.filter(p => p.id !== curId);
+  const pool = others.length > 0 ? others : fp;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  $('passageSelect').value = pick.id;
+  loadPassage(pick.id);
+});
+$('submitBtn').addEventListener('click', submit);
+$('clearBtn').addEventListener('click', () => {
+  state.marks = [];
+  state.pendingSel = null;
+  $('tagPicker').classList.remove('open');
+  renderPassage();
+  renderMarkedList();
+});
+$('confSlider').addEventListener('input', e => $('confVal').textContent = e.target.value);
+
+// boot
+renderSelect();
+renderTagAcc();
+renderChart();
+</script>
+</body>
+</html>
