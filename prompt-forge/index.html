@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt Forge — Practice Prompt Engineering</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #273449;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #7c3aed;
+    --accent-2: #a78bfa;
+    --good: #22c55e;
+    --bad: #ef4444;
+    --warn: #f59e0b;
+    --code-bg: #0b1220;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: var(--sans); }
+  body { min-height: 100vh; }
+  header {
+    background: linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: 0.5px; }
+  header p { margin: 4px 0 0; color: #e9d5ff; font-size: 13px; }
+  main { display: grid; grid-template-columns: 280px 1fr; gap: 16px; padding: 16px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .panel h2 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-2); }
+
+  ul.challenge-list { list-style: none; margin: 0; padding: 0; max-height: 70vh; overflow-y: auto; }
+  ul.challenge-list li {
+    padding: 10px;
+    margin: 6px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--panel-2);
+    transition: background 0.15s, border-color 0.15s;
+    font-size: 13px;
+  }
+  ul.challenge-list li:hover { border-color: var(--accent-2); }
+  ul.challenge-list li.active { background: #3b2272; border-color: var(--accent-2); }
+  .challenge-num { color: var(--accent-2); font-weight: bold; margin-right: 6px; }
+  .star-row { font-size: 11px; color: var(--warn); margin-top: 4px; }
+
+  .work-area { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 1100px) { .work-area { grid-template-columns: 1fr; } }
+
+  .target-box {
+    grid-column: 1 / -1;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .target-box h3 { margin: 0 0 6px; font-size: 15px; color: var(--accent-2); }
+  .target-box p { margin: 0; line-height: 1.5; }
+
+  textarea#promptInput {
+    width: 100%;
+    min-height: 140px;
+    padding: 10px;
+    background: var(--code-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 13px;
+    resize: vertical;
+  }
+  textarea#promptInput:focus { outline: none; border-color: var(--accent-2); }
+
+  .btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: #6d28d9; }
+  .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn.secondary:hover { background: var(--panel-2); }
+  .btn.small { padding: 4px 10px; font-size: 12px; }
+
+  .controls { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+
+  .output-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 60px;
+    line-height: 1.5;
+  }
+  .output-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .rubric-list { list-style: none; margin: 0; padding: 0; }
+  .rubric-list li {
+    padding: 6px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    border-bottom: 1px solid #2a3548;
+  }
+  .rubric-list li:last-child { border-bottom: none; }
+  .rubric-mark { font-weight: bold; flex-shrink: 0; width: 18px; }
+  .rubric-mark.pass { color: var(--good); }
+  .rubric-mark.fail { color: var(--bad); }
+
+  .score-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel-2);
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .score-stars { font-size: 22px; color: var(--warn); letter-spacing: 4px; }
+  .score-percent { font-size: 18px; font-weight: bold; }
+
+  .tip-box {
+    background: #422006;
+    border: 1px solid #92400e;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .tip-box.success {
+    background: #052e16;
+    border-color: #166534;
+  }
+  .tip-label { font-weight: bold; color: var(--warn); margin-right: 4px; }
+  .tip-box.success .tip-label { color: var(--good); }
+
+  details.advanced {
+    margin-top: 16px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  details.advanced summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+  details.advanced[open] summary { margin-bottom: 8px; }
+  .advanced-note { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 6px 0; }
+  .key-row { display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+  .key-row input {
+    flex: 1;
+    min-width: 200px;
+    padding: 7px 10px;
+    background: var(--code-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .key-status { font-size: 12px; color: var(--good); }
+
+  .history-list { list-style: none; margin: 0; padding: 0; max-height: 200px; overflow-y: auto; }
+  .history-list li {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 6px;
+    background: var(--code-bg);
+    font-size: 12px;
+  }
+  .history-prompt { font-family: var(--mono); color: var(--text); max-height: 50px; overflow: hidden; }
+  .history-meta { color: var(--muted); font-size: 11px; margin-top: 4px; }
+
+  .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  @media (max-width: 700px) { .comparison { grid-template-columns: 1fr; } }
+  .footer-note { text-align: center; color: var(--muted); font-size: 12px; padding: 14px; }
+  .keyword { color: #a78bfa; font-weight: bold; }
+  code.inline { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-family: var(--mono); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Prompt Forge</h1>
+  <p>Practice prompt engineering — write prompts that hit the target. Built for curious teens.</p>
+</header>
+
+<main>
+  <aside class="panel">
+    <h2>Challenges</h2>
+    <ul class="challenge-list" id="challengeList"></ul>
+  </aside>
+
+  <section>
+    <div class="work-area">
+      <div class="target-box">
+        <h3 id="targetTitle">Pick a challenge</h3>
+        <p id="targetDesc">Select one from the left to get started.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Your Prompt</h2>
+        <textarea id="promptInput" placeholder="Type your prompt here. Be specific!"></textarea>
+        <div class="controls">
+          <button class="btn" id="runBtn">Run Mock Model</button>
+          <button class="btn secondary" id="clearBtn">Clear</button>
+          <button class="btn secondary" id="hintBtn">Show Hint</button>
+        </div>
+
+        <details class="advanced">
+          <summary>Advanced: use real model (optional)</summary>
+          <p class="advanced-note">
+            You can optionally try your prompt against Anthropic's Claude API for a real comparison.
+            Your API key is stored only in this browser's localStorage and is sent only to
+            <code class="inline">api.anthropic.com</code> — never to any other server. Don't share your key with anyone.
+            <strong>Prompt Forge works fully without a key.</strong>
+          </p>
+          <div class="key-row">
+            <input type="password" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" />
+            <button class="btn small" id="saveKeyBtn">Save key</button>
+            <button class="btn small secondary" id="clearKeyBtn">Clear key</button>
+            <span class="key-status" id="keyStatus"></span>
+          </div>
+        </details>
+      </div>
+
+      <div class="panel">
+        <h2>Output</h2>
+        <div id="outputArea">
+          <div class="output-label">Mock model output</div>
+          <div class="output-block" id="mockOutput">(run your prompt to see output)</div>
+        </div>
+        <div id="realOutputWrap" style="display:none; margin-top:10px;">
+          <div class="output-label">Real Claude output</div>
+          <div class="output-block" id="realOutput">(no real model output yet)</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Score &amp; Rubrics</h2>
+        <div class="score-box">
+          <div class="score-stars" id="scoreStars">☆☆☆</div>
+          <div class="score-percent" id="scorePercent">—</div>
+        </div>
+        <ul class="rubric-list" id="rubricList"><li style="color:var(--muted);">Run a prompt to see rubric results.</li></ul>
+        <div id="tipArea"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Your Attempts</h2>
+        <ul class="history-list" id="historyList"><li style="color:var(--muted); border:none;">No attempts yet for this challenge.</li></ul>
+      </div>
+    </div>
+    <div class="footer-note">Tip: a great prompt names the format, the length, the audience, and any constraints.</div>
+  </section>
+</main>
+
+<script>
+/* ============================================================
+   Prompt Forge - mock LLM + rubric engine
+   ============================================================ */
+
+/* ---------- Utility helpers ---------- */
+function countSyllables(word) {
+  word = word.toLowerCase().replace(/[^a-z]/g, '');
+  if (!word) return 0;
+  if (word.length <= 3) return 1;
+  word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
+  word = word.replace(/^y/, '');
+  const matches = word.match(/[aeiouy]{1,2}/g);
+  return matches ? matches.length : 1;
+}
+function lineSyllables(line) {
+  return line.trim().split(/\s+/).filter(Boolean).reduce((s, w) => s + countSyllables(w), 0);
+}
+function endRhyme(line) {
+  const words = line.trim().toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(Boolean);
+  if (!words.length) return '';
+  const last = words[words.length - 1];
+  return last.slice(-2);
+}
+function lower(s) { return (s || '').toLowerCase(); }
+function has(prompt, ...terms) {
+  const p = lower(prompt);
+  return terms.some(t => p.includes(t.toLowerCase()));
+}
+function extractNumber(prompt, near) {
+  const p = lower(prompt);
+  const idx = p.indexOf(near);
+  if (idx < 0) return null;
+  const window = p.slice(Math.max(0, idx - 20), idx + 30);
+  const m = window.match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : null;
+}
+function extractAnyNumber(prompt) {
+  const m = lower(prompt).match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+/* ---------- Mock LLM responses per challenge ---------- */
+/* Each challenge has a generator(prompt) -> output string
+   The generator inspects the prompt for rubric keywords and adjusts output. */
+
+const SIMPLE_WORDS = new Set([
+  "the","a","an","and","is","are","was","were","of","to","in","on","up","down","wet","dry","sun",
+  "rain","cloud","clouds","water","sky","drop","drops","fall","falls","cold","warm","hot","big","small",
+  "it","when","then","they","go","goes","make","makes","get","gets","like","because","so","tiny",
+  "you","we","i","this","that","drip","drips","puddle","puddles","river","sea","ocean","high","low",
+  "from","into","with","up","becomes","turns","heavy","light","earth","ground","back"
+]);
+
+const CHALLENGES = [
+  {
+    id: 1,
+    title: "Haiku about photosynthesis",
+    desc: "Get the AI to output a 4-line poem about photosynthesis with NO rhymes, in haiku style (5-7-5 syllables per line).",
+    hint: "Tell it the topic, the exact number of lines, the syllable pattern, and that rhymes are NOT allowed.",
+    placeholder: "e.g. Write a 4-line poem about ...",
+    generate(prompt) {
+      const wantsHaiku = has(prompt, 'haiku', '5-7-5', '5/7/5');
+      const wantsPhoto = has(prompt, 'photosynthesis');
+      const wants4 = extractNumber(prompt, 'line') === 4 || has(prompt, 'four lines', '4 lines');
+      const noRhyme = has(prompt, 'no rhyme', 'no rhymes', "don't rhyme", 'not rhyme');
+      let lines = [];
+      if (wantsPhoto && wantsHaiku && wants4) {
+        // 5-7-5-5 attempt that mentions photosynthesis, no rhymes
+        lines = [
+          "Green leaves drink the sun",            // 5
+          "Photosynthesis at work",                // 7 (pho-to-syn-the-sis-at-work)
+          "Sugar feeds the tree",                  // 5
+          "Quiet roots below"                      // 5
+        ];
+      } else if (wantsPhoto && wants4) {
+        lines = [
+          "Leaves love sunlight bright",
+          "They make food called sugar so",
+          "Plants can grow up tall",
+          "Photosynthesis"
+        ];
+      } else if (wantsHaiku && wantsPhoto) {
+        lines = [
+          "Green leaves drink the sun",
+          "Sunlight turns to food today",
+          "Sugar feeds the tree"
+        ];
+      } else if (wants4) {
+        lines = [
+          "Roses are bright red",
+          "Violets are bright blue too",
+          "Plants need light to grow",
+          "And nice clean water"
+        ];
+      } else {
+        lines = [
+          "A poem about something:",
+          "Things happen in nature day by day",
+          "Sometimes there is sun and rain too"
+        ];
+      }
+      if (!noRhyme) {
+        // intentionally add a rhyming pair if not asked to avoid rhymes
+        if (lines.length >= 2) {
+          lines[0] = "Green plants love the sun";
+          lines[lines.length - 1] = "Then the work is done";
+        }
+      }
+      return lines.join('\n');
+    },
+    rubrics: [
+      { label: "Output has exactly 4 lines", check: (out) => out.split('\n').filter(l => l.trim()).length === 4 },
+      { label: "Mentions photosynthesis (or 'photo-')", check: (out) => /photosynth/i.test(out) },
+      { label: "Line 1 has 5 syllables", check: (out) => {
+          const lines = out.split('\n').filter(l => l.trim());
+          return lines[0] && lineSyllables(lines[0]) === 5;
+      }},
+      { label: "Line 2 has 7 syllables", check: (out) => {
+          const lines = out.split('\n').filter(l => l.trim());
+          return lines[1] && lineSyllables(lines[1]) === 7;
+      }},
+      { label: "Line 3 has 5 syllables", check: (out) => {
+          const lines = out.split('\n').filter(l => l.trim());
+          return lines[2] && lineSyllables(lines[2]) === 5;
+      }},
+      { label: "No two lines rhyme (no shared end-sound)", check: (out) => {
+          const lines = out.split('\n').filter(l => l.trim());
+          const endings = lines.map(endRhyme);
+          const set = new Set(endings);
+          return set.size === endings.length;
+      }}
+    ]
+  },
+
+  {
+    id: 2,
+    title: "Explain rain for a 6-year-old (2 sentences)",
+    desc: "Get the AI to explain how rain forms — written for a 6-year-old, in exactly 2 sentences.",
+    hint: "Specify the audience age, the topic, and the exact sentence count.",
+    placeholder: "e.g. Explain how rain forms ...",
+    generate(prompt) {
+      const wantsRain = has(prompt, 'rain');
+      const wantsKid = has(prompt, '6-year-old', '6 year old', 'six year', 'child', 'kid', 'simple');
+      const want2 = extractNumber(prompt, 'sentence') === 2 || has(prompt, 'two sentences');
+      if (wantsRain && wantsKid && want2) {
+        return "The sun warms water in lakes and the sea so it turns into tiny drops that float up into clouds. When the clouds get heavy and cold, the drops fall back down as rain.";
+      }
+      if (wantsRain && want2) {
+        return "Atmospheric evaporation causes water vapor to ascend and condense within cloud formations. Subsequent precipitation occurs when accumulated droplets exceed buoyant suspension.";
+      }
+      if (wantsRain && wantsKid) {
+        return "The sun warms water and it goes up into the sky. Up in the sky it makes clouds. When the clouds get full the water comes back down. That is rain. Then it lands on the ground.";
+      }
+      return "Rain is a meteorological phenomenon caused by condensation of atmospheric moisture and subsequent gravitational descent of droplets across various ecosystems.";
+    },
+    rubrics: [
+      { label: "Exactly 2 sentences", check: (out) => out.trim().split(/[.!?]+(?=\s|$)/).filter(s => s.trim()).length === 2 },
+      { label: "Mentions rain (or droplets/clouds together)", check: (out) => /rain|drop|cloud/i.test(out) },
+      { label: "Uses simple words (kid-friendly)", check: (out) => {
+          const words = out.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(Boolean);
+          if (!words.length) return false;
+          const simple = words.filter(w => SIMPLE_WORDS.has(w)).length;
+          return simple / words.length >= 0.55;
+      }},
+      { label: "No long words (>10 chars)", check: (out) => !out.split(/\s+/).some(w => w.replace(/[^a-zA-Z]/g, '').length > 10) }
+    ]
+  },
+
+  {
+    id: 3,
+    title: "JSON list of 5 mammals (with 'legs' key)",
+    desc: "Get the AI to output a JSON array of 5 mammals. Each item must have a key 'legs'.",
+    hint: "Say JSON, say 5 items, list which keys (like 'legs') each item must include.",
+    placeholder: "e.g. Output a JSON array of ...",
+    generate(prompt) {
+      const wantsJson = has(prompt, 'json');
+      const want5 = extractAnyNumber(prompt) === 5 || has(prompt, 'five');
+      const wantsLegs = has(prompt, 'legs');
+      const wantsMammals = has(prompt, 'mammal');
+      if (wantsJson && want5 && wantsLegs && wantsMammals) {
+        return JSON.stringify([
+          { "name": "Cat", "legs": 4 },
+          { "name": "Human", "legs": 2 },
+          { "name": "Whale", "legs": 0 },
+          { "name": "Horse", "legs": 4 },
+          { "name": "Bat", "legs": 2 }
+        ], null, 2);
+      }
+      if (wantsJson && wantsMammals) {
+        return JSON.stringify([
+          { "name": "Cat" }, { "name": "Dog" }, { "name": "Cow" }
+        ], null, 2);
+      }
+      if (wantsMammals) {
+        return "Five mammals: cat, dog, cow, horse, whale.";
+      }
+      return "Here are some animals: cat, dog, cow, frog (frog is not a mammal), bird.";
+    },
+    rubrics: [
+      { label: "Output parses as JSON", check: (out) => { try { JSON.parse(out); return true; } catch { return false; } } },
+      { label: "JSON is an array with exactly 5 items", check: (out) => { try { const j = JSON.parse(out); return Array.isArray(j) && j.length === 5; } catch { return false; } } },
+      { label: "Every item has a 'legs' key", check: (out) => { try { const j = JSON.parse(out); return Array.isArray(j) && j.every(o => o && typeof o === 'object' && 'legs' in o); } catch { return false; } } },
+      { label: "All items are real mammals", check: (out) => {
+          try {
+            const j = JSON.parse(out);
+            const mammals = new Set(['cat','dog','cow','horse','whale','human','bat','dolphin','lion','tiger','elephant','mouse','rat','pig','sheep','goat','rabbit','bear','wolf','fox','deer','monkey','gorilla','panda','seal']);
+            return Array.isArray(j) && j.every(o => o && mammals.has(String(o.name || '').toLowerCase()));
+          } catch { return false; }
+      }}
+    ]
+  },
+
+  {
+    id: 4,
+    title: "Polite email declining a meeting",
+    desc: "Get a polite email declining a meeting. Under 60 words. No exclamation points.",
+    hint: "Tell it the format (email), tone (polite), word limit, and the punctuation rule.",
+    placeholder: "e.g. Write a polite email ...",
+    generate(prompt) {
+      const wantsEmail = has(prompt, 'email');
+      const wantsPolite = has(prompt, 'polite', 'professional', 'kind');
+      const wantsDecline = has(prompt, 'declin', 'no thank', 'turn down', "can't attend", 'not attend', "won't attend", "can not attend");
+      const noExclaim = has(prompt, 'no exclam', 'without exclam', 'no !');
+      const wordLimit = extractNumber(prompt, 'word') || (has(prompt, 'under 60', 'less than 60') ? 60 : null);
+      if (wantsEmail && wantsPolite && wantsDecline && noExclaim && wordLimit && wordLimit <= 80) {
+        return "Hi Alex,\n\nThank you for the invite to Thursday's meeting. Unfortunately, I have a scheduling conflict and won't be able to join. I appreciate you thinking of me, and I'd love to catch up soon. Please share any notes from the discussion so I can follow along.\n\nBest,\nJamie";
+      }
+      if (wantsEmail && wantsDecline && noExclaim) {
+        return "Hi Alex,\n\nThanks for the meeting invite. I won't be able to attend due to another commitment that day. Please send notes if possible. I appreciate the heads up and hope the meeting goes well.\n\nBest,\nJamie";
+      }
+      if (wantsEmail && wantsDecline) {
+        return "Hi Alex!\n\nThanks so much for the invite! Sadly I can't make it! Hope the meeting goes great!\n\nThanks!\nJamie";
+      }
+      return "Here's a quick reply: cannot attend the meeting, will follow up later! Thanks!";
+    },
+    rubrics: [
+      { label: "Reads like an email (greeting + sign-off)", check: (out) => /\b(hi|hello|dear)\b/i.test(out) && /\b(best|regards|sincerely|thanks)\b/i.test(out) },
+      { label: "Politely declines (no/can't/unable)", check: (out) => /\b(unable|won['’]t be able|can['’]t|cannot|decline|conflict)\b/i.test(out) },
+      { label: "Under 60 words", check: (out) => out.trim().split(/\s+/).filter(Boolean).length < 60 },
+      { label: "No exclamation points", check: (out) => !out.includes('!') }
+    ]
+  },
+
+  {
+    id: 5,
+    title: "3 bullet points starting with a verb (saving water)",
+    desc: "Get exactly 3 bullet points about saving water. Each bullet must start with a verb.",
+    hint: "Specify the count, the format (bullets), the topic, and the verb-first rule.",
+    placeholder: "e.g. Give me exactly 3 bullets ...",
+    generate(prompt) {
+      const wantsBullets = has(prompt, 'bullet', '•', '- ');
+      const wantsWater = has(prompt, 'water');
+      const want3 = extractAnyNumber(prompt) === 3 || has(prompt, 'three');
+      const wantsVerb = has(prompt, 'verb', 'action word', 'start with');
+      if (wantsBullets && wantsWater && want3 && wantsVerb) {
+        return "- Turn off the tap while brushing your teeth.\n- Fix leaky faucets quickly.\n- Collect rainwater for your garden.";
+      }
+      if (wantsBullets && wantsWater && want3) {
+        return "- Water is important for life.\n- People use it every day.\n- Saving it helps the planet.";
+      }
+      if (wantsWater && want3) {
+        return "Three ideas for saving water: be careful with the tap, fix leaks, and reuse rainwater when you can.";
+      }
+      return "Saving water is important. Here are some thoughts: use less, check your pipes, and tell friends.";
+    },
+    rubrics: [
+      { label: "Has exactly 3 bullet lines", check: (out) => out.split('\n').filter(l => /^\s*[-*•]/.test(l)).length === 3 },
+      { label: "Each bullet starts with a verb", check: (out) => {
+          const verbs = new Set(['turn','fix','collect','use','save','reuse','take','stop','close','check','water','plant','install','reduce','wash','run','set','share','tell','teach','do','make','keep','choose','pick','grow','build','catch']);
+          const lines = out.split('\n').filter(l => /^\s*[-*•]/.test(l));
+          if (lines.length === 0) return false;
+          return lines.every(l => {
+            const first = l.replace(/^\s*[-*•]\s*/, '').trim().split(/\s+/)[0];
+            return first && verbs.has(first.toLowerCase().replace(/[^a-z]/g, ''));
+          });
+      }},
+      { label: "About saving water", check: (out) => /water/i.test(out) && /(save|saving|reduce|reuse|leak|tap|faucet|rain)/i.test(out) }
+    ]
+  },
+
+  {
+    id: 6,
+    title: "Museum guide describes the moon (present tense)",
+    desc: "Have the AI roleplay as a museum guide describing the moon, using present tense throughout.",
+    hint: "Assign a role ('You are...'), name the subject, and pin the tense.",
+    placeholder: "e.g. You are a museum guide ...",
+    generate(prompt) {
+      const wantsRole = has(prompt, 'museum guide', 'tour guide', 'you are a');
+      const wantsMoon = has(prompt, 'moon');
+      const wantsPresent = has(prompt, 'present tense');
+      if (wantsRole && wantsMoon && wantsPresent) {
+        return "Welcome, friends. Here you see our beautiful moon. It orbits Earth every 27 days. Its surface holds craters, mountains, and dark seas of ancient lava. The moon reflects sunlight, which is why it glows at night. Step closer and notice how its phases change as it travels around our planet.";
+      }
+      if (wantsRole && wantsMoon) {
+        return "Welcome, friends. Long ago, astronauts walked on the moon. They collected rocks and planted a flag. The moon was bright that day. People around the world watched on television.";
+      }
+      if (wantsMoon) {
+        return "The moon was formed long ago. It used to be closer to Earth. People have visited it in the past.";
+      }
+      return "Here is some information about the topic you asked about.";
+    },
+    rubrics: [
+      { label: "Speaks as a guide (welcoming/tour voice)", check: (out) => /\b(welcome|step (closer|inside|right up)|join me|on your (left|right)|notice)\b/i.test(out) },
+      { label: "Talks about the moon", check: (out) => /\bmoon\b/i.test(out) },
+      { label: "Uses present tense (no past-tense -ed verbs)", check: (out) => {
+          const pastWords = (out.match(/\b\w+ed\b/gi) || []).filter(w => !/^(red|bed|fed|wed|need|seed|feed|speed|breed|deed|reed|weed|indeed|exceed|proceed)$/i.test(w));
+          return pastWords.length === 0 && !/\b(was|were|had)\b/i.test(out);
+      }},
+      { label: "Uses present-tense action verbs (orbits/holds/reflects/etc.)", check: (out) => /\b(orbits|holds|reflects|glows|shines|circles|travels|changes|rises|sets|shows|brings)\b/i.test(out) }
+    ]
+  },
+
+  {
+    id: 7,
+    title: "Multiple-choice question about photosynthesis",
+    desc: "Get a single multiple-choice question about photosynthesis, with exactly 4 options labeled A-D.",
+    hint: "Say multiple-choice, name the topic, ask for 4 options labeled A, B, C, D.",
+    placeholder: "e.g. Write one multiple-choice question ...",
+    generate(prompt) {
+      const wantsMcq = has(prompt, 'multiple-choice', 'multiple choice', 'mcq');
+      const wantsPhoto = has(prompt, 'photosynthesis');
+      const want4 = extractAnyNumber(prompt) === 4 || has(prompt, 'four options');
+      const wantsLetters = has(prompt, 'a-d', 'a, b, c, d', 'labeled', 'options');
+      if (wantsMcq && wantsPhoto && want4 && wantsLetters) {
+        return "Which gas do plants take in during photosynthesis?\nA) Oxygen\nB) Carbon dioxide\nC) Nitrogen\nD) Helium";
+      }
+      if (wantsMcq && wantsPhoto) {
+        return "Photosynthesis happens in which part of a plant?\nLeaves\nRoots\nFlowers";
+      }
+      if (wantsPhoto) {
+        return "Photosynthesis is the process by which plants use sunlight, water, and carbon dioxide to make food.";
+      }
+      return "Here is a quiz about something.";
+    },
+    rubrics: [
+      { label: "Has a question (ends with ?)", check: (out) => /\?/.test(out.split('\n')[0]) },
+      { label: "Has exactly 4 options", check: (out) => {
+          const opts = out.split('\n').filter(l => /^[A-D][\)\.]\s/.test(l.trim()));
+          return opts.length === 4;
+      }},
+      { label: "Options labeled A, B, C, D", check: (out) => {
+          const labels = out.split('\n').map(l => l.trim()).filter(l => /^[A-D][\)\.]/.test(l)).map(l => l[0]);
+          return labels.join('') === 'ABCD';
+      }},
+      { label: "About photosynthesis", check: (out) => /photosynth/i.test(out) }
+    ]
+  },
+
+  {
+    id: 8,
+    title: "Numbered recipe — 5 steps, ingredients + total time",
+    desc: "Get a recipe with ingredients listed first, then exactly 5 numbered steps, and include the total time.",
+    hint: "Demand structure: a header for ingredients, exactly 5 numbered steps, and a 'Total time' line.",
+    placeholder: "e.g. Write a recipe for ...",
+    generate(prompt) {
+      const wantsRecipe = has(prompt, 'recipe');
+      const wantsIngredients = has(prompt, 'ingredient');
+      const wants5 = extractNumber(prompt, 'step') === 5 || has(prompt, '5 steps', 'five steps');
+      const wantsTime = has(prompt, 'total time', 'time included', 'how long');
+      const wantsNumbered = has(prompt, 'numbered', 'number the', '1.', '1)');
+      if (wantsRecipe && wantsIngredients && wants5 && wantsTime && wantsNumbered) {
+        return "Ingredients:\n- 2 slices of bread\n- 1 tablespoon peanut butter\n- 1 tablespoon jam\n\n1. Lay both slices of bread flat on a plate.\n2. Spread peanut butter evenly on one slice.\n3. Spread jam on the other slice.\n4. Press the two slices together.\n5. Cut in half and serve.\n\nTotal time: 5 minutes";
+      }
+      if (wantsRecipe && wantsIngredients && wants5) {
+        return "Ingredients:\n- bread\n- peanut butter\n- jam\n\n1. Get your bread.\n2. Add peanut butter.\n3. Add jam.\n4. Squish together.\n5. Eat.";
+      }
+      if (wantsRecipe) {
+        return "Easy peanut butter sandwich: grab two slices of bread, smear peanut butter and jam, press together and enjoy.";
+      }
+      return "Here is some food advice.";
+    },
+    rubrics: [
+      { label: "Has an 'Ingredients' section", check: (out) => /ingredient/i.test(out) },
+      { label: "Has exactly 5 numbered steps", check: (out) => out.split('\n').filter(l => /^\s*[1-9]\d?[\).]\s/.test(l)).length === 5 },
+      { label: "Steps are numbered 1-5 in order", check: (out) => {
+          const nums = out.split('\n').filter(l => /^\s*\d+[\).]\s/.test(l)).map(l => parseInt(l.match(/\d+/)[0], 10));
+          return nums.length === 5 && nums.every((n, i) => n === i + 1);
+      }},
+      { label: "Includes total time", check: (out) => /total time/i.test(out) && /\d+\s*(minute|min|hour|hr)/i.test(out) }
+    ]
+  },
+
+  {
+    id: 9,
+    title: "Friendly chatbot reply (under 30 words, no emoji)",
+    desc: "Get the AI to act as a friendly customer-support bot greeting a new user. Under 30 words, no emoji.",
+    hint: "Role: friendly support bot. Set a word cap. Forbid emoji.",
+    placeholder: "e.g. You are a friendly support bot ...",
+    generate(prompt) {
+      const wantsRole = has(prompt, 'support', 'chatbot', 'bot', 'assistant');
+      const wantsFriendly = has(prompt, 'friendly', 'warm', 'welcoming');
+      const wordLimit = extractNumber(prompt, 'word') || (has(prompt, 'under 30', 'less than 30') ? 30 : null);
+      const noEmoji = has(prompt, 'no emoji', 'without emoji', 'no emojis');
+      const wantsGreet = has(prompt, 'greet', 'greeting', 'welcome', 'new user');
+      if (wantsRole && wantsFriendly && wordLimit && wordLimit <= 40 && noEmoji && wantsGreet) {
+        return "Hi there, and welcome aboard. I am here to help with any questions about your account, orders, or settings. Just type what you need and I will jump in.";
+      }
+      if (wantsRole && wantsFriendly && wantsGreet) {
+        return "Hey! 👋 So great to meet you! I'm your friendly helper bot and I'm SO excited to chat with you today and help with absolutely anything you might need help with at any time! 🎉";
+      }
+      return "Hello user. State your issue.";
+    },
+    rubrics: [
+      { label: "Has a friendly greeting", check: (out) => /\b(hi|hello|hey|welcome)\b/i.test(out) },
+      { label: "Sounds like a support assistant", check: (out) => /\b(help|assist|support|question|need)\b/i.test(out) },
+      { label: "Under 30 words", check: (out) => out.trim().split(/\s+/).filter(Boolean).length < 30 },
+      { label: "No emoji", check: (out) => !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(out) }
+    ]
+  },
+
+  {
+    id: 10,
+    title: "Compare two animals in a markdown table",
+    desc: "Get a markdown table comparing a cat and a dog with at least 3 attributes (rows).",
+    hint: "Say markdown table. Name both animals as columns. Ask for at least 3 attribute rows.",
+    placeholder: "e.g. Make a markdown table comparing ...",
+    generate(prompt) {
+      const wantsTable = has(prompt, 'markdown', 'table');
+      const wantsCatDog = has(prompt, 'cat') && has(prompt, 'dog');
+      const wants3 = (extractAnyNumber(prompt) || 0) >= 3 || has(prompt, 'three');
+      if (wantsTable && wantsCatDog && wants3) {
+        return "| Attribute | Cat | Dog |\n|-----------|-----|-----|\n| Sound | Meow | Bark |\n| Diet | Carnivore | Omnivore |\n| Lifespan | 12-18 years | 10-13 years |\n| Common pet | Yes | Yes |";
+      }
+      if (wantsTable && wantsCatDog) {
+        return "| Cat | Dog |\n| Meow | Bark |";
+      }
+      if (wantsCatDog) {
+        return "Cats meow and dogs bark. Cats clean themselves; dogs need baths. Both are common pets.";
+      }
+      return "Animals come in many shapes and sizes.";
+    },
+    rubrics: [
+      { label: "Output is a markdown table (uses | and ---)", check: (out) => /\|/.test(out) && /\|\s*-+\s*\|/.test(out) },
+      { label: "Header row mentions both cat and dog", check: (out) => {
+          const header = out.split('\n').find(l => /\|/.test(l)) || '';
+          return /cat/i.test(header) && /dog/i.test(header);
+      }},
+      { label: "Has at least 3 data rows (after header)", check: (out) => {
+          const rows = out.split('\n').filter(l => /\|/.test(l) && !/^\s*\|?\s*-+/.test(l));
+          return rows.length >= 4; // header + 3 data
+      }}
+    ]
+  },
+
+  {
+    id: 11,
+    title: "Translate a phrase to Spanish — only the translation",
+    desc: "Get the Spanish translation of \"Good morning, how are you?\" and ONLY the translation (no English, no extras).",
+    hint: "Be very explicit: 'translate X into Spanish. Output only the translation, no extra text.'",
+    placeholder: "e.g. Translate the following ...",
+    generate(prompt) {
+      const wantsSpanish = has(prompt, 'spanish', 'español', 'espanol');
+      const wantsOnly = has(prompt, 'only the translation', 'no extra', 'no english', 'just the translation', 'nothing else', 'only output');
+      const hasPhrase = has(prompt, 'good morning') && (has(prompt, 'how are you') || has(prompt, "how're you"));
+      if (wantsSpanish && wantsOnly && hasPhrase) {
+        return "Buenos días, ¿cómo estás?";
+      }
+      if (wantsSpanish && hasPhrase) {
+        return "Sure! Here's the translation:\n\n\"Good morning, how are you?\" → \"Buenos días, ¿cómo estás?\"\n\nHope that helps!";
+      }
+      if (wantsSpanish) {
+        return "Spanish translation: Hola.";
+      }
+      return "Translation requested.";
+    },
+    rubrics: [
+      { label: "Contains the Spanish translation", check: (out) => /buenos d[ií]as/i.test(out) && /c[oó]mo est[aá]s/i.test(out) },
+      { label: "No English explanation included", check: (out) => !/translation|here['’]?s|hope|sure|original/i.test(out) && !/good morning/i.test(out) },
+      { label: "Output is short (under 12 words)", check: (out) => out.trim().split(/\s+/).filter(Boolean).length <= 12 }
+    ]
+  },
+
+  {
+    id: 12,
+    title: "Few-shot: classify sentence sentiment",
+    desc: "Show the AI 2 example sentences with sentiment labels (positive/negative), then ask it to classify \"This pizza is amazing.\"",
+    hint: "Provide 2 labeled examples (a positive and a negative). Then ask for the label of the new sentence. Format like: 'Sentence: ... Label: positive'.",
+    placeholder: "e.g. Sentence: I love sunny days. Label: positive ...",
+    generate(prompt) {
+      const hasExamples = (lower(prompt).match(/label:/g) || []).length >= 2;
+      const hasPositive = /label:\s*positive/i.test(prompt);
+      const hasNegative = /label:\s*negative/i.test(prompt);
+      const asksPizza = has(prompt, 'this pizza is amazing');
+      if (hasExamples && hasPositive && hasNegative && asksPizza) {
+        return "Label: positive";
+      }
+      if (hasExamples && asksPizza) {
+        return "Label: positive\nReasoning: The word 'amazing' suggests a positive feeling.";
+      }
+      if (asksPizza) {
+        return "The sentence describes a pizza in a complimentary way. It seems the speaker enjoys it. So the sentiment is probably good.";
+      }
+      return "Please give me examples and a target sentence.";
+    },
+    rubrics: [
+      { label: "Output classifies as 'positive'", check: (out) => /\bpositive\b/i.test(out) },
+      { label: "Uses the Label: format (matches examples)", check: (out) => /label\s*:\s*positive/i.test(out) },
+      { label: "Concise (under 10 words)", check: (out) => out.trim().split(/\s+/).filter(Boolean).length < 10 }
+    ]
+  }
+];
+
+/* ============================================================
+   UI / State
+   ============================================================ */
+
+let currentChallengeId = null;
+let lastResult = null;
+
+const $ = (id) => document.getElementById(id);
+
+function renderChallengeList() {
+  const ul = $('challengeList');
+  ul.innerHTML = '';
+  CHALLENGES.forEach(c => {
+    const li = document.createElement('li');
+    const best = getBestStars(c.id);
+    li.innerHTML = `<span class="challenge-num">#${c.id}</span>${escapeHtml(c.title)}<div class="star-row">${starString(best)}</div>`;
+    li.dataset.id = c.id;
+    if (c.id === currentChallengeId) li.classList.add('active');
+    li.addEventListener('click', () => selectChallenge(c.id));
+    ul.appendChild(li);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function starString(n) {
+  if (!n) return '☆☆☆ (not yet)';
+  return '★'.repeat(n) + '☆'.repeat(3 - n);
+}
+
+function selectChallenge(id) {
+  currentChallengeId = id;
+  const c = CHALLENGES.find(x => x.id === id);
+  $('targetTitle').textContent = `#${c.id}. ${c.title}`;
+  $('targetDesc').textContent = c.desc;
+  $('promptInput').value = '';
+  $('promptInput').placeholder = c.placeholder || 'Type your prompt here...';
+  $('mockOutput').textContent = '(run your prompt to see output)';
+  $('realOutputWrap').style.display = 'none';
+  $('realOutput').textContent = '(no real model output yet)';
+  $('rubricList').innerHTML = '<li style="color:var(--muted);">Run a prompt to see rubric results.</li>';
+  $('scoreStars').textContent = '☆☆☆';
+  $('scorePercent').textContent = '—';
+  $('tipArea').innerHTML = '';
+  renderChallengeList();
+  renderHistory();
+}
+
+function runPrompt() {
+  if (currentChallengeId == null) { alert('Pick a challenge first.'); return; }
+  const c = CHALLENGES.find(x => x.id === currentChallengeId);
+  const prompt = $('promptInput').value;
+  if (!prompt.trim()) { alert('Type a prompt first.'); return; }
+  const output = c.generate(prompt);
+  $('mockOutput').textContent = output;
+
+  const results = c.rubrics.map(r => ({ label: r.label, pass: !!r.check(output) }));
+  const passed = results.filter(r => r.pass).length;
+  const total = results.length;
+  const pct = Math.round((passed / total) * 100);
+  const wordCount = prompt.trim().split(/\s+/).filter(Boolean).length;
+  const concise = wordCount <= 35;
+  let stars = 0;
+  if (passed > 0) stars = 1;
+  if (passed === total) stars = 2;
+  if (passed === total && concise) stars = 3;
+
+  lastResult = { passed, total, pct, stars, prompt, output, wordCount, results };
+  renderRubrics(results);
+  $('scorePercent').textContent = `${pct}% (${passed}/${total})`;
+  $('scoreStars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+  renderTip(c, results, stars, wordCount, prompt);
+  saveAttempt(currentChallengeId, { prompt, output, pct, stars, wordCount, timestamp: Date.now() });
+  renderChallengeList();
+  renderHistory();
+
+  // also call real model if key + button user wants
+  if (getApiKey()) {
+    callRealModel(prompt);
+  }
+}
+
+function renderRubrics(results) {
+  const ul = $('rubricList');
+  ul.innerHTML = '';
+  results.forEach(r => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="rubric-mark ${r.pass ? 'pass' : 'fail'}">${r.pass ? '✓' : '✗'}</span><span>${escapeHtml(r.label)}</span>`;
+    ul.appendChild(li);
+  });
+}
+
+function renderTip(challenge, results, stars, wordCount, prompt) {
+  const tipArea = $('tipArea');
+  tipArea.innerHTML = '';
+  const failed = results.filter(r => !r.pass);
+  if (failed.length === 0 && stars === 3) {
+    tipArea.innerHTML = `<div class="tip-box success"><span class="tip-label">3 Stars!</span>All rubrics passed and your prompt was concise (${wordCount} words). Try another challenge!</div>`;
+    return;
+  }
+  if (failed.length === 0) {
+    tipArea.innerHTML = `<div class="tip-box success"><span class="tip-label">All rubrics pass.</span>Now try to make your prompt shorter (currently ${wordCount} words; under 35 earns 3 stars).</div>`;
+    return;
+  }
+  // Targeted tip based on first failed rubric
+  const first = failed[0];
+  const tip = tipFor(challenge, first, prompt);
+  tipArea.innerHTML = `<div class="tip-box"><span class="tip-label">Tip:</span>${escapeHtml(tip)}</div>`;
+}
+
+function tipFor(challenge, failedRubric, prompt) {
+  const label = failedRubric.label.toLowerCase();
+  if (label.includes('exactly') && label.includes('line')) return 'Your prompt may not name the exact line count. Try adding "in exactly 4 lines".';
+  if (label.includes('syllable')) return 'Tell the model the 5-7-5 syllable pattern explicitly (haiku style).';
+  if (label.includes('rhyme')) return 'Add a constraint like "no rhymes" so the model knows not to rhyme.';
+  if (label.includes('sentence')) return 'Specify the exact sentence count, e.g. "in exactly 2 sentences".';
+  if (label.includes('simple words') || label.includes('long words')) return 'Tell the model the audience age, e.g. "for a 6-year-old".';
+  if (label.includes('json')) return 'Use the word JSON and describe the shape: "a JSON array where each item has...".';
+  if (label.includes('legs')) return 'Name the required keys explicitly, e.g. "each item has a key called legs".';
+  if (label.includes('mammals')) return 'Say "mammals" — otherwise the model may include non-mammals.';
+  if (label.includes('exclamation')) return 'Add "no exclamation points" to your prompt.';
+  if (label.includes('60 words') || label.includes('30 words')) return 'Add a word limit, e.g. "under 60 words".';
+  if (label.includes('email')) return 'Ask for it to be formatted as an email with a greeting and sign-off.';
+  if (label.includes('decline')) return 'Use the word "decline" or "won\'t be able to attend" to make intent clear.';
+  if (label.includes('bullet')) return 'Use the words "bullet points" and specify the count.';
+  if (label.includes('verb')) return 'Add: "each bullet must start with a verb".';
+  if (label.includes('saving water')) return 'Name the topic explicitly: "about saving water".';
+  if (label.includes('guide')) return 'Set the role: "You are a museum guide. Talk to a group of visitors."';
+  if (label.includes('present tense')) return 'Add: "Use only present-tense verbs."';
+  if (label.includes('moon')) return 'Name the subject (the moon) directly in your prompt.';
+  if (label.includes('question') && label.includes('?')) return 'Ask for a single question that ends with a "?".';
+  if (label.includes('4 options') || label.includes('labeled')) return 'Specify "4 options labeled A, B, C, D".';
+  if (label.includes('photosynthesis')) return 'Mention "photosynthesis" explicitly in your prompt.';
+  if (label.includes('ingredients')) return 'Ask for an "Ingredients:" section before the steps.';
+  if (label.includes('5 numbered steps') || label.includes('numbered 1-5')) return 'Ask for "exactly 5 numbered steps (1., 2., 3., ...)".';
+  if (label.includes('total time')) return 'Add: "Include a Total time line at the end."';
+  if (label.includes('emoji')) return 'Add: "Do not use any emoji."';
+  if (label.includes('friendly')) return 'Set the tone: "You are a friendly support bot".';
+  if (label.includes('greeting')) return 'Ask for a greeting for a new user.';
+  if (label.includes('markdown table')) return 'Use the words "markdown table" so the model uses pipe (|) syntax.';
+  if (label.includes('both cat and dog')) return 'Name both animals in the prompt.';
+  if (label.includes('data rows')) return 'Specify "at least 3 rows of attributes".';
+  if (label.includes('spanish translation') || label.includes('contains the spanish')) return 'Name the source language pair and quote the exact phrase to translate.';
+  if (label.includes('no english')) return 'Add: "Output ONLY the translation. Do not include any English."';
+  if (label.includes('short') || label.includes('concise')) return 'Ask for a very short answer. Forbid extra commentary.';
+  if (label.includes('positive')) return 'Provide labeled examples so the model knows the format and labels to use.';
+  if (label.includes('label: format')) return 'Show 2 examples like "Sentence: X\\nLabel: positive" then ask for the new label.';
+  return 'Read the target carefully and add the missing constraint to your prompt.';
+}
+
+/* ---------- localStorage history ---------- */
+function historyKey(id) { return `promptforge_history_${id}`; }
+function bestKey(id) { return `promptforge_best_${id}`; }
+
+function saveAttempt(id, attempt) {
+  let hist = [];
+  try { hist = JSON.parse(localStorage.getItem(historyKey(id)) || '[]'); } catch {}
+  hist.unshift(attempt);
+  hist = hist.slice(0, 20);
+  try { localStorage.setItem(historyKey(id), JSON.stringify(hist)); } catch {}
+  const best = getBestStars(id);
+  if (attempt.stars > best) {
+    try { localStorage.setItem(bestKey(id), String(attempt.stars)); } catch {}
+  }
+}
+function getHistory(id) {
+  try { return JSON.parse(localStorage.getItem(historyKey(id)) || '[]'); } catch { return []; }
+}
+function getBestStars(id) {
+  try { return parseInt(localStorage.getItem(bestKey(id)) || '0', 10); } catch { return 0; }
+}
+function renderHistory() {
+  const ul = $('historyList');
+  ul.innerHTML = '';
+  if (currentChallengeId == null) return;
+  const hist = getHistory(currentChallengeId);
+  if (!hist.length) {
+    ul.innerHTML = '<li style="color:var(--muted); border:none;">No attempts yet for this challenge.</li>';
+    return;
+  }
+  hist.forEach(a => {
+    const li = document.createElement('li');
+    const stars = '★'.repeat(a.stars) + '☆'.repeat(3 - a.stars);
+    const when = new Date(a.timestamp).toLocaleString();
+    li.innerHTML = `
+      <div class="history-prompt">${escapeHtml(a.prompt)}</div>
+      <div class="history-meta">${stars} &middot; ${a.pct}% &middot; ${a.wordCount} words &middot; ${when}</div>
+    `;
+    ul.appendChild(li);
+  });
+}
+
+/* ---------- BYO Anthropic key ---------- */
+function getApiKey() { try { return localStorage.getItem('promptforge_anthropic_key') || ''; } catch { return ''; } }
+function setApiKey(k) { try { localStorage.setItem('promptforge_anthropic_key', k); } catch {} }
+function clearApiKey() { try { localStorage.removeItem('promptforge_anthropic_key'); } catch {} }
+
+function updateKeyStatus() {
+  const k = getApiKey();
+  if (k) {
+    $('keyStatus').textContent = `Key saved (***${k.slice(-4)})`;
+    $('apiKeyInput').value = '';
+    $('apiKeyInput').placeholder = '(key saved — leave blank or paste a new one)';
+  } else {
+    $('keyStatus').textContent = '';
+    $('apiKeyInput').placeholder = 'sk-ant-...';
+  }
+}
+
+async function callRealModel(prompt) {
+  const key = getApiKey();
+  if (!key) return;
+  $('realOutputWrap').style.display = 'block';
+  $('realOutput').textContent = '(calling api.anthropic.com...)';
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-haiku-latest',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      $('realOutput').textContent = `Error ${resp.status}: ${errText.slice(0, 300)}`;
+      return;
+    }
+    const data = await resp.json();
+    const text = (data.content || []).map(c => c.text || '').join('\n').trim() || '(empty response)';
+    $('realOutput').textContent = text;
+  } catch (e) {
+    $('realOutput').textContent = `Request failed: ${e.message}. (CORS or network issue — the real-model option is best-effort.)`;
+  }
+}
+
+/* ---------- Wire up ---------- */
+$('runBtn').addEventListener('click', runPrompt);
+$('clearBtn').addEventListener('click', () => { $('promptInput').value = ''; });
+$('hintBtn').addEventListener('click', () => {
+  if (currentChallengeId == null) return;
+  const c = CHALLENGES.find(x => x.id === currentChallengeId);
+  alert('Hint: ' + c.hint);
+});
+$('saveKeyBtn').addEventListener('click', () => {
+  const v = $('apiKeyInput').value.trim();
+  if (!v) { alert('Paste a key first (or leave the field empty and click Clear key to remove).'); return; }
+  setApiKey(v);
+  updateKeyStatus();
+});
+$('clearKeyBtn').addEventListener('click', () => {
+  clearApiKey();
+  $('apiKeyInput').value = '';
+  updateKeyStatus();
+  $('realOutputWrap').style.display = 'none';
+});
+
+// init
+renderChallengeList();
+selectChallenge(1);
+updateKeyStatus();
+</script>
+
+</body>
+</html>
