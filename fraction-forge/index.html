@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fraction Forge 🔨</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { min-height: 100%; font-family: 'Comic Sans MS', 'Chalkboard SE', system-ui, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #2c1810 0%, #5d3a1f 50%, #8b5a2b 100%);
+    min-height: 100vh;
+    user-select: none;
+    color: #2c1810;
+  }
+  #app { width: 100%; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 12px; }
+  .screen {
+    width: 100%; max-width: 980px;
+    padding: 16px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  h1 { font-size: clamp(2rem, 6vw, 3.4rem); color: #FFD700; text-shadow: 3px 3px 0 #2c1810, 6px 6px 0 rgba(0,0,0,0.3); margin: 8px 0; text-align: center; }
+  h2 { font-size: clamp(1.2rem, 3.5vw, 1.8rem); color: #FFE4B5; text-align: center; margin: 8px 0; text-shadow: 2px 2px 0 #2c1810; }
+  h3 { font-size: clamp(1rem, 3vw, 1.3rem); color: #5d3a1f; margin: 8px 0; }
+
+  .big-btn {
+    font-family: inherit;
+    font-size: clamp(1rem, 2.6vw, 1.4rem);
+    padding: 14px 24px;
+    border: 4px solid #FFE4B5;
+    border-radius: 20px;
+    cursor: pointer;
+    background: #c0392b;
+    color: white;
+    box-shadow: 0 6px 0 #7b1f15, 0 8px 16px rgba(0,0,0,0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin: 6px;
+    font-weight: bold;
+  }
+  .big-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #7b1f15, 0 4px 8px rgba(0,0,0,0.2); }
+  .big-btn.green { background: #4CAF50; box-shadow: 0 6px 0 #2e7031, 0 8px 16px rgba(0,0,0,0.3); }
+  .big-btn.green:active { box-shadow: 0 2px 0 #2e7031, 0 4px 8px rgba(0,0,0,0.2); }
+  .big-btn.blue { background: #2E86AB; box-shadow: 0 6px 0 #1c5670, 0 8px 16px rgba(0,0,0,0.3); }
+  .big-btn.purple { background: #9B59B6; box-shadow: 0 6px 0 #5e3470, 0 8px 16px rgba(0,0,0,0.3); }
+  .big-btn.gold { background: #FFD700; color: #2c1810; box-shadow: 0 6px 0 #b89400, 0 8px 16px rgba(0,0,0,0.3); border-color: #2c1810; }
+  .big-btn.gray { background: #777; box-shadow: 0 6px 0 #444; font-size: 0.95rem; padding: 10px 18px; }
+
+  .hero { font-size: clamp(4rem, 11vw, 6rem); animation: hammer 1.8s ease-in-out infinite; display: inline-block; }
+  @keyframes hammer { 0%,100% { transform: rotate(-10deg); } 50% { transform: rotate(15deg); } }
+
+  .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; width: 100%; max-width: 760px; margin-top: 18px; }
+  .mode-card {
+    background: #FFF8E7; border-radius: 20px; padding: 18px; text-align: center;
+    cursor: pointer; border: 4px solid #8b5a2b;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.3), 0 10px 18px rgba(0,0,0,0.2);
+    transition: transform 0.15s;
+  }
+  .mode-card:active { transform: scale(0.97); }
+  .mode-emoji { font-size: clamp(2.5rem, 6vw, 3.6rem); }
+  .mode-name { font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: bold; color: #5d3a1f; margin-top: 6px; }
+  .mode-desc { font-size: clamp(0.85rem, 2.2vw, 1rem); color: #7b5e3c; margin-top: 6px; }
+
+  .panel {
+    background: #FFF8E7; border-radius: 24px; padding: 18px;
+    box-shadow: 0 8px 0 rgba(0,0,0,0.3), 0 12px 24px rgba(0,0,0,0.2);
+    width: 100%; max-width: 880px;
+    margin: 10px 0;
+    border: 4px solid #8b5a2b;
+  }
+
+  .target-display {
+    text-align: center;
+    font-size: clamp(1rem, 2.8vw, 1.3rem);
+    color: #5d3a1f;
+    margin: 6px 0 12px;
+  }
+  .target-display .frac { font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: bold; color: #c0392b; }
+
+  .anvil {
+    background: linear-gradient(180deg, #555 0%, #333 100%);
+    border-radius: 16px;
+    padding: 14px;
+    min-height: 120px;
+    margin: 10px 0;
+    border: 4px solid #1a1a1a;
+    box-shadow: inset 0 4px 8px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .anvil-label {
+    position: absolute; top: 6px; left: 12px;
+    color: #FFD700; font-size: 0.9rem; font-weight: bold;
+    text-shadow: 1px 1px 0 #000;
+  }
+  .anvil-tiles {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    min-height: 60px; align-items: center;
+    padding-top: 20px;
+  }
+  .empty-anvil-msg { color: #999; font-style: italic; text-align: center; width: 100%; padding: 12px; }
+
+  .bars-row { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+  .bar-track {
+    position: relative; height: 30px;
+    background: #e0d0b0; border-radius: 8px;
+    border: 2px solid #5d3a1f;
+    overflow: hidden;
+  }
+  .bar-fill {
+    position: absolute; left: 0; top: 0; height: 100%;
+    background: linear-gradient(180deg, #c0392b 0%, #962d22 100%);
+    transition: width 0.3s;
+  }
+  .bar-target {
+    position: absolute; top: 0; height: 100%;
+    border-right: 3px dashed #FFD700;
+    pointer-events: none;
+  }
+  .bar-label { font-size: 0.85rem; color: #5d3a1f; font-weight: bold; }
+
+  .readout {
+    text-align: center; padding: 10px;
+    font-size: clamp(1rem, 2.6vw, 1.3rem);
+    color: #5d3a1f;
+  }
+  .readout .big { font-size: clamp(1.6rem, 4.5vw, 2.2rem); font-weight: bold; color: #c0392b; }
+
+  .tile-tray {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+    padding: 8px;
+  }
+  .tile {
+    cursor: pointer;
+    border: 3px solid #5d3a1f;
+    border-radius: 10px;
+    color: white;
+    font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.3), 0 6px 10px rgba(0,0,0,0.2);
+    transition: transform 0.1s;
+    height: 46px;
+    font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.4);
+  }
+  .tile:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+  .anvil-tile {
+    height: 38px; font-size: 0.95rem;
+    border: 2px solid #FFD700;
+    color: white; font-weight: bold;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    padding: 0 6px;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.4);
+  }
+  .anvil-tile:active { transform: scale(0.95); }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+
+  .feedback {
+    text-align: center; padding: 10px; margin: 8px 0;
+    border-radius: 14px; font-weight: bold;
+    font-size: clamp(1rem, 2.8vw, 1.3rem);
+    min-height: 40px;
+  }
+  .feedback.good { background: #d4edda; color: #155724; border: 3px solid #4CAF50; animation: pop 0.4s; }
+  .feedback.bad { background: #f8d7da; color: #721c24; border: 3px solid #E74C3C; animation: shake 0.4s; }
+  @keyframes pop { 0%{transform:scale(0.8);} 50%{transform:scale(1.1);} 100%{transform:scale(1);} }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+
+  .hint-bot {
+    background: linear-gradient(135deg, #4a148c 0%, #6a1b9a 100%);
+    color: white;
+    border-radius: 18px; padding: 16px;
+    margin: 10px 0;
+    border: 3px solid #FFD700;
+    box-shadow: 0 6px 0 #2a0a4a, 0 8px 16px rgba(0,0,0,0.3);
+  }
+  .hint-bot-header {
+    font-size: 1.2rem; font-weight: bold; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hint-bot-body { font-size: 1rem; line-height: 1.5; }
+  .hint-bot-body svg { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 6px; margin-top: 8px; }
+
+  .predict-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 14px 0; }
+  .predict-buttons .big-btn { min-width: 130px; }
+
+  .compare-display {
+    display: flex; align-items: center; justify-content: center;
+    gap: 20px; margin: 14px 0; flex-wrap: wrap;
+  }
+  .compare-side {
+    background: #fff; border: 3px solid #8b5a2b; border-radius: 14px;
+    padding: 14px; cursor: pointer; min-width: 160px;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+    text-align: center;
+  }
+  .compare-side:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(0,0,0,0.2); }
+  .compare-side.selected { border-color: #FFD700; background: #FFF3C4; }
+  .compare-frac { font-size: 2rem; font-weight: bold; color: #c0392b; }
+
+  .equiv-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; max-width: 600px; margin: 10px auto; }
+  .equiv-btn {
+    background: #fff; border: 3px solid #8b5a2b; border-radius: 14px;
+    padding: 14px; cursor: pointer; font-size: 1.5rem; font-weight: bold;
+    color: #c0392b; font-family: inherit;
+    box-shadow: 0 5px 0 rgba(0,0,0,0.2);
+  }
+  .equiv-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+  .equiv-btn.correct { background: #4CAF50; color: #fff; border-color: #2e7031; }
+  .equiv-btn.wrong { background: #E74C3C; color: #fff; border-color: #962d22; }
+  .equiv-btn.shown-correct { background: #c8e6c9; }
+
+  .topbar {
+    width: 100%; max-width: 880px; display: flex; justify-content: space-between;
+    align-items: center; padding: 6px 12px; margin-bottom: 6px;
+    color: #FFE4B5;
+  }
+  .score-chip {
+    background: rgba(0,0,0,0.4); padding: 6px 14px; border-radius: 20px;
+    border: 2px solid #FFD700; font-weight: bold;
+    color: #FFD700;
+  }
+
+  .dashboard-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px; width: 100%;
+  }
+  .stat-card {
+    background: #fff; border: 3px solid #8b5a2b; border-radius: 14px;
+    padding: 14px; text-align: center;
+  }
+  .stat-num { font-size: 2rem; font-weight: bold; color: #c0392b; }
+  .stat-label { font-size: 0.95rem; color: #5d3a1f; margin-top: 4px; }
+
+  .err-bar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 0.95rem; }
+  .err-bar-label { flex: 0 0 200px; color: #5d3a1f; }
+  .err-bar-wrap { flex: 1; background: #e0d0b0; border-radius: 6px; height: 22px; overflow: hidden; border: 2px solid #5d3a1f; }
+  .err-bar-fill { background: linear-gradient(90deg, #c0392b, #FFD700); height: 100%; }
+  .err-bar-count { flex: 0 0 30px; font-weight: bold; color: #5d3a1f; text-align: right; }
+
+  .equiv-target-bar {
+    display: flex; height: 40px; border: 3px solid #5d3a1f; border-radius: 8px; overflow: hidden;
+    margin: 8px auto; max-width: 600px;
+  }
+  .equiv-target-bar > div {
+    border-right: 2px solid #5d3a1f;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: bold; text-shadow: 1px 1px 0 #000;
+  }
+  .equiv-target-bar > div:last-child { border-right: none; }
+
+  .footer-tip {
+    text-align: center; color: #FFE4B5; font-size: 0.9rem;
+    margin-top: 10px; padding: 8px; opacity: 0.85;
+  }
+
+  @media (max-width: 600px) {
+    .tile { height: 40px; font-size: 0.85rem; }
+    .compare-side { min-width: 130px; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+
+// ---------- MATH UTILITIES ----------
+function gcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) { [a, b] = [b, a % b]; }
+  return a || 1;
+}
+function lcm(a, b) { return Math.abs(a * b) / gcd(a, b); }
+
+function makeFrac(n, d) {
+  if (d === 0) return { n: 0, d: 1 };
+  if (d < 0) { n = -n; d = -d; }
+  const g = gcd(Math.abs(n), d);
+  return { n: n / g, d: d / g };
+}
+function addFrac(a, b) {
+  return makeFrac(a.n * b.d + b.n * a.d, a.d * b.d);
+}
+function subFrac(a, b) {
+  return makeFrac(a.n * b.d - b.n * a.d, a.d * b.d);
+}
+function fracEq(a, b) {
+  const x = makeFrac(a.n, a.d), y = makeFrac(b.n, b.d);
+  return x.n === y.n && x.d === y.d;
+}
+function fracToDec(f) { return f.n / f.d; }
+function cmpFrac(a, b) {
+  const x = a.n * b.d, y = b.n * a.d;
+  return x < y ? -1 : x > y ? 1 : 0;
+}
+function fracStr(f) {
+  const s = makeFrac(f.n, f.d);
+  if (s.d === 1) return String(s.n);
+  return s.n + "/" + s.d;
+}
+
+// ---------- TILE DEFINITIONS ----------
+const TILE_DENOMS = [2, 3, 4, 6, 8, 12];
+const TILE_COLORS = {
+  2:  "#c0392b",
+  3:  "#2980b9",
+  4:  "#27ae60",
+  6:  "#8e44ad",
+  8:  "#e67e22",
+  12: "#16a085",
+};
+
+// ---------- STATE ----------
+const SAVE_KEY = "fraction_forge_v1";
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      return Object.assign(defaultState(), s);
+    }
+  } catch (e) {}
+  return defaultState();
+}
+function defaultState() {
+  return {
+    score: 0,
+    skill: { forge: { right: 0, wrong: 0 }, equiv: { right: 0, wrong: 0 }, predict: { right: 0, wrong: 0 }, compare: { right: 0, wrong: 0 } },
+    errors: [],          // history of {type, mode, ts}
+    recentErrors: [],    // last 3
+    predictions: [],     // {target, predictedSign, actualSign, correct, ts}
+  };
+}
+function saveState() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function resetState() {
+  state = defaultState();
+  saveState();
+}
+
+// ---------- ERROR CLASSIFIER (HINT BOT) ----------
+// type ids: "addNumDen", "wrongCommonDen", "flipped", "compareDen", "off"
+const ERROR_DESCRIPTIONS = {
+  addNumDen: {
+    title: "Adding numerators AND denominators",
+    body: "When adding fractions, only the TOP numbers add (after finding a common bottom). The bottom is the SIZE of the slice — it doesn't change just because you put more slices together.",
+    visual: "addNumDen",
+  },
+  wrongCommonDen: {
+    title: "Wrong common denominator",
+    body: "To add fractions, both bottoms must MATCH. Find the LCM (lowest common multiple). For 1/2 + 1/3, the matching bottom is 6 (because 2×3=6).",
+    visual: "wrongCommonDen",
+  },
+  flipped: {
+    title: "Numerator/denominator flipped",
+    body: "The TOP (numerator) is how many slices you have. The BOTTOM (denominator) is how many slices make a whole. 3/4 means 3 slices out of 4 — not 4 slices out of 3.",
+    visual: "flipped",
+  },
+  compareDen: {
+    title: "Comparing with different bottoms",
+    body: "A BIGGER bottom means SMALLER slices. 1/8 is smaller than 1/4! To compare fairly, give both fractions the SAME bottom first.",
+    visual: "compareDen",
+  },
+};
+
+// Classify an error given context.
+// ctx = { mode, target?, userFrac?, parts?, choice?, options?, left?, right? }
+function classifyError(ctx) {
+  if (ctx.mode === "forge") {
+    // userFrac was their sum on anvil; target is goal
+    if (!ctx.userFrac || !ctx.target) return "off";
+    // Did they likely add num+num and den+den from two parts?
+    if (ctx.parts && ctx.parts.length >= 2) {
+      // Simulate "naive add": sum-num = sum of numerators (each tile has num=1), sum-den = sum of denominators
+      const naiveN = ctx.parts.reduce((s, p) => s + p.n, 0);
+      const naiveD = ctx.parts.reduce((s, p) => s + p.d, 0);
+      const naive = makeFrac(naiveN, naiveD);
+      if (fracEq(naive, ctx.target)) return "addNumDen";
+    }
+    // Wrong common denominator: user's denominator doesn't match target after simplification check
+    const tNorm = makeFrac(ctx.target.n, ctx.target.d);
+    const uNorm = makeFrac(ctx.userFrac.n, ctx.userFrac.d);
+    if (uNorm.d !== tNorm.d && Math.abs(uNorm.n / uNorm.d - tNorm.n / tNorm.d) > 0.01) {
+      return "wrongCommonDen";
+    }
+    return "off";
+  }
+  if (ctx.mode === "equiv") {
+    if (!ctx.choice || !ctx.target) return "off";
+    // Flipped? choice equals target with num/den swapped
+    if (ctx.choice.n === ctx.target.d && ctx.choice.d === ctx.target.n) return "flipped";
+    // Added same number to top and bottom?
+    const tn = ctx.target.n, td = ctx.target.d;
+    const cn = ctx.choice.n, cd = ctx.choice.d;
+    if ((cn - tn) === (cd - td) && (cn - tn) !== 0) return "addNumDen";
+    return "wrongCommonDen";
+  }
+  if (ctx.mode === "compare") {
+    // Picked the one with bigger denominator thinking it's bigger
+    if (ctx.left && ctx.right && ctx.choice) {
+      const picked = ctx.choice;
+      const other = picked === "L" ? ctx.right : ctx.left;
+      const chosen = picked === "L" ? ctx.left : ctx.right;
+      if (chosen.d > other.d && chosen.n <= other.n) return "compareDen";
+    }
+    return "compareDen";
+  }
+  if (ctx.mode === "predict") return "off";
+  return "off";
+}
+
+function recordError(type, mode) {
+  const entry = { type, mode, ts: Date.now() };
+  state.errors.push(entry);
+  state.recentErrors.push(entry);
+  if (state.recentErrors.length > 3) state.recentErrors.shift();
+  saveState();
+}
+function recordRight(mode) {
+  state.skill[mode].right++;
+  state.score += 10;
+  saveState();
+}
+function recordWrong(mode) {
+  state.skill[mode].wrong++;
+  saveState();
+}
+
+// Check if last 3 errors are the same type -> trigger micro-lesson
+function checkPatternedError() {
+  if (state.recentErrors.length < 3) return null;
+  const t = state.recentErrors[state.recentErrors.length - 1].type;
+  if (state.recentErrors.every(e => e.type === t)) return t;
+  // 2 of last 3 same type also triggers a softer hint
+  const counts = {};
+  state.recentErrors.forEach(e => counts[e.type] = (counts[e.type] || 0) + 1);
+  for (const k in counts) if (counts[k] >= 2) return k;
+  return null;
+}
+
+// ---------- RENDER ----------
+const app = document.getElementById("app");
+
+function render(html) {
+  app.innerHTML = "";
+  const screen = document.createElement("div");
+  screen.className = "screen";
+  screen.innerHTML = html;
+  app.appendChild(screen);
+}
+
+function topbar(showBack) {
+  return `
+    <div class="topbar">
+      ${showBack ? '<button class="big-btn gray" onclick="goHome()">← Menu</button>' : '<span></span>'}
+      <span class="score-chip">🪙 ${state.score}</span>
+    </div>
+  `;
+}
+
+// ---------- HOME ----------
+function goHome() {
+  render(`
+    <h1><span class="hero">🔨</span> Fraction Forge</h1>
+    <h2>Pick your forge challenge</h2>
+    <div class="modes">
+      <div class="mode-card" onclick="startMode('forge')">
+        <div class="mode-emoji">🎯</div>
+        <div class="mode-name">Forge a Target</div>
+        <div class="mode-desc">Build a target fraction by dropping tiles on the anvil</div>
+      </div>
+      <div class="mode-card" onclick="startMode('equiv')">
+        <div class="mode-emoji">⚖️</div>
+        <div class="mode-name">Find Equivalents</div>
+        <div class="mode-desc">Spot fractions that are equal to the target</div>
+      </div>
+      <div class="mode-card" onclick="startMode('predict')">
+        <div class="mode-emoji">🔮</div>
+        <div class="mode-name">Predict & Reveal</div>
+        <div class="mode-desc">Guess MORE or LESS than 1, then forge it to check</div>
+      </div>
+      <div class="mode-card" onclick="startMode('compare')">
+        <div class="mode-emoji">📏</div>
+        <div class="mode-name">Which is Bigger?</div>
+        <div class="mode-desc">Compare two tricky fractions</div>
+      </div>
+      <div class="mode-card" onclick="showDashboard()" style="background:#FFF3C4;">
+        <div class="mode-emoji">👨‍👩‍👧</div>
+        <div class="mode-name">Parent Dashboard</div>
+        <div class="mode-desc">See progress + most common error patterns</div>
+      </div>
+    </div>
+    <div class="footer-tip">Drag-and-tap tiles work on phones, tablets, and computers.</div>
+    ${topbar(false)}
+  `);
+}
+
+// ---------- MODE DISPATCH ----------
+let mode = null;
+function startMode(m) {
+  mode = m;
+  if (m === "forge") newForge();
+  else if (m === "equiv") newEquiv();
+  else if (m === "predict") newPredict();
+  else if (m === "compare") newCompare();
+}
+
+// =============== FORGE MODE ===============
+let forgeState = null;
+
+function pickForgeTarget() {
+  // pick from achievable targets using our tile denominators
+  const candidates = [
+    { n: 5, d: 6 },
+    { n: 3, d: 4 },
+    { n: 7, d: 8 },
+    { n: 5, d: 12 },
+    { n: 2, d: 3 },
+    { n: 11, d: 12 },
+    { n: 1, d: 2 },
+    { n: 7, d: 12 },
+    { n: 5, d: 8 },
+  ];
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function newForge() {
+  forgeState = {
+    target: pickForgeTarget(),
+    tiles: [],   // array of {n:1, d}
+    feedback: null,
+    hint: null,
+    attempted: false,
+  };
+  renderForge();
+}
+
+function renderForge() {
+  const sum = forgeState.tiles.reduce((acc, t) => addFrac(acc, t), { n: 0, d: 1 });
+  const target = forgeState.target;
+  const sumDec = fracToDec(sum);
+  const targetDec = fracToDec(target);
+  const pct = Math.min(100, sumDec * 100);
+  const targetPct = Math.min(100, targetDec * 100);
+
+  render(`
+    ${topbar(true)}
+    <h2>🎯 Forge the target</h2>
+    <div class="panel">
+      <div class="target-display">Target: <span class="frac">${fracStr(target)}</span> (decimal ${targetDec.toFixed(3)})</div>
+
+      <div class="bars-row">
+        <div class="bar-label">Your forge:</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%"></div>
+          <div class="bar-target" style="left:${targetPct}%; width:0;"></div>
+        </div>
+      </div>
+
+      <div class="anvil">
+        <div class="anvil-label">🔨 ANVIL</div>
+        <div class="anvil-tiles">
+          ${forgeState.tiles.length === 0
+            ? '<div class="empty-anvil-msg">Tap fraction tiles below to place them on the anvil</div>'
+            : forgeState.tiles.map((t, i) =>
+              `<div class="anvil-tile" style="background:${TILE_COLORS[t.d]}; width:${Math.max(50, 320 / t.d)}px;" onclick="removeForgeTile(${i})" title="Tap to remove">1/${t.d}</div>`
+            ).join("")}
+        </div>
+      </div>
+
+      <div class="readout">
+        Sum on anvil: <span class="big">${fracStr(sum)}</span>
+        &nbsp;=&nbsp; <span>${sumDec.toFixed(3)}</span>
+      </div>
+
+      <h3 style="text-align:center;">Tile tray (tap to add)</h3>
+      <div class="tile-tray">
+        ${TILE_DENOMS.map(d =>
+          `<div class="tile" style="background:${TILE_COLORS[d]}; width:${Math.max(60, 360 / d)}px;" onclick="addForgeTile(${d})">1/${d}</div>`
+        ).join("")}
+      </div>
+
+      <div class="controls">
+        <button class="big-btn gold" onclick="checkForge()">✓ Check forge</button>
+        <button class="big-btn gray" onclick="clearForge()">Clear anvil</button>
+        <button class="big-btn blue" onclick="newForge()">New target</button>
+      </div>
+
+      ${forgeState.feedback ? `<div class="feedback ${forgeState.feedback.kind}">${forgeState.feedback.msg}</div>` : ""}
+      ${forgeState.hint ? renderHintBot(forgeState.hint) : ""}
+    </div>
+  `);
+}
+
+function addForgeTile(d) {
+  forgeState.tiles.push({ n: 1, d });
+  forgeState.feedback = null;
+  renderForge();
+}
+function removeForgeTile(i) {
+  forgeState.tiles.splice(i, 1);
+  forgeState.feedback = null;
+  renderForge();
+}
+function clearForge() {
+  forgeState.tiles = [];
+  forgeState.feedback = null;
+  forgeState.hint = null;
+  renderForge();
+}
+function checkForge() {
+  if (forgeState.tiles.length === 0) {
+    forgeState.feedback = { kind: "bad", msg: "Put at least one tile on the anvil!" };
+    renderForge();
+    return;
+  }
+  const sum = forgeState.tiles.reduce((acc, t) => addFrac(acc, t), { n: 0, d: 1 });
+  if (fracEq(sum, forgeState.target)) {
+    forgeState.feedback = { kind: "good", msg: "🎉 Perfectly forged! Sum simplifies to " + fracStr(forgeState.target) + "." };
+    forgeState.hint = null;
+    recordRight("forge");
+    state.recentErrors = []; // reset streak on win
+    saveState();
+    setTimeout(() => { newForge(); }, 1800);
+  } else {
+    forgeState.feedback = { kind: "bad", msg: "Not quite — your sum is " + fracStr(sum) + ", target is " + fracStr(forgeState.target) + "." };
+    const errType = classifyError({ mode: "forge", target: forgeState.target, userFrac: sum, parts: forgeState.tiles });
+    recordError(errType, "forge");
+    recordWrong("forge");
+    const patterned = checkPatternedError();
+    if (patterned && ERROR_DESCRIPTIONS[patterned]) forgeState.hint = patterned;
+    renderForge();
+  }
+}
+
+// =============== EQUIVALENTS MODE ===============
+let equivState = null;
+
+function newEquiv() {
+  // Pick a target fraction in lowest terms
+  const seeds = [{n:3,d:4},{n:2,d:3},{n:1,d:2},{n:3,d:5},{n:2,d:5},{n:5,d:6},{n:1,d:4},{n:1,d:3}];
+  const target = seeds[Math.floor(Math.random() * seeds.length)];
+
+  // Build options: 1 correct equivalent (scaled by 2 or 3), distractors
+  const scale = [2, 3, 4][Math.floor(Math.random() * 3)];
+  const correct = { n: target.n * scale, d: target.d * scale };
+
+  const options = [correct];
+  // Distractor: flipped
+  options.push({ n: target.d, d: target.n });
+  // Distractor: added same to top and bottom
+  const add = [1, 2, 3][Math.floor(Math.random() * 3)];
+  options.push({ n: target.n + add, d: target.d + add });
+  // Distractor: scaled only the numerator
+  options.push({ n: target.n * 2, d: target.d });
+
+  // dedupe + shuffle
+  const seen = new Set();
+  const unique = options.filter(o => {
+    const k = o.n + "/" + o.d;
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+  unique.sort(() => Math.random() - 0.5);
+
+  equivState = { target, options: unique, picked: null, feedback: null, hint: null };
+  renderEquiv();
+}
+
+function renderEquiv() {
+  const t = equivState.target;
+  // visual bar showing target
+  const slices = [];
+  for (let i = 0; i < t.d; i++) {
+    slices.push(`<div style="flex:1; background:${i < t.n ? TILE_COLORS[2] : "#e0d0b0"};">${i < t.n ? "■" : ""}</div>`);
+  }
+  render(`
+    ${topbar(true)}
+    <h2>⚖️ Find an equivalent fraction</h2>
+    <div class="panel">
+      <div class="target-display">Which of these equals <span class="frac">${fracStr(t)}</span>?</div>
+      <div class="equiv-target-bar">${slices.join("")}</div>
+      <div class="readout">Decimal: <span class="big">${fracToDec(t).toFixed(3)}</span></div>
+      <div class="equiv-options">
+        ${equivState.options.map((o, i) => {
+          let cls = "equiv-btn";
+          if (equivState.picked !== null) {
+            const isCorrect = fracEq(o, t);
+            if (i === equivState.picked) cls += isCorrect ? " correct" : " wrong";
+            else if (isCorrect) cls += " shown-correct";
+          }
+          return `<button class="${cls}" onclick="pickEquiv(${i})" ${equivState.picked !== null ? "disabled" : ""}>${o.n}/${o.d}</button>`;
+        }).join("")}
+      </div>
+      ${equivState.feedback ? `<div class="feedback ${equivState.feedback.kind}">${equivState.feedback.msg}</div>` : ""}
+      ${equivState.hint ? renderHintBot(equivState.hint) : ""}
+      <div class="controls">
+        <button class="big-btn blue" onclick="newEquiv()">Next ➜</button>
+      </div>
+    </div>
+  `);
+}
+
+function pickEquiv(i) {
+  if (equivState.picked !== null) return;
+  equivState.picked = i;
+  const choice = equivState.options[i];
+  const t = equivState.target;
+  if (fracEq(choice, t)) {
+    equivState.feedback = { kind: "good", msg: "🎉 Yes! " + fracStr(choice) + " = " + fracStr(t) + " (both = " + fracToDec(t).toFixed(3) + ")" };
+    recordRight("equiv");
+    state.recentErrors = [];
+    saveState();
+    setTimeout(() => { newEquiv(); }, 1800);
+  } else {
+    equivState.feedback = { kind: "bad", msg: choice.n + "/" + choice.d + " = " + fracToDec(choice).toFixed(3) + ", but " + fracStr(t) + " = " + fracToDec(t).toFixed(3) };
+    const errType = classifyError({ mode: "equiv", target: t, choice });
+    recordError(errType, "equiv");
+    recordWrong("equiv");
+    const patterned = checkPatternedError();
+    if (patterned && ERROR_DESCRIPTIONS[patterned]) equivState.hint = patterned;
+  }
+  renderEquiv();
+}
+
+// =============== PREDICT MODE ===============
+let predictState = null;
+
+function newPredict() {
+  // Pick two fractions with unlike denominators
+  const pairs = [
+    [{n:2,d:3},{n:1,d:4}], // 11/12 < 1
+    [{n:3,d:4},{n:1,d:2}], // 5/4 > 1
+    [{n:1,d:2},{n:1,d:3}], // 5/6 < 1
+    [{n:2,d:3},{n:1,d:2}], // 7/6 > 1
+    [{n:3,d:8},{n:1,d:4}], // 5/8 < 1
+    [{n:5,d:6},{n:1,d:4}], // 13/12 > 1
+    [{n:1,d:3},{n:1,d:6}], // 1/2 < 1
+    [{n:3,d:4},{n:3,d:8}], // 9/8 > 1
+  ];
+  const [a, b] = pairs[Math.floor(Math.random() * pairs.length)];
+  predictState = {
+    a, b,
+    prediction: null,  // "more" or "less"
+    predictionRecorded: false,
+    tiles: [],
+    revealed: false,
+    feedback: null,
+  };
+  renderPredict();
+}
+
+function renderPredict() {
+  const { a, b, prediction, revealed, tiles } = predictState;
+  const sum = revealed ? addFrac(a, b) : null;
+  const actualSign = sum ? (cmpFrac(sum, {n:1,d:1}) > 0 ? "more" : cmpFrac(sum, {n:1,d:1}) < 0 ? "less" : "equal") : null;
+  const userSum = tiles.reduce((acc, t) => addFrac(acc, t), {n:0,d:1});
+
+  render(`
+    ${topbar(true)}
+    <h2>🔮 Predict, then forge to reveal</h2>
+    <div class="panel">
+      <div class="target-display">
+        <span class="frac">${fracStr(a)}</span>
+        &nbsp;+&nbsp;
+        <span class="frac">${fracStr(b)}</span>
+      </div>
+
+      ${prediction === null ? `
+        <h3 style="text-align:center;">Step 1: Will the answer be MORE or LESS than 1?</h3>
+        <div class="predict-buttons">
+          <button class="big-btn green" onclick="recordPrediction('less')">⬇️ Less than 1</button>
+          <button class="big-btn purple" onclick="recordPrediction('more')">⬆️ More than 1</button>
+        </div>
+      ` : `
+        <div class="readout">Your prediction: <span class="big">${prediction === "more" ? "MORE than 1" : "LESS than 1"}</span></div>
+        ${!revealed ? `
+          <h3 style="text-align:center;">Step 2: Forge ${fracStr(a)} + ${fracStr(b)} on the anvil</h3>
+          <p style="text-align:center; color:#5d3a1f;">Tip: Use the same-size tiles for both fractions.</p>
+          <div class="anvil">
+            <div class="anvil-label">🔨 ANVIL</div>
+            <div class="anvil-tiles">
+              ${tiles.length === 0
+                ? '<div class="empty-anvil-msg">Tap tiles below to build the sum</div>'
+                : tiles.map((t,i) => `<div class="anvil-tile" style="background:${TILE_COLORS[t.d]};" onclick="removePredictTile(${i})">1/${t.d}</div>`).join("")}
+            </div>
+          </div>
+          <div class="readout">Anvil sum: <span class="big">${fracStr(userSum)}</span> (${fracToDec(userSum).toFixed(3)})</div>
+          <div class="tile-tray">
+            ${TILE_DENOMS.map(d =>
+              `<div class="tile" style="background:${TILE_COLORS[d]}; width:${Math.max(60, 360 / d)}px;" onclick="addPredictTile(${d})">1/${d}</div>`
+            ).join("")}
+          </div>
+          <div class="controls">
+            <button class="big-btn gold" onclick="revealPredict()">🔥 Reveal answer</button>
+            <button class="big-btn gray" onclick="clearPredictTiles()">Clear</button>
+          </div>
+        ` : `
+          <div class="readout">
+            ${fracStr(a)} + ${fracStr(b)} = <span class="big">${fracStr(sum)}</span> (${fracToDec(sum).toFixed(3)})
+          </div>
+          <div class="feedback ${prediction === actualSign ? "good" : "bad"}">
+            ${prediction === actualSign
+              ? `✓ Great prediction! ${fracStr(sum)} is ${actualSign === "more" ? "MORE" : "LESS"} than 1.`
+              : `Actually ${fracStr(sum)} is ${actualSign === "more" ? "MORE" : "LESS"} than 1. Your prediction was ${prediction.toUpperCase()}.`}
+          </div>
+          <div class="controls">
+            <button class="big-btn blue" onclick="newPredict()">Next ➜</button>
+          </div>
+        `}
+      `}
+
+      ${predictState.feedback ? `<div class="feedback ${predictState.feedback.kind}">${predictState.feedback.msg}</div>` : ""}
+    </div>
+  `);
+}
+
+function recordPrediction(p) {
+  predictState.prediction = p;
+  // Store BEFORE the reveal (per spec)
+  const actualSum = addFrac(predictState.a, predictState.b);
+  const actualSign = cmpFrac(actualSum, {n:1,d:1}) > 0 ? "more" : cmpFrac(actualSum, {n:1,d:1}) < 0 ? "less" : "equal";
+  state.predictions.push({
+    target: fracStr(predictState.a) + "+" + fracStr(predictState.b),
+    predictedSign: p,
+    actualSign,
+    correct: p === actualSign,
+    ts: Date.now(),
+  });
+  predictState.predictionRecorded = true;
+  saveState();
+  renderPredict();
+}
+function addPredictTile(d) { predictState.tiles.push({n:1,d}); renderPredict(); }
+function removePredictTile(i) { predictState.tiles.splice(i,1); renderPredict(); }
+function clearPredictTiles() { predictState.tiles = []; renderPredict(); }
+function revealPredict() {
+  predictState.revealed = true;
+  const actualSum = addFrac(predictState.a, predictState.b);
+  const actualSign = cmpFrac(actualSum, {n:1,d:1}) > 0 ? "more" : "less";
+  if (predictState.prediction === actualSign) {
+    recordRight("predict");
+    state.recentErrors = [];
+  } else {
+    recordWrong("predict");
+    recordError("off", "predict");
+  }
+  saveState();
+  renderPredict();
+}
+
+// =============== COMPARE MODE ===============
+let compareState = null;
+function newCompare() {
+  const pairs = [
+    [{n:3,d:5},{n:5,d:8}],
+    [{n:2,d:3},{n:3,d:4}],
+    [{n:5,d:6},{n:7,d:8}],
+    [{n:3,d:4},{n:5,d:6}],
+    [{n:1,d:3},{n:1,d:4}],
+    [{n:2,d:5},{n:3,d:8}],
+    [{n:7,d:12},{n:5,d:8}],
+    [{n:1,d:2},{n:5,d:12}],
+  ];
+  const [L, R] = pairs[Math.floor(Math.random() * pairs.length)];
+  compareState = { L, R, picked: null, feedback: null, hint: null };
+  renderCompare();
+}
+
+function renderCompare() {
+  const { L, R, picked, feedback, hint } = compareState;
+  const c = cmpFrac(L, R);
+  const winner = c > 0 ? "L" : c < 0 ? "R" : "EQ";
+  render(`
+    ${topbar(true)}
+    <h2>📏 Which one is bigger?</h2>
+    <div class="panel">
+      <div class="compare-display">
+        <div class="compare-side ${picked === "L" ? "selected" : ""}" onclick="${picked ? "" : "pickCompare('L')"}">
+          <div class="compare-frac">${fracStr(L)}</div>
+          ${picked ? `<div style="font-size:0.9rem; color:#5d3a1f; margin-top:6px;">${fracToDec(L).toFixed(3)}</div>` : ""}
+        </div>
+        <div style="font-size:2rem; color:#FFD700; text-shadow:2px 2px 0 #2c1810;">vs</div>
+        <div class="compare-side ${picked === "R" ? "selected" : ""}" onclick="${picked ? "" : "pickCompare('R')"}">
+          <div class="compare-frac">${fracStr(R)}</div>
+          ${picked ? `<div style="font-size:0.9rem; color:#5d3a1f; margin-top:6px;">${fracToDec(R).toFixed(3)}</div>` : ""}
+        </div>
+      </div>
+
+      ${feedback ? `<div class="feedback ${feedback.kind}">${feedback.msg}</div>` : `<p style="text-align:center; color:#5d3a1f;">Tap the BIGGER fraction</p>`}
+      ${hint ? renderHintBot(hint) : ""}
+
+      <div class="controls">
+        <button class="big-btn blue" onclick="newCompare()">Next ➜</button>
+      </div>
+    </div>
+  `);
+}
+function pickCompare(side) {
+  if (compareState.picked) return;
+  compareState.picked = side;
+  const { L, R } = compareState;
+  const c = cmpFrac(L, R);
+  const winner = c > 0 ? "L" : "R";
+  if (side === winner) {
+    compareState.feedback = { kind: "good", msg: "🎉 Correct! " + fracStr(side === "L" ? L : R) + " > " + fracStr(side === "L" ? R : L) };
+    recordRight("compare");
+    state.recentErrors = [];
+    saveState();
+  } else {
+    compareState.feedback = { kind: "bad", msg: fracStr(L) + " = " + fracToDec(L).toFixed(3) + " and " + fracStr(R) + " = " + fracToDec(R).toFixed(3) + ". The bigger one is " + fracStr(winner === "L" ? L : R) + "." };
+    const errType = classifyError({ mode: "compare", left: L, right: R, choice: side });
+    recordError(errType, "compare");
+    recordWrong("compare");
+    const patterned = checkPatternedError();
+    if (patterned && ERROR_DESCRIPTIONS[patterned]) compareState.hint = patterned;
+  }
+  renderCompare();
+}
+
+// ---------- HINT BOT RENDER ----------
+function renderHintBot(typeId) {
+  const info = ERROR_DESCRIPTIONS[typeId];
+  if (!info) return "";
+  return `
+    <div class="hint-bot">
+      <div class="hint-bot-header">🤖 Hint Bot noticed a pattern</div>
+      <div class="hint-bot-body">
+        <strong>${info.title}</strong><br>
+        ${info.body}
+        ${hintVisual(info.visual)}
+      </div>
+    </div>
+  `;
+}
+
+function hintVisual(kind) {
+  if (kind === "addNumDen") {
+    // show 1/2 + 1/2 visually = 1, not 2/4
+    return `
+      <svg width="100%" height="90" viewBox="0 0 360 90">
+        <text x="10" y="20" fill="#FFD700" font-family="inherit" font-size="13">1/2 + 1/2 = 1 (not 2/4)</text>
+        <rect x="10" y="30" width="160" height="24" fill="#c0392b" stroke="#FFD700" stroke-width="2"/>
+        <text x="80" y="48" fill="#fff" font-family="inherit" font-size="14" text-anchor="middle">1/2</text>
+        <text x="180" y="48" fill="#FFD700" font-family="inherit" font-size="18" text-anchor="middle">+</text>
+        <rect x="190" y="30" width="160" height="24" fill="#c0392b" stroke="#FFD700" stroke-width="2"/>
+        <text x="270" y="48" fill="#fff" font-family="inherit" font-size="14" text-anchor="middle">1/2</text>
+        <text x="180" y="80" fill="#FFD700" font-family="inherit" font-size="13" text-anchor="middle">= 1 whole</text>
+      </svg>`;
+  }
+  if (kind === "wrongCommonDen") {
+    return `
+      <svg width="100%" height="100" viewBox="0 0 360 100">
+        <text x="10" y="20" fill="#FFD700" font-family="inherit" font-size="13">1/2 + 1/3 → match bottoms to 6</text>
+        <text x="10" y="40" fill="#fff" font-family="inherit" font-size="12">1/2 = 3/6</text>
+        <rect x="10" y="46" width="150" height="20" fill="#2980b9" stroke="#FFD700" stroke-width="1"/>
+        <text x="170" y="40" fill="#fff" font-family="inherit" font-size="12">1/3 = 2/6</text>
+        <rect x="170" y="46" width="100" height="20" fill="#27ae60" stroke="#FFD700" stroke-width="1"/>
+        <text x="10" y="86" fill="#FFD700" font-family="inherit" font-size="13">3/6 + 2/6 = 5/6 ✓</text>
+      </svg>`;
+  }
+  if (kind === "flipped") {
+    return `
+      <svg width="100%" height="80" viewBox="0 0 360 80">
+        <text x="10" y="20" fill="#FFD700" font-family="inherit" font-size="13">3/4: TOP=have, BOTTOM=total</text>
+        <rect x="10" y="30" width="240" height="30" fill="none" stroke="#FFD700" stroke-width="2"/>
+        <rect x="10" y="30" width="60" height="30" fill="#c0392b"/>
+        <rect x="70" y="30" width="60" height="30" fill="#c0392b"/>
+        <rect x="130" y="30" width="60" height="30" fill="#c0392b"/>
+        <line x1="190" y1="30" x2="190" y2="60" stroke="#FFD700" stroke-width="2"/>
+        <text x="130" y="78" fill="#FFD700" font-family="inherit" font-size="12" text-anchor="middle">3 filled of 4 slices</text>
+      </svg>`;
+  }
+  if (kind === "compareDen") {
+    return `
+      <svg width="100%" height="90" viewBox="0 0 360 90">
+        <text x="10" y="18" fill="#FFD700" font-family="inherit" font-size="13">1/4 vs 1/8 — bigger bottom = smaller slice</text>
+        <rect x="10" y="26" width="80" height="20" fill="#27ae60" stroke="#FFD700"/>
+        <text x="100" y="40" fill="#fff" font-family="inherit" font-size="12">1/4</text>
+        <rect x="10" y="56" width="40" height="20" fill="#e67e22" stroke="#FFD700"/>
+        <text x="60" y="70" fill="#fff" font-family="inherit" font-size="12">1/8 (smaller!)</text>
+      </svg>`;
+  }
+  return "";
+}
+
+// ---------- PARENT DASHBOARD ----------
+function showDashboard() {
+  const errCounts = {};
+  state.errors.forEach(e => errCounts[e.type] = (errCounts[e.type] || 0) + 1);
+  const errLabels = {
+    addNumDen: "Added num + den together",
+    wrongCommonDen: "Wrong common denominator",
+    flipped: "Flipped numerator/denominator",
+    compareDen: "Compared wrong (bigger denom)",
+    off: "Other / miscellaneous",
+  };
+  const maxErr = Math.max(1, ...Object.values(errCounts));
+
+  const skillRow = (m, label) => {
+    const s = state.skill[m];
+    const total = s.right + s.wrong;
+    const pct = total ? Math.round(100 * s.right / total) : 0;
+    return `
+      <div class="stat-card">
+        <div class="stat-num">${pct}%</div>
+        <div class="stat-label">${label}<br>${s.right} ✓ / ${s.wrong} ✗</div>
+      </div>`;
+  };
+
+  render(`
+    ${topbar(true)}
+    <h2>👨‍👩‍👧 Parent Dashboard</h2>
+    <div class="panel">
+      <h3 style="text-align:center;">Mastery by skill</h3>
+      <div class="dashboard-grid">
+        ${skillRow("forge", "Forge a target")}
+        ${skillRow("equiv", "Equivalents")}
+        ${skillRow("predict", "Predict & reveal")}
+        ${skillRow("compare", "Compare")}
+      </div>
+
+      <h3 style="text-align:center; margin-top:18px;">Most common error patterns</h3>
+      ${Object.keys(errCounts).length === 0
+        ? '<p style="text-align:center; color:#5d3a1f;">No errors yet — keep playing to see patterns!</p>'
+        : Object.entries(errCounts).sort((a,b) => b[1]-a[1]).map(([t,c]) => `
+            <div class="err-bar-row">
+              <div class="err-bar-label">${errLabels[t] || t}</div>
+              <div class="err-bar-wrap"><div class="err-bar-fill" style="width:${(c/maxErr)*100}%;"></div></div>
+              <div class="err-bar-count">${c}</div>
+            </div>
+          `).join("")}
+
+      <h3 style="text-align:center; margin-top:18px;">Predict-then-reveal log (last 5)</h3>
+      ${state.predictions.length === 0
+        ? '<p style="text-align:center; color:#5d3a1f;">No predictions logged yet.</p>'
+        : state.predictions.slice(-5).reverse().map(p => `
+            <div style="padding:6px; border-bottom:1px dashed #8b5a2b; color:#5d3a1f;">
+              ${p.target}: predicted <strong>${p.predictedSign}</strong>, actual <strong>${p.actualSign}</strong>
+              ${p.correct ? "✓" : "✗"}
+            </div>
+          `).join("")}
+
+      <div class="controls">
+        <button class="big-btn gray" onclick="if(confirm('Reset all progress?')){resetState(); showDashboard();}">Reset progress</button>
+        <button class="big-btn blue" onclick="goHome()">← Back to menu</button>
+      </div>
+    </div>
+  `);
+}
+
+// ---------- BOOT + SELF TESTS ----------
+function selfTest() {
+  // Run quick assertions (logged to console only).
+  console.assert(fracEq(addFrac({n:1,d:2},{n:1,d:3}), {n:5,d:6}), "1/2 + 1/3 = 5/6");
+  console.assert(fracEq(addFrac({n:1,d:4},{n:1,d:4}), {n:1,d:2}), "1/4 + 1/4 = 1/2");
+  console.assert(fracEq(addFrac({n:1,d:2},{n:1,d:2}), {n:1,d:1}), "1/2 + 1/2 = 1");
+  console.assert(fracEq({n:3,d:4}, makeFrac(6,8)), "3/4 == 6/8");
+  console.assert(cmpFrac({n:3,d:5},{n:5,d:8}) < 0, "3/5 < 5/8");
+  console.assert(cmpFrac({n:2,d:3},{n:1,d:2}) > 0, "2/3 > 1/2");
+}
+selfTest();
+goHome();
+</script>
+</body>
+</html>
