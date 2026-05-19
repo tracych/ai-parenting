@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Letter Friends 🐻</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { min-height: 100%; font-family: 'Comic Sans MS', 'Chalkboard SE', system-ui, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #FFD1DC 0%, #B5EAD7 50%, #C7CEEA 100%);
+    user-select: none;
+    min-height: 100vh;
+  }
+  #app { width: 100%; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 16px; }
+  .screen {
+    width: 100%; max-width: 900px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  h1 { font-size: clamp(2rem, 6vw, 3.2rem); color: #FF6B9D; text-shadow: 3px 3px 0 #fff; margin: 8px 0; text-align: center; }
+  h2 { font-size: clamp(1.3rem, 4vw, 2rem); color: #5E60CE; text-align: center; margin: 8px 0; }
+  .subtitle { color: #5E60CE; font-size: clamp(1rem, 2.5vw, 1.2rem); margin-bottom: 12px; text-align: center; }
+
+  .big-btn {
+    font-family: inherit;
+    font-size: clamp(1.1rem, 2.8vw, 1.5rem);
+    padding: 14px 24px;
+    border: 4px solid #fff;
+    border-radius: 24px;
+    cursor: pointer;
+    background: #FF6B9D;
+    color: white;
+    box-shadow: 0 6px 0 #c4477b, 0 8px 16px rgba(0,0,0,0.2);
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin: 6px;
+    font-weight: bold;
+  }
+  .big-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c4477b, 0 4px 8px rgba(0,0,0,0.2); }
+  .big-btn.green { background: #4CAF50; box-shadow: 0 6px 0 #2e7031, 0 8px 16px rgba(0,0,0,0.2); }
+  .big-btn.green:active { box-shadow: 0 2px 0 #2e7031, 0 4px 8px rgba(0,0,0,0.2); }
+  .big-btn.blue { background: #2E86AB; box-shadow: 0 6px 0 #1c5670, 0 8px 16px rgba(0,0,0,0.2); }
+  .big-btn.blue:active { box-shadow: 0 2px 0 #1c5670, 0 4px 8px rgba(0,0,0,0.2); }
+  .big-btn.purple { background: #9B59B6; box-shadow: 0 6px 0 #5e3470, 0 8px 16px rgba(0,0,0,0.2); }
+  .big-btn.purple:active { box-shadow: 0 2px 0 #5e3470, 0 4px 8px rgba(0,0,0,0.2); }
+  .big-btn.gray { background: #888; box-shadow: 0 6px 0 #555, 0 8px 16px rgba(0,0,0,0.2); font-size: 0.95rem; padding: 8px 16px; }
+  .big-btn.gray:active { box-shadow: 0 2px 0 #555, 0 4px 8px rgba(0,0,0,0.2); }
+
+  .top-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+
+  /* Letter grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+    width: 100%;
+    margin: 12px 0;
+  }
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 12px 6px;
+    text-align: center;
+    cursor: pointer;
+    border: 4px solid #fff;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.08);
+    transition: transform 0.15s;
+    position: relative;
+    min-height: 130px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .card:active { transform: scale(0.95); }
+  .card .letter { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: bold; color: #5E60CE; line-height: 1; }
+  .card .friend-emoji { font-size: clamp(2rem, 6vw, 3rem); margin: 4px 0; }
+  .card .friend-name { font-size: clamp(0.7rem, 2vw, 0.9rem); color: #444; font-weight: bold; }
+  .card .star { position: absolute; top: 4px; right: 6px; font-size: 1.3rem; }
+  .card.visited { background: linear-gradient(135deg, #FFF9C4 0%, #FFE082 100%); }
+  .card.target { animation: pulse-target 1s ease-in-out infinite; }
+  @keyframes pulse-target { 0%, 100% { transform: scale(1); box-shadow: 0 6px 0 rgba(0,0,0,0.12), 0 0 0 0 rgba(255, 107, 157, 0.5); } 50% { transform: scale(1.05); box-shadow: 0 6px 0 rgba(0,0,0,0.12), 0 0 0 12px rgba(255, 107, 157, 0); } }
+
+  /* Letter detail */
+  .detail {
+    background: white;
+    border-radius: 32px;
+    padding: 24px;
+    margin: 16px 0;
+    width: 100%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    text-align: center;
+  }
+  .big-letter {
+    font-size: clamp(5rem, 18vw, 9rem);
+    color: #FF6B9D;
+    line-height: 1;
+    font-weight: bold;
+    text-shadow: 4px 4px 0 #FFD1DC;
+    display: inline-block;
+  }
+  .big-letter.wiggle { animation: wiggle 0.6s ease-in-out; }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    20% { transform: rotate(-10deg) scale(1.1); }
+    40% { transform: rotate(10deg) scale(1.1); }
+    60% { transform: rotate(-6deg) scale(1.1); }
+    80% { transform: rotate(6deg) scale(1.1); }
+  }
+  .big-friend { font-size: clamp(4rem, 14vw, 7rem); margin: 8px 0; display: inline-block; }
+  .big-friend.bounce { animation: bounce-big 0.8s ease-in-out; }
+  @keyframes bounce-big {
+    0%, 100% { transform: translateY(0); }
+    25% { transform: translateY(-30px) rotate(-10deg); }
+    50% { transform: translateY(0) rotate(0deg); }
+    75% { transform: translateY(-15px) rotate(10deg); }
+  }
+  .friend-name-big { font-size: clamp(1.4rem, 4vw, 2rem); color: #5E60CE; font-weight: bold; margin: 8px 0; }
+  .sound-label { font-size: clamp(1.1rem, 3vw, 1.5rem); color: #444; margin: 8px 0; }
+  .sound-label .sound { color: #FF6B9D; font-weight: bold; font-size: 1.3em; }
+
+  .word-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 16px 0; }
+  .word-pill {
+    background: #FFF8E7;
+    border: 3px solid #FFB347;
+    border-radius: 18px;
+    padding: 10px 14px;
+    text-align: center;
+    min-width: 90px;
+  }
+  .word-pill .emoji { font-size: clamp(2rem, 5vw, 2.8rem); display: block; }
+  .word-pill .word { font-size: clamp(0.9rem, 2.5vw, 1.1rem); color: #333; font-weight: bold; margin-top: 4px; }
+
+  .sentence-box {
+    background: linear-gradient(135deg, #B5EAD7 0%, #C7CEEA 100%);
+    border: 4px dashed #5E60CE;
+    border-radius: 20px;
+    padding: 16px;
+    margin: 16px 0;
+    font-size: clamp(1.1rem, 3.5vw, 1.6rem);
+    color: #333;
+    font-weight: bold;
+    line-height: 1.4;
+    min-height: 80px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 12px 0; }
+
+  /* Hunt mode */
+  .hunt-prompt {
+    background: white;
+    border-radius: 24px;
+    padding: 20px;
+    margin: 12px 0;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  .hunt-target { font-size: clamp(1.4rem, 4vw, 1.8rem); color: #5E60CE; font-weight: bold; }
+  .hunt-target .target-letter { color: #FF6B9D; font-size: 1.6em; }
+  .hunt-score { font-size: clamp(1rem, 2.5vw, 1.2rem); color: #444; margin-top: 8px; }
+  .card.hunt-mode { cursor: pointer; }
+  .card.hunt-right { background: #B5EAD7 !important; animation: shake-correct 0.5s; }
+  .card.hunt-wrong { background: #FFB3BA !important; animation: shake-wrong 0.4s; }
+  @keyframes shake-correct { 0%,100%{transform:scale(1);} 50%{transform:scale(1.15);} }
+  @keyframes shake-wrong { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+
+  /* Dashboard */
+  .dashboard {
+    background: white;
+    border-radius: 24px;
+    padding: 20px;
+    width: 100%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  .dashboard h2 { text-align: left; margin-bottom: 12px; }
+  .dash-summary {
+    background: #FFF8E7; border-radius: 16px; padding: 12px; margin-bottom: 12px;
+    font-size: clamp(0.95rem, 2.5vw, 1.1rem); color: #333;
+  }
+  .dash-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  .dash-table th, .dash-table td { padding: 8px 6px; text-align: left; border-bottom: 1px solid #eee; }
+  .dash-table th { background: #C7CEEA; color: #333; }
+  .dash-table .l { font-weight: bold; color: #5E60CE; font-size: 1.2rem; }
+  .empty-state { text-align: center; padding: 30px; color: #777; font-size: 1.1rem; }
+
+  .footer-note { font-size: 0.85rem; color: #555; text-align: center; margin: 12px 0; max-width: 600px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+'use strict';
+
+/* ---------- LETTER DATA ---------- */
+/* Each letter has: friend (emoji + name), sound (phonetic word), words [{emoji, word}],
+   bank {adj, animal, verb, adjFood, food} - each list of 3-5 items, ALL starting with letter. */
+const LETTERS = {
+  A: {
+    friend: '🐜', friendName: 'Ant',
+    sound: 'ah',
+    words: [{e:'🍎',w:'Apple'},{e:'✈️',w:'Airplane'},{e:'🥑',w:'Avocado'},{e:'🐊',w:'Alligator'}],
+    bank: {
+      adj: ['Awesome','Amazing','Artsy','Active'],
+      animal: ['Ant','Alligator','Antelope','Ape'],
+      verb: ['adds','asks','arranges','admires'],
+      adjFood: ['amazing','awesome','almond','apple'],
+      food: ['apples','apricots','almonds','avocados']
+    }
+  },
+  B: {
+    friend: '🐻', friendName: 'Bear',
+    sound: 'buh',
+    words: [{e:'🍌',w:'Banana'},{e:'🐝',w:'Bee'},{e:'⚽',w:'Ball'},{e:'🦋',w:'Butterfly'}],
+    bank: {
+      adj: ['Bouncy','Brave','Big','Bubbly'],
+      animal: ['Bear','Bunny','Bee','Beaver'],
+      verb: ['bakes','blows','builds','brings'],
+      adjFood: ['big','blue','buttery','beautiful'],
+      food: ['bagels','bananas','berries','biscuits']
+    }
+  },
+  C: {
+    friend: '🐱', friendName: 'Cat',
+    sound: 'kuh',
+    words: [{e:'🥕',w:'Carrot'},{e:'☁️',w:'Cloud'},{e:'🐄',w:'Cow'},{e:'🍪',w:'Cookie'}],
+    bank: {
+      adj: ['Curious','Cuddly','Cool','Clever'],
+      animal: ['Cat','Cow','Camel','Crab'],
+      verb: ['cooks','catches','carries','cuddles'],
+      adjFood: ['crunchy','colorful','chewy','cool'],
+      food: ['cookies','carrots','corn','cupcakes']
+    }
+  },
+  D: {
+    friend: '🐶', friendName: 'Dog',
+    sound: 'duh',
+    words: [{e:'🦆',w:'Duck'},{e:'🍩',w:'Donut'},{e:'🐬',w:'Dolphin'},{e:'🥁',w:'Drum'}],
+    bank: {
+      adj: ['Daring','Dizzy','Dancing','Dreamy'],
+      animal: ['Dog','Duck','Dolphin','Deer'],
+      verb: ['digs','dances','dives','draws'],
+      adjFood: ['delicious','dotted','dreamy','dripping'],
+      food: ['donuts','dumplings','dates','dragonfruit']
+    }
+  },
+  E: {
+    friend: '🐘', friendName: 'Elephant',
+    sound: 'eh',
+    words: [{e:'🥚',w:'Egg'},{e:'👁️',w:'Eye'},{e:'🦅',w:'Eagle'},{e:'🌽',w:'Ear of corn'}],
+    bank: {
+      adj: ['Eager','Excellent','Energetic','Earnest'],
+      animal: ['Elephant','Eagle','Eel','Emu'],
+      verb: ['eats','enjoys','explores','examines'],
+      adjFood: ['eight','enormous','extra','easy'],
+      food: ['eggs','enchiladas','edamame','eclairs']
+    }
+  },
+  F: {
+    friend: '🦊', friendName: 'Fox',
+    sound: 'fuh',
+    words: [{e:'🐸',w:'Frog'},{e:'🍟',w:'Fries'},{e:'🌸',w:'Flower'},{e:'🐟',w:'Fish'}],
+    bank: {
+      adj: ['Fluffy','Funny','Fast','Friendly'],
+      animal: ['Fox','Frog','Fish','Flamingo'],
+      verb: ['finds','flips','flies','feeds'],
+      adjFood: ['fresh','fruity','fancy','five'],
+      food: ['figs','fries','flapjacks','fruit']
+    }
+  },
+  G: {
+    friend: '🦒', friendName: 'Giraffe',
+    sound: 'guh',
+    words: [{e:'🍇',w:'Grapes'},{e:'🐐',w:'Goat'},{e:'🎁',w:'Gift'},{e:'🍏',w:'Green apple'}],
+    bank: {
+      adj: ['Goofy','Giant','Gentle','Glittery'],
+      animal: ['Giraffe','Goat','Gorilla','Goose'],
+      verb: ['grabs','giggles','gives','gallops'],
+      adjFood: ['great','green','golden','gooey'],
+      food: ['grapes','granola','gummies','greens']
+    }
+  },
+  H: {
+    friend: '🐹', friendName: 'Hamster',
+    sound: 'huh',
+    words: [{e:'🏠',w:'House'},{e:'🐴',w:'Horse'},{e:'🎩',w:'Hat'},{e:'🍯',w:'Honey'}],
+    bank: {
+      adj: ['Happy','Helpful','Huge','Honest'],
+      animal: ['Hamster','Horse','Hippo','Hen'],
+      verb: ['hops','hugs','hums','helps'],
+      adjFood: ['hot','honey','healthy','huge'],
+      food: ['hotdogs','honeydew','ham','hummus']
+    }
+  },
+  I: {
+    friend: '🦎', friendName: 'Iguana',
+    sound: 'ih',
+    words: [{e:'🍦',w:'Ice cream'},{e:'🧊',w:'Ice'},{e:'🐛',w:'Inchworm'},{e:'🏝️',w:'Island'}],
+    bank: {
+      adj: ['Itchy','Icy','Interesting','Imaginative'],
+      animal: ['Iguana','Inchworm','Ibis','Impala'],
+      verb: ['inspects','invites','inches','imagines'],
+      adjFood: ['icy','iced','incredible','irresistible'],
+      food: ['ice cream','icing','idli','imli']
+    }
+  },
+  J: {
+    friend: '🪼', friendName: 'Jellyfish',
+    sound: 'juh',
+    words: [{e:'🤹',w:'Juggler'},{e:'🍯',w:'Jam'},{e:'🥋',w:'Judo'},{e:'🧃',w:'Juice'}],
+    bank: {
+      adj: ['Jolly','Jumpy','Joyful','Jazzy'],
+      animal: ['Jellyfish','Jaguar','Jackal','Jay'],
+      verb: ['jumps','juggles','jogs','joins'],
+      adjFood: ['juicy','jiggly','jumbo','jellied'],
+      food: ['jam','jellybeans','juice','jicama']
+    }
+  },
+  K: {
+    friend: '🦘', friendName: 'Kangaroo',
+    sound: 'kuh',
+    words: [{e:'🪁',w:'Kite'},{e:'🔑',w:'Key'},{e:'🐨',w:'Koala'},{e:'👑',w:'King'}],
+    bank: {
+      adj: ['Kind','Kooky','Keen','Kingly'],
+      animal: ['Kangaroo','Koala','Kitten','Kingfisher'],
+      verb: ['kicks','keeps','knocks','knits'],
+      adjFood: ['kiwi','krunchy','keen','kingly'],
+      food: ['kiwis','ketchup','kale','kabobs']
+    }
+  },
+  L: {
+    friend: '🦁', friendName: 'Lion',
+    sound: 'luh',
+    words: [{e:'🐞',w:'Ladybug'},{e:'🍋',w:'Lemon'},{e:'🍃',w:'Leaf'},{e:'🦎',w:'Lizard'}],
+    bank: {
+      adj: ['Loud','Lazy','Little','Lucky'],
+      animal: ['Lion','Lamb','Ladybug','Lizard'],
+      verb: ['leaps','licks','laughs','listens'],
+      adjFood: ['lemony','little','luscious','large'],
+      food: ['lemons','lollipops','limes','lasagna']
+    }
+  },
+  M: {
+    friend: '🐵', friendName: 'Monkey',
+    sound: 'muh',
+    words: [{e:'🌙',w:'Moon'},{e:'🥭',w:'Mango'},{e:'🐭',w:'Mouse'},{e:'🍄',w:'Mushroom'}],
+    bank: {
+      adj: ['Mighty','Magical','Merry','Muddy'],
+      animal: ['Monkey','Mouse','Moose','Mole'],
+      verb: ['munches','makes','marches','mixes'],
+      adjFood: ['mighty','mini','minty','many'],
+      food: ['mangoes','muffins','macaroni','marshmallows']
+    }
+  },
+  N: {
+    friend: '🦊', friendName: 'Newt',
+    sound: 'nuh',
+    words: [{e:'🥜',w:'Nut'},{e:'🪺',w:'Nest'},{e:'🌃',w:'Night'},{e:'👃',w:'Nose'}],
+    bank: {
+      adj: ['Nice','Noisy','Nifty','Neat'],
+      animal: ['Newt','Nightingale','Numbat','Narwhal'],
+      verb: ['nibbles','naps','notices','nods'],
+      adjFood: ['nine','nutty','new','nice'],
+      food: ['nuts','noodles','nectarines','naan']
+    }
+  },
+  O: {
+    friend: '🐙', friendName: 'Octopus',
+    sound: 'ah',
+    words: [{e:'🍊',w:'Orange'},{e:'🦉',w:'Owl'},{e:'🫒',w:'Olive'},{e:'⭕',w:'O'}],
+    bank: {
+      adj: ['Odd','Orange','Open','Old'],
+      animal: ['Octopus','Owl','Ostrich','Otter'],
+      verb: ['opens','offers','orders','observes'],
+      adjFood: ['orange','open','olive','one'],
+      food: ['oranges','oats','olives','omelets']
+    }
+  },
+  P: {
+    friend: '🐧', friendName: 'Penguin',
+    sound: 'puh',
+    words: [{e:'🍕',w:'Pizza'},{e:'🐼',w:'Panda'},{e:'🐷',w:'Pig'},{e:'🍑',w:'Peach'}],
+    bank: {
+      adj: ['Polite','Purple','Playful','Peppy'],
+      animal: ['Penguin','Panda','Pig','Parrot'],
+      verb: ['paints','plays','picks','packs'],
+      adjFood: ['pink','pretty','perfect','puffy'],
+      food: ['pizza','pancakes','peaches','popcorn']
+    }
+  },
+  Q: {
+    friend: '🦆', friendName: 'Quail',
+    sound: 'kwuh',
+    words: [{e:'👑',w:'Queen'},{e:'❓',w:'Question'},{e:'🪡',w:'Quilt'},{e:'🤫',w:'Quiet'}],
+    bank: {
+      adj: ['Quick','Quiet','Quirky','Quaint'],
+      animal: ['Quail','Queen bee','Quokka','Quetzal'],
+      verb: ['quacks','quivers','quests','quiets'],
+      adjFood: ['quick','quality','quaint','quirky'],
+      food: ['quiche','quinoa','quesadillas','quince']
+    }
+  },
+  R: {
+    friend: '🐰', friendName: 'Rabbit',
+    sound: 'ruh',
+    words: [{e:'🌈',w:'Rainbow'},{e:'🚀',w:'Rocket'},{e:'🌹',w:'Rose'},{e:'🤖',w:'Robot'}],
+    bank: {
+      adj: ['Red','Rosy','Royal','Rad'],
+      animal: ['Rabbit','Raccoon','Rhino','Robin'],
+      verb: ['runs','reads','rolls','races'],
+      adjFood: ['red','round','ripe','really tasty'],
+      food: ['raspberries','rice','radishes','raisins']
+    }
+  },
+  S: {
+    friend: '🐍', friendName: 'Snake',
+    sound: 'sss',
+    words: [{e:'☀️',w:'Sun'},{e:'⭐',w:'Star'},{e:'🍓',w:'Strawberry'},{e:'🛼',w:'Skates'}],
+    bank: {
+      adj: ['Silly','Speedy','Sparkly','Sweet'],
+      animal: ['Snake','Squirrel','Seal','Sheep'],
+      verb: ['sings','swims','skips','spins'],
+      adjFood: ['sweet','sticky','small','six'],
+      food: ['strawberries','sandwiches','spaghetti','smoothies']
+    }
+  },
+  T: {
+    friend: '🐯', friendName: 'Tiger',
+    sound: 'tuh',
+    words: [{e:'🌳',w:'Tree'},{e:'🐢',w:'Turtle'},{e:'🚂',w:'Train'},{e:'🍅',w:'Tomato'}],
+    bank: {
+      adj: ['Tiny','Tough','Tickly','Twirly'],
+      animal: ['Tiger','Turtle','Toad','Toucan'],
+      verb: ['talks','tiptoes','twirls','tries'],
+      adjFood: ['tasty','tangy','tiny','two'],
+      food: ['tacos','tomatoes','toast','tangerines']
+    }
+  },
+  U: {
+    friend: '🦄', friendName: 'Unicorn',
+    sound: 'uh',
+    words: [{e:'☂️',w:'Umbrella'},{e:'🦄',w:'Unicorn'},{e:'⬆️',w:'Up'},{e:'🛸',w:'UFO'}],
+    bank: {
+      adj: ['Unique','Upbeat','Useful','Unicorn-y'],
+      animal: ['Unicorn','Urchin','Umbrellabird','Uakari'],
+      verb: ['uses','unwraps','unites','understands'],
+      adjFood: ['unusual','upside-down','ultra','umami'],
+      food: ['udon','ugli fruit','upside-down cake','uglifruit']
+    }
+  },
+  V: {
+    friend: '🐻‍❄️', friendName: 'Vole',
+    sound: 'vuh',
+    words: [{e:'🎻',w:'Violin'},{e:'🌋',w:'Volcano'},{e:'🚐',w:'Van'},{e:'🥦',w:'Vegetable'}],
+    bank: {
+      adj: ['Velvety','Vivid','Very nice','Vibrant'],
+      animal: ['Vole','Vulture','Viper','Veal cow'],
+      verb: ['visits','votes','views','volunteers'],
+      adjFood: ['violet','very yummy','vanilla','vibrant'],
+      food: ['vegetables','vanilla cake','veggie wraps','vichyssoise']
+    }
+  },
+  W: {
+    friend: '🐋', friendName: 'Whale',
+    sound: 'wuh',
+    words: [{e:'🍉',w:'Watermelon'},{e:'🐺',w:'Wolf'},{e:'🌊',w:'Wave'},{e:'🪱',w:'Worm'}],
+    bank: {
+      adj: ['Wiggly','Wonderful','Wild','Wise'],
+      animal: ['Whale','Wolf','Walrus','Worm'],
+      verb: ['waves','walks','whistles','wiggles'],
+      adjFood: ['warm','wiggly','wonderful','white'],
+      food: ['waffles','watermelon','walnuts','wraps']
+    }
+  },
+  X: {
+    friend: '🩻', friendName: 'X-ray fish',
+    sound: 'ks',
+    words: [{e:'🎄',w:'Xmas tree'},{e:'🎵',w:'Xylophone'},{e:'❌',w:'X'},{e:'🩻',w:'X-ray'}],
+    bank: {
+      adj: ['Extra','Excellent','Exciting','Extraordinary'],
+      animal: ['X-ray fish','Xerus','Xenops','Xolo dog'],
+      verb: ['examines','explores','exclaims','excites'],
+      adjFood: ['extra','exciting','excellent','expert'],
+      food: ['extra cheese','extra fruit','expert pizza','excellent pie']
+    }
+  },
+  Y: {
+    friend: '🪀', friendName: 'Yak',
+    sound: 'yuh',
+    words: [{e:'💛',w:'Yellow'},{e:'🧶',w:'Yarn'},{e:'🪀',w:'Yo-yo'},{e:'🥚',w:'Yolk'}],
+    bank: {
+      adj: ['Yellow','Yummy','Young','Yawning'],
+      animal: ['Yak','Yorkie','Yellowjacket','Yellow bird'],
+      verb: ['yells','yawns','yodels','yanks'],
+      adjFood: ['yellow','yummy','young','yum'],
+      food: ['yogurt','yams','yolk','yummy yogurt']
+    }
+  },
+  Z: {
+    friend: '🦓', friendName: 'Zebra',
+    sound: 'zzz',
+    words: [{e:'🦓',w:'Zebra'},{e:'⚡',w:'Zap'},{e:'🤐',w:'Zip'},{e:'0️⃣',w:'Zero'}],
+    bank: {
+      adj: ['Zippy','Zany','Zesty','Zigzag'],
+      animal: ['Zebra','Zebu','Zebrafish','Zorse'],
+      verb: ['zooms','zigzags','zips','zaps'],
+      adjFood: ['zesty','zippy','zingy','zero-sugar'],
+      food: ['zucchini','ziti','zeppoles','zoodles']
+    }
+  }
+};
+
+const ALPHABET = Object.keys(LETTERS);
+
+/* ---------- STATE ---------- */
+const STORAGE_KEY = 'letterFriends_v1';
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        parsed.visited = parsed.visited || {};
+        parsed.hunt = parsed.hunt || {};
+        return parsed;
+      }
+    }
+  } catch (e) {}
+  return { visited: {}, hunt: {} };
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+/* ---------- SPEECH ---------- */
+const speechSupported = (typeof window !== 'undefined') && ('speechSynthesis' in window) && (typeof SpeechSynthesisUtterance !== 'undefined');
+
+function speak(text, opts) {
+  if (!speechSupported) return;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = (opts && opts.rate) || 0.9;
+    u.pitch = (opts && opts.pitch) || 1.1;
+    u.volume = 1;
+    u.lang = 'en-US';
+    window.speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+/* ---------- HELPERS ---------- */
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function generateSentence(letter) {
+  const d = LETTERS[letter];
+  const b = d.bank;
+  const adj = pick(b.adj);
+  const animal = pick(b.animal);
+  const verb = pick(b.verb);
+  const adjFood = pick(b.adjFood);
+  const food = pick(b.food);
+  return adj + ' ' + animal + ' ' + verb + ' ' + adjFood + ' ' + food + '!';
+}
+
+/* ---------- VIEWS ---------- */
+let view = 'home'; // 'home' | 'detail' | 'hunt' | 'dash'
+let activeLetter = null;
+let currentSentence = '';
+let huntTarget = null;
+let huntFeedback = null; // {letter, ok}
+
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  const screen = document.createElement('div');
+  screen.className = 'screen';
+
+  if (view === 'home') renderHome(screen);
+  else if (view === 'detail') renderDetail(screen);
+  else if (view === 'hunt') renderHunt(screen);
+  else if (view === 'dash') renderDash(screen);
+
+  app.appendChild(screen);
+}
+
+function renderHome(root) {
+  const bar = document.createElement('div');
+  bar.className = 'top-bar';
+  bar.innerHTML = '<div></div>';
+  const right = document.createElement('div');
+  const huntBtn = mkBtn('🎯 Letter Hunt', 'big-btn purple', () => { view = 'hunt'; nextHuntTarget(); render(); });
+  const dashBtn = mkBtn('👨‍👩‍👧 For Grown-Ups', 'big-btn gray', () => { view = 'dash'; render(); });
+  right.appendChild(huntBtn);
+  right.appendChild(dashBtn);
+  bar.appendChild(right);
+  root.appendChild(bar);
+
+  const h1 = document.createElement('h1');
+  h1.textContent = 'Letter Friends 🐻🦊🐧';
+  root.appendChild(h1);
+  const sub = document.createElement('div');
+  sub.className = 'subtitle';
+  sub.textContent = 'Tap a letter to meet its friend!';
+  root.appendChild(sub);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  ALPHABET.forEach(L => grid.appendChild(makeLetterCard(L, false)));
+  root.appendChild(grid);
+
+  if (!speechSupported) {
+    const note = document.createElement('div');
+    note.className = 'footer-note';
+    note.textContent = '(Audio narration not available in this browser — letters and words are still shown!)';
+    root.appendChild(note);
+  }
+}
+
+function makeLetterCard(L, huntMode) {
+  const d = LETTERS[L];
+  const card = document.createElement('div');
+  card.className = 'card' + (state.visited[L] ? ' visited' : '') + (huntMode ? ' hunt-mode' : '');
+  if (huntMode && huntTarget === L) card.classList.add('target');
+  if (huntFeedback && huntFeedback.letter === L) {
+    card.classList.add(huntFeedback.ok ? 'hunt-right' : 'hunt-wrong');
+  }
+  card.innerHTML =
+    '<div class="letter">' + L + ' ' + L.toLowerCase() + '</div>' +
+    '<div class="friend-emoji">' + d.friend + '</div>' +
+    '<div class="friend-name">' + d.friendName + '</div>' +
+    (state.visited[L] ? '<div class="star">⭐</div>' : '');
+  card.addEventListener('click', () => {
+    if (huntMode) handleHuntTap(L);
+    else openLetter(L);
+  });
+  return card;
+}
+
+function openLetter(L) {
+  activeLetter = L;
+  state.visited[L] = (state.visited[L] || 0) + 1;
+  saveState();
+  currentSentence = generateSentence(L);
+  view = 'detail';
+  render();
+  // speak letter + sound on open
+  const d = LETTERS[L];
+  speak(L + '. ' + L.toLowerCase() + '. ' + d.sound + '.');
+}
+
+function renderDetail(root) {
+  const L = activeLetter;
+  const d = LETTERS[L];
+
+  const bar = document.createElement('div');
+  bar.className = 'top-bar';
+  bar.appendChild(mkBtn('⬅️ Back', 'big-btn blue', () => { view = 'home'; activeLetter = null; render(); }));
+  bar.appendChild(mkBtn('Next ➡️', 'big-btn green', () => {
+    const idx = ALPHABET.indexOf(L);
+    openLetter(ALPHABET[(idx + 1) % ALPHABET.length]);
+  }));
+  root.appendChild(bar);
+
+  const detail = document.createElement('div');
+  detail.className = 'detail';
+
+  const bigL = document.createElement('div');
+  bigL.className = 'big-letter wiggle';
+  bigL.textContent = L + ' ' + L.toLowerCase();
+  detail.appendChild(bigL);
+
+  const friendWrap = document.createElement('div');
+  const bigFriend = document.createElement('div');
+  bigFriend.className = 'big-friend bounce';
+  bigFriend.textContent = d.friend;
+  friendWrap.appendChild(bigFriend);
+  detail.appendChild(friendWrap);
+
+  const fname = document.createElement('div');
+  fname.className = 'friend-name-big';
+  fname.textContent = adjFriendlyName(L) + ' ' + d.friendName;
+  detail.appendChild(fname);
+
+  const sound = document.createElement('div');
+  sound.className = 'sound-label';
+  sound.innerHTML = 'Sound: <span class="sound">"' + d.sound + '"</span>';
+  detail.appendChild(sound);
+
+  // words
+  const words = document.createElement('div');
+  words.className = 'word-row';
+  d.words.forEach(item => {
+    const pill = document.createElement('div');
+    pill.className = 'word-pill';
+    pill.innerHTML = '<span class="emoji">' + item.e + '</span><div class="word">' + item.w + '</div>';
+    pill.addEventListener('click', () => speak(item.w));
+    words.appendChild(pill);
+  });
+  detail.appendChild(words);
+
+  // sentence
+  const sentBox = document.createElement('div');
+  sentBox.className = 'sentence-box';
+  sentBox.id = 'sentence-box';
+  sentBox.textContent = currentSentence;
+  detail.appendChild(sentBox);
+
+  const btns = document.createElement('div');
+  btns.className = 'btn-row';
+  btns.appendChild(mkBtn('📖 New silly story', 'big-btn purple', () => {
+    currentSentence = generateSentence(L);
+    document.getElementById('sentence-box').textContent = currentSentence;
+    speak(currentSentence);
+  }));
+  btns.appendChild(mkBtn('🔊 Say it!', 'big-btn green', () => speak(currentSentence)));
+  btns.appendChild(mkBtn('🔁 Letter sound', 'big-btn blue', () => speak(L + '. ' + d.sound)));
+  detail.appendChild(btns);
+
+  root.appendChild(detail);
+}
+
+function adjFriendlyName(L) {
+  // a friendly alliterative descriptor for the friend's name
+  const d = LETTERS[L];
+  return pick(d.bank.adj);
+}
+
+/* ---------- HUNT MODE ---------- */
+function nextHuntTarget() {
+  huntFeedback = null;
+  // pick a random letter, prefer ones with lower accuracy / fewer tries (slight bias)
+  const candidates = ALPHABET.slice();
+  huntTarget = pick(candidates);
+  if (speechSupported) {
+    const d = LETTERS[huntTarget];
+    setTimeout(() => speak('Find the letter ' + huntTarget + '. ' + huntTarget + ' says ' + d.sound), 120);
+  }
+}
+
+function handleHuntTap(L) {
+  if (!huntTarget) return;
+  if (huntFeedback) return; // wait for next round
+  const ok = (L === huntTarget);
+  const rec = state.hunt[huntTarget] || { tries: 0, correct: 0 };
+  rec.tries += 1;
+  if (ok) rec.correct += 1;
+  state.hunt[huntTarget] = rec;
+  saveState();
+  huntFeedback = { letter: L, ok: ok };
+  render();
+  if (ok) {
+    speak('Yes! ' + L + '!');
+    setTimeout(() => { nextHuntTarget(); render(); }, 900);
+  } else {
+    speak('That was ' + L + '. Try again!');
+    setTimeout(() => { huntFeedback = null; render(); }, 1000);
+  }
+}
+
+function renderHunt(root) {
+  const bar = document.createElement('div');
+  bar.className = 'top-bar';
+  bar.appendChild(mkBtn('⬅️ Back', 'big-btn blue', () => { view = 'home'; huntTarget = null; huntFeedback = null; render(); }));
+  bar.appendChild(mkBtn('🔊 Hear again', 'big-btn green', () => {
+    if (huntTarget) speak('Find the letter ' + huntTarget + '. ' + huntTarget + ' says ' + LETTERS[huntTarget].sound);
+  }));
+  root.appendChild(bar);
+
+  const h1 = document.createElement('h1');
+  h1.textContent = '🎯 Letter Hunt';
+  root.appendChild(h1);
+
+  const prompt = document.createElement('div');
+  prompt.className = 'hunt-prompt';
+  const totals = Object.values(state.hunt).reduce((a, r) => ({ t: a.t + r.tries, c: a.c + r.correct }), { t: 0, c: 0 });
+  prompt.innerHTML =
+    '<div class="hunt-target">Find: <span class="target-letter">' + (huntTarget || '?') + '</span> ' +
+    '<span style="font-size:0.7em">(says "' + (huntTarget ? LETTERS[huntTarget].sound : '') + '")</span></div>' +
+    '<div class="hunt-score">Score: ' + totals.c + ' / ' + totals.t + '</div>';
+  root.appendChild(prompt);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  ALPHABET.forEach(L => grid.appendChild(makeLetterCard(L, true)));
+  root.appendChild(grid);
+}
+
+/* ---------- DASHBOARD ---------- */
+function renderDash(root) {
+  const bar = document.createElement('div');
+  bar.className = 'top-bar';
+  bar.appendChild(mkBtn('⬅️ Back', 'big-btn blue', () => { view = 'home'; render(); }));
+  bar.appendChild(mkBtn('🗑️ Reset progress', 'big-btn gray', () => {
+    if (confirm('Reset all visit + hunt progress?')) {
+      state = { visited: {}, hunt: {} };
+      saveState();
+      render();
+    }
+  }));
+  root.appendChild(bar);
+
+  const h1 = document.createElement('h1');
+  h1.textContent = '👨‍👩‍👧 For Grown-Ups';
+  root.appendChild(h1);
+
+  const dash = document.createElement('div');
+  dash.className = 'dashboard';
+
+  const visitedCount = Object.keys(state.visited).length;
+  const huntLetters = Object.keys(state.hunt);
+  const huntTotals = Object.values(state.hunt).reduce((a, r) => ({ t: a.t + r.tries, c: a.c + r.correct }), { t: 0, c: 0 });
+  const overallAcc = huntTotals.t ? Math.round(100 * huntTotals.c / huntTotals.t) : null;
+
+  const summary = document.createElement('div');
+  summary.className = 'dash-summary';
+  summary.innerHTML =
+    '<div><b>Letters explored:</b> ' + visitedCount + ' / 26</div>' +
+    '<div><b>Letter Hunt rounds:</b> ' + huntTotals.t + (overallAcc !== null ? ' (' + overallAcc + '% correct overall)' : '') + '</div>';
+  dash.appendChild(summary);
+
+  if (visitedCount === 0 && huntTotals.t === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = 'No activity yet! Tap a letter on the main screen to get started.';
+    dash.appendChild(empty);
+  } else {
+    const table = document.createElement('table');
+    table.className = 'dash-table';
+    table.innerHTML = '<thead><tr><th>Letter</th><th>Friend</th><th>Visits</th><th>Hunt: correct / tries</th><th>Accuracy</th></tr></thead>';
+    const tbody = document.createElement('tbody');
+    ALPHABET.forEach(L => {
+      const visits = state.visited[L] || 0;
+      const hunt = state.hunt[L] || { tries: 0, correct: 0 };
+      const acc = hunt.tries ? Math.round(100 * hunt.correct / hunt.tries) + '%' : '—';
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="l">' + L + '</td>' +
+        '<td>' + LETTERS[L].friend + ' ' + LETTERS[L].friendName + '</td>' +
+        '<td>' + visits + '</td>' +
+        '<td>' + hunt.correct + ' / ' + hunt.tries + '</td>' +
+        '<td>' + acc + '</td>';
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    dash.appendChild(table);
+  }
+
+  root.appendChild(dash);
+
+  const tips = document.createElement('div');
+  tips.className = 'footer-note';
+  tips.innerHTML =
+    '<b>Parent tips:</b> Sit with your kid for the first few letters and repeat the sound. ' +
+    'Letter Hunt builds quick recognition — short sessions (3–5 minutes) work best for ages 3–5. ' +
+    'The silly sentences are great for talking about what alliteration is ("they all start the same!").';
+  root.appendChild(tips);
+}
+
+/* ---------- UTIL ---------- */
+function mkBtn(text, cls, onClick) {
+  const b = document.createElement('button');
+  b.className = cls;
+  b.textContent = text;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+/* ---------- INIT ---------- */
+// warm up voices on some browsers
+if (speechSupported) {
+  try { window.speechSynthesis.getVoices(); } catch (e) {}
+  window.speechSynthesis.onvoiceschanged = function () {};
+}
+
+render();
+</script>
+</body>
+</html>
