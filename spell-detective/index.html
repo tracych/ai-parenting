@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spell Detective 🔍🦉</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: 'Comic Sans MS', 'Chalkboard SE', system-ui, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #FFD89B 0%, #B6E0FE 100%);
+    overflow: hidden;
+    user-select: none;
+  }
+  #app { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .screen {
+    width: 100%; max-width: 900px; height: 100%; max-height: 100vh;
+    padding: 20px; display: flex; flex-direction: column; align-items: center;
+    overflow-y: auto;
+  }
+  h1 { font-size: clamp(2rem, 6vw, 3.5rem); color: #7B3F00; text-shadow: 3px 3px 0 #fff; margin: 10px 0; text-align: center; }
+  h2 { font-size: clamp(1.3rem, 4vw, 2rem); color: #2E86AB; text-align: center; margin: 10px 0; }
+  p { text-align: center; color: #333; font-size: clamp(1rem, 3vw, 1.3rem); line-height: 1.5; }
+
+  .big-btn {
+    font-family: inherit;
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    padding: 18px 32px;
+    border: 4px solid #fff;
+    border-radius: 24px;
+    cursor: pointer;
+    background: #FF6B35;
+    color: white;
+    box-shadow: 0 6px 0 #c44a1f, 0 8px 16px rgba(0,0,0,0.2);
+    transition: transform 0.1s, box-shadow 0.1s;
+    margin: 8px;
+    font-weight: bold;
+  }
+  .big-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c44a1f, 0 4px 8px rgba(0,0,0,0.2); }
+  .big-btn.green { background: #4CAF50; box-shadow: 0 6px 0 #2e7031, 0 8px 16px rgba(0,0,0,0.2); }
+  .big-btn.green:active { box-shadow: 0 2px 0 #2e7031, 0 4px 8px rgba(0,0,0,0.2); }
+  .big-btn.blue { background: #2E86AB; box-shadow: 0 6px 0 #1c5670, 0 8px 16px rgba(0,0,0,0.2); }
+  .big-btn.purple { background: #9B59B6; box-shadow: 0 6px 0 #5e3470, 0 8px 16px rgba(0,0,0,0.2); }
+  .big-btn.gray { background: #888; box-shadow: 0 6px 0 #555, 0 8px 16px rgba(0,0,0,0.2); font-size: 1rem; padding: 10px 20px; }
+
+  .hero { font-size: clamp(4rem, 12vw, 7rem); animation: bounce 2s ease-in-out infinite; }
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+  .levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; width: 100%; max-width: 700px; margin-top: 20px; }
+  .level-card {
+    background: white; border-radius: 24px; padding: 20px; text-align: center;
+    cursor: pointer; border: 5px solid transparent;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.15), 0 8px 16px rgba(0,0,0,0.1);
+    transition: transform 0.15s;
+  }
+  .level-card:active { transform: scale(0.97); }
+  .level-emoji { font-size: clamp(2.5rem, 7vw, 4rem); }
+  .level-name { font-size: clamp(1rem, 2.5vw, 1.2rem); font-weight: bold; color: #333; margin-top: 8px; }
+  .level-meta { font-size: 0.9rem; color: #666; margin-top: 4px; }
+  .level-badge { font-size: 1.2rem; margin-top: 4px; }
+
+  .clue-box {
+    background: white; border-radius: 32px; padding: 24px; margin: 16px 0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    width: 100%; max-width: 700px; text-align: center;
+  }
+  .clue-emoji { font-size: clamp(4rem, 14vw, 7rem); margin: 10px 0; animation: pop 0.4s ease-out; }
+  @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+  .clue-hint { font-size: clamp(1rem, 3vw, 1.3rem); color: #555; margin: 8px 0; font-style: italic; }
+
+  .speak-btn {
+    font-family: inherit;
+    font-size: clamp(1rem, 3vw, 1.3rem);
+    padding: 12px 24px;
+    border: 4px solid #fff;
+    border-radius: 24px;
+    background: #2E86AB;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #1c5670;
+    font-weight: bold;
+    margin: 10px;
+  }
+  .speak-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #1c5670; }
+
+  .suspects { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; width: 100%; max-width: 600px; margin: 16px 0; }
+  .suspect {
+    background: #FFF8E7; border: 5px solid #FFB347; border-radius: 20px;
+    padding: 20px; cursor: pointer; min-height: 90px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(1.5rem, 5vw, 2.4rem);
+    font-weight: bold; color: #333;
+    box-shadow: 0 6px 0 #d99840;
+    font-family: inherit;
+    letter-spacing: 2px;
+    transition: transform 0.1s;
+  }
+  .suspect:active { transform: translateY(3px); box-shadow: 0 3px 0 #d99840; }
+  .suspect.correct { background: #C8F7C5; border-color: #4CAF50; box-shadow: 0 6px 0 #2e7031; animation: shake-correct 0.5s; }
+  .suspect.wrong { background: #FFD6D6; border-color: #E74C3C; box-shadow: 0 6px 0 #962d22; animation: shake-wrong 0.4s; }
+  .suspect.show-correct { background: #C8F7C5; border-color: #4CAF50; box-shadow: 0 6px 0 #2e7031; }
+  .suspect .diff { color: #E74C3C; background: #FFE5E5; padding: 0 4px; border-radius: 6px; }
+  .suspect .same { color: #333; }
+  @keyframes shake-correct { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+  @keyframes shake-wrong { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+
+  .hud {
+    width: 100%; max-width: 700px;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(255,255,255,0.7); border-radius: 20px;
+    padding: 10px 16px; margin-bottom: 8px;
+    font-weight: bold; color: #333;
+  }
+  .hud-item { font-size: clamp(0.9rem, 2.5vw, 1.1rem); display: flex; align-items: center; gap: 6px; }
+  .streak { color: #FF6B35; }
+
+  .mascot-talk {
+    background: #fff; border: 4px solid #9B59B6; border-radius: 20px;
+    padding: 14px 18px; margin: 10px 0; max-width: 600px;
+    font-size: clamp(1rem, 3vw, 1.3rem); color: #333;
+    position: relative; text-align: center;
+  }
+  .mascot-talk .owl { font-size: 2rem; vertical-align: middle; }
+
+  .case-file {
+    background: linear-gradient(135deg, #FFE082, #FFB347);
+    border: 5px dashed #7B3F00; border-radius: 24px;
+    padding: 24px; margin: 16px 0; max-width: 600px; text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  }
+  .case-file h3 { font-size: clamp(1.4rem, 4vw, 2rem); color: #7B3F00; margin-bottom: 10px; }
+  .case-badge { font-size: 4rem; margin: 10px 0; }
+
+  .dash-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #fff; border-radius: 16px; padding: 12px 16px;
+    margin: 6px 0; box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    width: 100%; max-width: 600px;
+  }
+  .dash-row .word { font-weight: bold; color: #333; font-size: 1.2rem; }
+  .dash-row .stats { color: #555; font-size: 1rem; }
+  .dash-bar {
+    height: 8px; background: #eee; border-radius: 4px; overflow: hidden;
+    width: 80px; display: inline-block; vertical-align: middle; margin: 0 6px;
+  }
+  .dash-bar > div { height: 100%; background: #4CAF50; }
+
+  .top-bar { width: 100%; max-width: 700px; display: flex; justify-content: space-between; margin-bottom: 8px; }
+
+  .confetti {
+    position: fixed; top: -10px; font-size: 2rem;
+    animation: fall 2s linear forwards; z-index: 1000;
+  }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  .scroll { width: 100%; max-width: 700px; overflow-y: auto; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+'use strict';
+
+// ============================================================
+// WORD LISTS — leveled, each word has an emoji clue
+// (Dolch-list spirit + simple Grade 1/2 vocabulary)
+// ============================================================
+const LEVELS = [
+  {
+    id: 'preK',
+    name: 'Pre-K Sight Words',
+    emoji: '🐣',
+    words: [
+      { word: 'cat', emoji: '🐱' },
+      { word: 'dog', emoji: '🐶' },
+      { word: 'sun', emoji: '☀️' },
+      { word: 'pig', emoji: '🐷' },
+      { word: 'hat', emoji: '🎩' },
+      { word: 'cup', emoji: '🥤' },
+      { word: 'bed', emoji: '🛏️' },
+      { word: 'bus', emoji: '🚌' },
+      { word: 'red', emoji: '🟥' },
+      { word: 'top', emoji: '🔝' },
+      { word: 'box', emoji: '📦' },
+      { word: 'fox', emoji: '🦊' }
+    ]
+  },
+  {
+    id: 'k',
+    name: 'Kindergarten',
+    emoji: '🦁',
+    words: [
+      { word: 'frog', emoji: '🐸' },
+      { word: 'duck', emoji: '🦆' },
+      { word: 'bird', emoji: '🐦' },
+      { word: 'fish', emoji: '🐟' },
+      { word: 'star', emoji: '⭐' },
+      { word: 'moon', emoji: '🌙' },
+      { word: 'tree', emoji: '🌳' },
+      { word: 'bear', emoji: '🐻' },
+      { word: 'milk', emoji: '🥛' },
+      { word: 'rain', emoji: '🌧️' },
+      { word: 'cake', emoji: '🍰' },
+      { word: 'ball', emoji: '⚽' },
+      { word: 'book', emoji: '📖' },
+      { word: 'snow', emoji: '❄️' }
+    ]
+  },
+  {
+    id: 'g1',
+    name: 'Grade 1',
+    emoji: '🐯',
+    words: [
+      { word: 'apple', emoji: '🍎' },
+      { word: 'happy', emoji: '😊' },
+      { word: 'house', emoji: '🏠' },
+      { word: 'water', emoji: '💧' },
+      { word: 'horse', emoji: '🐴' },
+      { word: 'mouse', emoji: '🐭' },
+      { word: 'snake', emoji: '🐍' },
+      { word: 'plant', emoji: '🌱' },
+      { word: 'truck', emoji: '🚚' },
+      { word: 'queen', emoji: '👑' },
+      { word: 'sheep', emoji: '🐑' },
+      { word: 'cloud', emoji: '☁️' },
+      { word: 'green', emoji: '🟢' },
+      { word: 'bread', emoji: '🍞' },
+      { word: 'sleep', emoji: '😴' }
+    ]
+  },
+  {
+    id: 'g2',
+    name: 'Grade 2',
+    emoji: '🐉',
+    words: [
+      { word: 'friend', emoji: '🤝' },
+      { word: 'school', emoji: '🏫' },
+      { word: 'pretty', emoji: '🌸' },
+      { word: 'rabbit', emoji: '🐰' },
+      { word: 'orange', emoji: '🍊' },
+      { word: 'monkey', emoji: '🐵' },
+      { word: 'butter', emoji: '🧈' },
+      { word: 'turtle', emoji: '🐢' },
+      { word: 'rocket', emoji: '🚀' },
+      { word: 'flower', emoji: '🌼' },
+      { word: 'banana', emoji: '🍌' },
+      { word: 'dragon', emoji: '🐲' },
+      { word: 'pencil', emoji: '✏️' },
+      { word: 'planet', emoji: '🪐' }
+    ]
+  },
+  {
+    id: 'g2plus',
+    name: 'Tricky Words',
+    emoji: '🧙',
+    words: [
+      { word: 'because', emoji: '❓' },
+      { word: 'people', emoji: '👨‍👩‍👧' },
+      { word: 'beautiful', emoji: '🌈' },
+      { word: 'enough', emoji: '✋' },
+      { word: 'water', emoji: '💧' },
+      { word: 'laugh', emoji: '😂' },
+      { word: 'where', emoji: '📍' },
+      { word: 'their', emoji: '👥' },
+      { word: 'every', emoji: '💯' },
+      { word: 'little', emoji: '🐜' },
+      { word: 'thought', emoji: '💭' }
+    ]
+  }
+];
+
+const VOWELS = ['a', 'e', 'i', 'o', 'u'];
+const SILENT_E_WORDS = ['cake', 'snake', 'horse', 'plane', 'kite', 'bone'];
+
+// Set of all real words across the game so a distractor never accidentally is one
+const ALL_REAL_WORDS = new Set();
+LEVELS.forEach(l => l.words.forEach(w => ALL_REAL_WORDS.add(w.word.toLowerCase())));
+
+// ============================================================
+// DISTRACTOR GENERATOR — realistic kid-error patterns
+// ============================================================
+function isVowel(c) { return VOWELS.includes(c.toLowerCase()); }
+
+function vowelSwap(word) {
+  // swap a vowel for another vowel
+  const idxs = [];
+  for (let i = 0; i < word.length; i++) if (isVowel(word[i])) idxs.push(i);
+  if (!idxs.length) return null;
+  const i = idxs[Math.floor(Math.random() * idxs.length)];
+  const others = VOWELS.filter(v => v !== word[i].toLowerCase());
+  const replacement = others[Math.floor(Math.random() * others.length)];
+  return { word: word.slice(0, i) + replacement + word.slice(i + 1), type: 'vowel-swap' };
+}
+
+function doubleLetter(word) {
+  // double a consonant that isn't already doubled
+  const idxs = [];
+  for (let i = 1; i < word.length - 1; i++) {
+    if (!isVowel(word[i]) && word[i] !== word[i - 1] && word[i] !== word[i + 1]) idxs.push(i);
+  }
+  if (!idxs.length) return null;
+  const i = idxs[Math.floor(Math.random() * idxs.length)];
+  return { word: word.slice(0, i) + word[i] + word.slice(i), type: 'double-letter' };
+}
+
+function silentEDrop(word) {
+  // drop a trailing e
+  if (word.endsWith('e') && word.length > 3) {
+    return { word: word.slice(0, -1), type: 'silent-e-drop' };
+  }
+  return null;
+}
+
+function phoneticSub(word) {
+  // simple phonetic substitutions kids make
+  const subs = [
+    [/ph/g, 'f'],
+    [/tion/g, 'shun'],
+    [/ough/g, 'uff'],
+    [/ck/g, 'k'],
+    [/qu/g, 'kw'],
+    [/c([aou])/g, 'k$1'],
+    [/c([ei])/g, 's$1'],
+    [/ight/g, 'ite'],
+    [/au/g, 'o'],
+    [/ai/g, 'a'],
+    [/ea/g, 'e'],
+    [/ee/g, 'e'],
+    [/oo/g, 'u'],
+    [/y$/g, 'i']
+  ];
+  // try a few random subs that actually change the word
+  const shuffled = subs.slice().sort(() => Math.random() - 0.5);
+  for (const [pat, rep] of shuffled) {
+    const next = word.replace(pat, rep);
+    if (next !== word) return { word: next, type: 'phonetic-sub' };
+  }
+  return null;
+}
+
+function letterReverse(word) {
+  // swap two adjacent letters
+  if (word.length < 3) return null;
+  const i = 1 + Math.floor(Math.random() * (word.length - 2));
+  if (word[i] === word[i + 1]) return null;
+  return {
+    word: word.slice(0, i) + word[i + 1] + word[i] + word.slice(i + 2),
+    type: 'letter-reverse'
+  };
+}
+
+function dropLetter(word) {
+  // drop a middle letter (common kid error)
+  if (word.length < 4) return null;
+  const i = 1 + Math.floor(Math.random() * (word.length - 2));
+  return { word: word.slice(0, i) + word.slice(i + 1), type: 'drop-letter' };
+}
+
+const DISTRACTOR_FNS = [vowelSwap, doubleLetter, silentEDrop, phoneticSub, letterReverse, dropLetter];
+
+function generateDistractors(correct, count = 3) {
+  const target = correct.toLowerCase();
+  const seen = new Set([target]);
+  const out = [];
+  let attempts = 0;
+  const maxAttempts = 200;
+
+  // Try every rule across many shufflings to fill the slate
+  while (out.length < count && attempts < maxAttempts) {
+    attempts++;
+    const fn = DISTRACTOR_FNS[Math.floor(Math.random() * DISTRACTOR_FNS.length)];
+    const result = fn(target);
+    if (!result) continue;
+    const candidate = result.word.toLowerCase();
+    // must differ from target, not be a known real word, not duplicate
+    if (candidate === target) continue;
+    if (seen.has(candidate)) continue;
+    if (ALL_REAL_WORDS.has(candidate)) continue;
+    if (candidate.length === 0) continue;
+    seen.add(candidate);
+    out.push({ word: candidate, type: result.type });
+  }
+
+  // Fallback — if generators couldn't fill, mutate vowels deterministically
+  let i = 0;
+  while (out.length < count) {
+    const swap = VOWELS[i % VOWELS.length];
+    let mutated = '';
+    let did = false;
+    for (let k = 0; k < target.length; k++) {
+      if (!did && isVowel(target[k]) && target[k] !== swap) {
+        mutated += swap; did = true;
+      } else mutated += target[k];
+    }
+    if (!did) mutated = target + swap;
+    if (!seen.has(mutated) && mutated !== target) {
+      seen.add(mutated);
+      out.push({ word: mutated, type: 'vowel-swap' });
+    }
+    i++;
+    if (i > 50) { // last-ditch: append i/j/k...
+      const c = String.fromCharCode(120 + (out.length));
+      const fb = target + c;
+      if (!seen.has(fb)) { seen.add(fb); out.push({ word: fb, type: 'fallback' }); }
+    }
+  }
+  return out;
+}
+
+// ============================================================
+// PROGRESS STATE
+// ============================================================
+const STATE_KEY = 'spell-detective-state-v1';
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { completedLevels: {}, stats: { words: {}, errorTypes: {} }, streak: 0 };
+}
+function saveState() {
+  try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+let state = loadState();
+
+function recordResult(word, correct, errorType) {
+  if (!state.stats.words[word]) state.stats.words[word] = { right: 0, wrong: 0 };
+  if (correct) state.stats.words[word].right++;
+  else {
+    state.stats.words[word].wrong++;
+    if (errorType) {
+      state.stats.errorTypes[errorType] = (state.stats.errorTypes[errorType] || 0) + 1;
+    }
+  }
+  saveState();
+}
+
+// ============================================================
+// SPEECH
+// ============================================================
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.85;
+    u.pitch = 1.1;
+    u.lang = 'en-US';
+    window.speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+const app = document.getElementById('app');
+function render(html) { app.innerHTML = `<div class="screen">${html}</div>`; }
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ----- Home -----
+function showHome() {
+  render(`
+    <div class="hero">🔍🦉</div>
+    <h1>Spell Detective</h1>
+    <p>Help Inspector Owl catch the misspellings!</p>
+    <div style="margin-top:24px;">
+      <button class="big-btn green" id="play">Start Investigation</button>
+      <button class="big-btn purple" id="parent">For Grown-Ups</button>
+    </div>
+    <p style="margin-top:16px; font-size:0.95rem; color:#555;">Tap a correct spelling. Earn case files. Become a Master Detective!</p>
+  `);
+  document.getElementById('play').onclick = showLevels;
+  document.getElementById('parent').onclick = showParent;
+}
+
+// ----- Level Select -----
+function showLevels() {
+  const cards = LEVELS.map(l => {
+    const done = state.completedLevels[l.id] ? '🏅' : '';
+    return `
+      <div class="level-card" data-id="${l.id}">
+        <div class="level-emoji">${l.emoji}</div>
+        <div class="level-name">${l.name}</div>
+        <div class="level-meta">${l.words.length} words</div>
+        <div class="level-badge">${done}</div>
+      </div>
+    `;
+  }).join('');
+  render(`
+    <div class="top-bar">
+      <button class="big-btn gray" id="back">← Home</button>
+      <div></div>
+    </div>
+    <h1>Pick a Case</h1>
+    <div class="levels">${cards}</div>
+  `);
+  document.getElementById('back').onclick = showHome;
+  document.querySelectorAll('.level-card').forEach(card => {
+    card.onclick = () => startLevel(card.dataset.id);
+  });
+}
+
+// ----- Gameplay -----
+let session = null;
+
+function startLevel(levelId) {
+  const level = LEVELS.find(l => l.id === levelId);
+  session = {
+    level,
+    queue: shuffle(level.words).slice(0, 10), // 10 questions per case
+    index: 0,
+    correctThisLevel: 0,
+    wrongThisLevel: 0
+  };
+  nextQuestion();
+}
+
+function nextQuestion() {
+  if (session.index >= session.queue.length) {
+    completeLevel();
+    return;
+  }
+  const target = session.queue[session.index];
+  const distractors = generateDistractors(target.word, 3);
+  const options = shuffle([
+    { word: target.word, correct: true, type: null },
+    ...distractors.map(d => ({ word: d.word, correct: false, type: d.type }))
+  ]);
+
+  // sanity check uniqueness
+  const seen = new Set();
+  const dedup = [];
+  for (const o of options) {
+    if (!seen.has(o.word)) { seen.add(o.word); dedup.push(o); }
+  }
+  while (dedup.length < 4) {
+    const extra = generateDistractors(target.word, 4 - dedup.length);
+    for (const e of extra) {
+      if (!seen.has(e.word)) { seen.add(e.word); dedup.push({ word: e.word, correct: false, type: e.type }); }
+    }
+    if (dedup.length < 4) break; // safety
+  }
+
+  renderQuestion(target, dedup);
+}
+
+function renderQuestion(target, options) {
+  const suspectHtml = options.map((o, i) => `
+    <button class="suspect" data-i="${i}">${o.word}</button>
+  `).join('');
+
+  render(`
+    <div class="hud">
+      <div class="hud-item">📁 ${session.level.name}</div>
+      <div class="hud-item">Q ${session.index + 1}/${session.queue.length}</div>
+      <div class="hud-item streak">🔥 ${state.streak}</div>
+    </div>
+    <div class="clue-box">
+      <div class="clue-emoji">${target.emoji}</div>
+      <button class="speak-btn" id="speak">🔊 Hear the word</button>
+      <div class="clue-hint">Which spelling is the real word?</div>
+    </div>
+    <div class="suspects">${suspectHtml}</div>
+    <div class="mascot-talk" id="msg"><span class="owl">🦉</span> Look carefully, detective!</div>
+    <div class="top-bar" style="justify-content:center; margin-top:10px;">
+      <button class="big-btn gray" id="quit">Quit Case</button>
+    </div>
+  `);
+
+  document.getElementById('speak').onclick = () => speak(target.word);
+  document.getElementById('quit').onclick = showLevels;
+  // auto-speak on load
+  setTimeout(() => speak(target.word), 300);
+
+  document.querySelectorAll('.suspect').forEach(btn => {
+    btn.onclick = () => handleAnswer(parseInt(btn.dataset.i), target, options);
+  });
+}
+
+function diffMarkup(picked, correct) {
+  // highlight letters that differ between picked & correct (aligned from left)
+  const max = Math.max(picked.length, correct.length);
+  let p = ''; let c = '';
+  for (let i = 0; i < max; i++) {
+    const pi = picked[i] || '';
+    const ci = correct[i] || '';
+    if (pi !== ci) {
+      if (pi) p += `<span class="diff">${pi}</span>`;
+      if (ci) c += `<span class="diff">${ci}</span>`;
+    } else {
+      p += `<span class="same">${pi}</span>`;
+      c += `<span class="same">${ci}</span>`;
+    }
+  }
+  return { p, c };
+}
+
+function handleAnswer(i, target, options) {
+  const choice = options[i];
+  const buttons = document.querySelectorAll('.suspect');
+  buttons.forEach(b => b.onclick = null);
+
+  recordResult(target.word, choice.correct, choice.type);
+
+  if (choice.correct) {
+    buttons[i].classList.add('correct');
+    state.streak++;
+    session.correctThisLevel++;
+    saveState();
+    document.getElementById('msg').innerHTML = `<span class="owl">🦉</span> Case solved! Great detective work! 🎉`;
+    confettiBurst(10);
+    setTimeout(() => { session.index++; nextQuestion(); }, 1200);
+  } else {
+    buttons[i].classList.add('wrong');
+    state.streak = 0;
+    session.wrongThisLevel++;
+    saveState();
+
+    // highlight diffs on picked + correct
+    const correctIdx = options.findIndex(o => o.correct);
+    const { p, c } = diffMarkup(choice.word, options[correctIdx].word);
+    buttons[i].innerHTML = p;
+    buttons[correctIdx].classList.add('show-correct');
+    buttons[correctIdx].innerHTML = c;
+
+    const hint = errorHint(choice.type);
+    document.getElementById('msg').innerHTML = `<span class="owl">🦉</span> ${hint}`;
+    setTimeout(() => speak(target.word), 400);
+
+    // continue button
+    const ctrl = document.createElement('div');
+    ctrl.style.marginTop = '10px';
+    ctrl.innerHTML = `<button class="big-btn green" id="next">Next Clue →</button>`;
+    document.querySelector('.mascot-talk').after(ctrl);
+    document.getElementById('next').onclick = () => { session.index++; nextQuestion(); };
+  }
+}
+
+function errorHint(type) {
+  switch (type) {
+    case 'vowel-swap': return 'Hmm, listen to the middle sounds. The vowels are the trick!';
+    case 'double-letter': return 'Watch out — that one has an extra letter sneaking in.';
+    case 'silent-e-drop': return 'Sneaky! A silent <b>e</b> at the end is missing.';
+    case 'phonetic-sub': return 'It SOUNDS right, but English spelling is tricky here!';
+    case 'letter-reverse': return 'Two letters traded places! Look again.';
+    case 'drop-letter': return 'A letter went missing in the middle!';
+    default: return 'Not quite — look at every letter carefully.';
+  }
+}
+
+function completeLevel() {
+  state.completedLevels[session.level.id] = true;
+  saveState();
+  const acc = Math.round(100 * session.correctThisLevel / session.queue.length);
+  render(`
+    <div class="hero">🏆</div>
+    <h1>Case Closed!</h1>
+    <div class="case-file">
+      <h3>🦉 Case File: ${session.level.name}</h3>
+      <div class="case-badge">${session.level.emoji}🏅</div>
+      <p><b>Correct:</b> ${session.correctThisLevel} / ${session.queue.length} (${acc}%)</p>
+      <p><b>Current streak:</b> 🔥 ${state.streak}</p>
+    </div>
+    <div>
+      <button class="big-btn green" id="again">Replay Case</button>
+      <button class="big-btn blue" id="more">Pick Another Case</button>
+      <button class="big-btn gray" id="home">Home</button>
+    </div>
+  `);
+  confettiBurst(30);
+  document.getElementById('again').onclick = () => startLevel(session.level.id);
+  document.getElementById('more').onclick = showLevels;
+  document.getElementById('home').onclick = showHome;
+}
+
+// ----- Parent Dashboard -----
+function showParent() {
+  const words = state.stats.words;
+  const wordKeys = Object.keys(words).sort();
+  const totalAttempts = wordKeys.reduce((s, k) => s + words[k].right + words[k].wrong, 0);
+
+  let wordList = '';
+  if (!wordKeys.length) {
+    wordList = `<p style="margin-top:14px; color:#666;">No plays yet — once your child plays a case, you'll see per-word accuracy here.</p>`;
+  } else {
+    wordList = wordKeys.map(w => {
+      const r = words[w].right, n = words[w].wrong;
+      const t = r + n;
+      const pct = t ? Math.round(100 * r / t) : 0;
+      return `
+        <div class="dash-row">
+          <span class="word">${w}</span>
+          <span class="stats">
+            ${r}✅ ${n}❌
+            <span class="dash-bar"><div style="width:${pct}%;"></div></span>
+            ${pct}%
+          </span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const errTypes = state.stats.errorTypes;
+  const errKeys = Object.keys(errTypes).sort((a,b) => errTypes[b] - errTypes[a]);
+  const errLabel = {
+    'vowel-swap': 'Vowel mix-ups (cat/cot)',
+    'double-letter': 'Extra doubled letter',
+    'silent-e-drop': 'Missing silent e',
+    'phonetic-sub': 'Spell-by-sound (becuz)',
+    'letter-reverse': 'Reversed letters (was/saw)',
+    'drop-letter': 'Dropped middle letter'
+  };
+  let errList = '';
+  if (!errKeys.length) {
+    errList = `<p style="margin-top:8px; color:#666;">No mistakes recorded yet.</p>`;
+  } else {
+    const max = errTypes[errKeys[0]] || 1;
+    errList = errKeys.map(k => {
+      const v = errTypes[k];
+      const pct = Math.round(100 * v / max);
+      return `
+        <div class="dash-row">
+          <span class="word">${errLabel[k] || k}</span>
+          <span class="stats">
+            ${v}×
+            <span class="dash-bar"><div style="width:${pct}%; background:#E74C3C;"></div></span>
+          </span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  render(`
+    <div class="top-bar">
+      <button class="big-btn gray" id="back">← Home</button>
+      <button class="big-btn gray" id="reset">Reset Progress</button>
+    </div>
+    <h1>For Grown-Ups</h1>
+    <p style="max-width:600px;">See which words and phoneme patterns are tripping your child up. Use the patterns below to pick what to practice next.</p>
+    <div class="scroll">
+      <h2 style="margin-top:18px;">Mistake Patterns</h2>
+      ${errList}
+      <h2 style="margin-top:18px;">Per-Word Accuracy</h2>
+      <p style="font-size:0.95rem; color:#666;">Total attempts: ${totalAttempts}</p>
+      ${wordList}
+      <div style="height:40px;"></div>
+    </div>
+  `);
+  document.getElementById('back').onclick = showHome;
+  document.getElementById('reset').onclick = () => {
+    if (confirm('Reset all progress and stats?')) {
+      state = { completedLevels: {}, stats: { words: {}, errorTypes: {} }, streak: 0 };
+      saveState();
+      showParent();
+    }
+  };
+}
+
+// ----- Confetti -----
+function confettiBurst(n) {
+  const emojis = ['🎉','⭐','🏅','✨','🎊','🔍'];
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.left = (Math.random() * 100) + 'vw';
+    el.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+}
+
+// ============================================================
+// SELF-TEST (console only, dev sanity)
+// ============================================================
+(function selfTest() {
+  let ok = true;
+  for (const lvl of LEVELS) {
+    for (const w of lvl.words) {
+      if (!w.emoji) { console.warn('Missing emoji for', w.word); ok = false; }
+      const d = generateDistractors(w.word, 3);
+      if (d.length !== 3) { console.warn('Bad distractor count for', w.word); ok = false; }
+      const set = new Set([w.word.toLowerCase(), ...d.map(x => x.word.toLowerCase())]);
+      if (set.size !== 4) { console.warn('Duplicate suspect for', w.word, d); ok = false; }
+      for (const x of d) {
+        if (x.word.toLowerCase() === w.word.toLowerCase()) {
+          console.warn('Distractor equals correct for', w.word); ok = false;
+        }
+      }
+    }
+  }
+  if (ok) console.log('Spell Detective self-test: OK');
+})();
+
+// Boot
+showHome();
+</script>
+</body>
+</html>
