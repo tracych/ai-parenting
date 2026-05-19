@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cluster Quest 🔮</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { min-height: 100%; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #e0f7fa 0%, #fff3e0 100%);
+    color: #222;
+    padding: 16px;
+    min-height: 100vh;
+  }
+  #app { max-width: 1100px; margin: 0 auto; }
+
+  header {
+    background: white; border-radius: 20px; padding: 16px 22px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    margin-bottom: 14px; flex-wrap: wrap; gap: 12px;
+  }
+  h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); color: #00838F; }
+  h1 .sparkle { display:inline-block; animation: spin 6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  h2 { font-size: 1.2rem; color: #455A64; margin-bottom: 8px; }
+  h3 { font-size: 1.05rem; color: #37474F; margin: 6px 0; }
+  p  { line-height: 1.5; color: #444; }
+  .muted { color: #777; font-size: 0.9rem; }
+
+  .btn {
+    font-family: inherit; font-weight: 600;
+    font-size: 1rem; padding: 10px 18px;
+    border: none; border-radius: 14px;
+    cursor: pointer; color: white;
+    background: #00ACC1;
+    box-shadow: 0 3px 0 #00798A;
+    transition: transform 0.08s, box-shadow 0.08s;
+  }
+  .btn:hover { filter: brightness(1.05); }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #00798A; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.green  { background: #43A047; box-shadow: 0 3px 0 #2E7D32; }
+  .btn.orange { background: #FB8C00; box-shadow: 0 3px 0 #EF6C00; }
+  .btn.purple { background: #8E24AA; box-shadow: 0 3px 0 #6A1B9A; }
+  .btn.gray   { background: #78909C; box-shadow: 0 3px 0 #546E7A; font-size: 0.9rem; padding: 8px 14px; }
+  .btn.small  { font-size: 0.85rem; padding: 6px 12px; }
+
+  .layout {
+    display: grid; grid-template-columns: 1fr 320px; gap: 14px;
+  }
+  @media (max-width: 820px) { .layout { grid-template-columns: 1fr; } }
+
+  .card {
+    background: white; border-radius: 18px; padding: 16px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  select, input[type=number] {
+    font-family: inherit; font-size: 0.95rem; padding: 8px 10px;
+    border: 2px solid #B0BEC5; border-radius: 10px; background: white;
+    cursor: pointer;
+  }
+  label { font-size: 0.9rem; color: #455A64; font-weight: 600; }
+
+  .axis-row { display: flex; align-items: center; gap: 8px; }
+
+  #plot-wrap {
+    position: relative; width: 100%;
+    background: linear-gradient(180deg, #FAFCFF 0%, #F0F7FA 100%);
+    border: 2px dashed #B2DFDB; border-radius: 14px;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    max-height: 560px;
+    margin: 0 auto;
+  }
+  svg.plot { width: 100%; height: 100%; display: block; }
+
+  .axis-label {
+    font-size: 0.85rem; fill: #607D8B; font-weight: 600;
+  }
+  .grid-line { stroke: #ECEFF1; stroke-width: 1; }
+
+  .creature {
+    cursor: pointer; transition: transform 0.3s ease;
+  }
+  .creature text { font-size: 24px; pointer-events: none; user-select: none; }
+  .creature circle.halo {
+    fill: white; stroke-width: 3; opacity: 0.9;
+  }
+  .centroid {
+    cursor: grab;
+  }
+  .centroid:active { cursor: grabbing; }
+  .centroid circle.core { stroke: #222; stroke-width: 3; }
+  .centroid text { font-size: 18px; font-weight: bold; fill: white; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+
+  .palette { display: flex; gap: 6px; flex-wrap: wrap; }
+  .swatch {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid white; box-shadow: 0 0 0 1px #999;
+  }
+
+  .status {
+    background: #FFF8E1; border: 2px solid #FFD54F; border-radius: 12px;
+    padding: 10px 14px; margin-top: 10px; font-weight: 600; color: #5D4037;
+  }
+  .status.success { background: #E8F5E9; border-color: #66BB6A; color: #2E7D32; }
+  .status.info    { background: #E1F5FE; border-color: #4FC3F7; color: #01579B; }
+
+  .challenge {
+    background: #F3E5F5; border: 2px solid #CE93D8; border-radius: 12px;
+    padding: 12px; margin: 10px 0;
+  }
+  .challenge.done { background: #E8F5E9; border-color: #66BB6A; }
+  .challenge .title { font-weight: 700; color: #6A1B9A; margin-bottom: 4px; }
+  .challenge.done .title::after { content: " ✅"; }
+  .challenge .desc { font-size: 0.92rem; color: #555; margin-bottom: 8px; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .tab {
+    padding: 8px 14px; border-radius: 12px 12px 0 0; cursor: pointer;
+    background: #ECEFF1; font-weight: 600; color: #546E7A; border: none; font-family: inherit;
+  }
+  .tab.active { background: white; color: #00838F; box-shadow: 0 -3px 8px rgba(0,0,0,0.06); }
+
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+    padding: 16px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: white; border-radius: 20px; padding: 22px; max-width: 480px; width: 100%;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.3);
+  }
+  .modal h2 { color: #00838F; margin-bottom: 10px; }
+  .modal .row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
+  .creature-info {
+    background: #FAFAFA; border-radius: 10px; padding: 10px 12px; font-size: 0.9rem;
+    margin: 8px 0;
+  }
+  .creature-info .traits { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin-top: 6px; }
+
+  .pred-buttons { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  .pred-btn {
+    padding: 8px 14px; border: 2px solid #00ACC1; background: white; color: #00838F;
+    border-radius: 10px; cursor: pointer; font-weight: 700; font-family: inherit;
+  }
+  .pred-btn.selected { background: #00ACC1; color: white; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; font-size: 0.85rem; }
+  .legend .item { display: flex; align-items: center; gap: 4px; padding: 2px 8px; background: #F5F5F5; border-radius: 8px; }
+  .legend .dot { width: 12px; height: 12px; border-radius: 50%; }
+
+  .dashboard-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #ECEFF1; font-size: 0.9rem; }
+  .dashboard-row:last-child { border: none; }
+
+  .hint {
+    font-size: 0.85rem; color: #666; background: #F5F5F5;
+    padding: 8px 10px; border-radius: 8px; margin: 6px 0;
+  }
+
+  footer { text-align: center; color: #78909C; font-size: 0.85rem; margin-top: 20px; padding: 10px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1><span class="sparkle">🔮</span> Cluster Quest</h1>
+    <div>
+      <button class="btn gray small" id="btn-parent">👪 Parent View</button>
+      <button class="btn gray small" id="btn-help">❓ How to Play</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="card">
+      <div class="controls">
+        <div class="axis-row">
+          <label>X axis:</label>
+          <select id="axis-x"></select>
+        </div>
+        <div class="axis-row">
+          <label>Y axis:</label>
+          <select id="axis-y"></select>
+        </div>
+        <div class="axis-row">
+          <label>k (groups):</label>
+          <select id="k-select">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+        <button class="btn purple" id="btn-place">📍 Place Centroids</button>
+        <button class="btn" id="btn-iterate">▶ Iterate</button>
+        <button class="btn green" id="btn-auto">⏩ Auto-Run</button>
+        <button class="btn orange" id="btn-reset">🔄 Reset</button>
+      </div>
+
+      <div id="plot-wrap">
+        <svg class="plot" id="plot" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <div class="legend" id="legend"></div>
+      <div class="status info" id="status">Pick how many groups you see, then drag the centroids onto the plot. Press <b>Iterate</b> to watch k-means work!</div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="tabs">
+          <button class="tab active" data-tab="challenges">🎯 Challenges</button>
+          <button class="tab" data-tab="info">💡 Why?</button>
+        </div>
+        <div id="tab-challenges"></div>
+        <div id="tab-info" style="display:none">
+          <h3>What is clustering?</h3>
+          <p style="font-size:0.92rem; margin:6px 0">Clustering means grouping things that are <b>similar</b> — but similar in what way? That depends on which <b>features</b> you measure!</p>
+          <p style="font-size:0.92rem; margin:6px 0">A computer doing <b>k-means</b> picks k starting points (centroids), then repeats:</p>
+          <ol style="font-size:0.9rem; margin: 6px 0 6px 20px">
+            <li>Each point joins the nearest centroid</li>
+            <li>Each centroid moves to the middle of its group</li>
+            <li>Repeat until nobody moves!</li>
+          </ol>
+          <div class="hint">Try the same dataset with different axes — same creatures, but the clusters change. That's the AI lesson: what you measure shapes what you see!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Built for curious kids age 9–11 · Open source on GitHub</footer>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+// ============================================================
+// DATA: 30 cartoon creatures with 5 traits (0-10 scale)
+// ============================================================
+const FEATURES = ["size", "fluffiness", "spikiness", "legs", "loudness"];
+const FEATURE_LABEL = {
+  size: "Size", fluffiness: "Fluffiness", spikiness: "Spikiness",
+  legs: "Legs", loudness: "Loudness"
+};
+
+// Designed so there are 3 natural clusters on size vs fluffiness:
+// - tiny fluffballs (small + very fluffy)
+// - big calm beasts (big + medium fluff)
+// - spiky critters (small/med + low fluff + high spike)
+const CREATURES = [
+  // Tiny fluffballs
+  { emoji:"🐹", name:"Hammie",   size:2, fluffiness:9, spikiness:1, legs:4, loudness:2 },
+  { emoji:"🐰", name:"Bunbun",   size:3, fluffiness:9, spikiness:0, legs:4, loudness:1 },
+  { emoji:"🐥", name:"Peep",     size:1, fluffiness:8, spikiness:0, legs:2, loudness:3 },
+  { emoji:"🐣", name:"Tiny",     size:1, fluffiness:7, spikiness:0, legs:2, loudness:4 },
+  { emoji:"🐭", name:"Squeak",   size:2, fluffiness:7, spikiness:1, legs:4, loudness:2 },
+  { emoji:"🐿️", name:"Skitter",  size:3, fluffiness:8, spikiness:1, legs:4, loudness:3 },
+  { emoji:"🐤", name:"Fluffy",   size:2, fluffiness:9, spikiness:0, legs:2, loudness:3 },
+  { emoji:"🐱", name:"Whisker",  size:3, fluffiness:8, spikiness:1, legs:4, loudness:2 },
+  { emoji:"🐶", name:"Pup",      size:4, fluffiness:9, spikiness:0, legs:4, loudness:5 },
+  { emoji:"🐨", name:"Eucal",    size:4, fluffiness:8, spikiness:0, legs:4, loudness:2 },
+
+  // Big calm beasts
+  { emoji:"🐘", name:"Thump",    size:10, fluffiness:2, spikiness:0, legs:4, loudness:8 },
+  { emoji:"🦏", name:"Horn",     size:9,  fluffiness:1, spikiness:3, legs:4, loudness:6 },
+  { emoji:"🦛", name:"Hippa",    size:9,  fluffiness:1, spikiness:0, legs:4, loudness:7 },
+  { emoji:"🐮", name:"Moomoo",   size:8,  fluffiness:3, spikiness:1, legs:4, loudness:6 },
+  { emoji:"🐴", name:"Gallop",   size:7,  fluffiness:4, spikiness:0, legs:4, loudness:5 },
+  { emoji:"🐻", name:"Bigbear",  size:8,  fluffiness:7, spikiness:0, legs:4, loudness:7 },
+  { emoji:"🦬", name:"Bizo",     size:9,  fluffiness:5, spikiness:1, legs:4, loudness:6 },
+  { emoji:"🐂", name:"Bull",     size:8,  fluffiness:2, spikiness:2, legs:4, loudness:7 },
+  { emoji:"🐊", name:"Snapp",    size:7,  fluffiness:0, spikiness:5, legs:4, loudness:4 },
+  { emoji:"🦒", name:"Stretch",  size:9,  fluffiness:3, spikiness:0, legs:4, loudness:3 },
+
+  // Spiky critters
+  { emoji:"🦔", name:"Pricks",   size:3, fluffiness:2, spikiness:9, legs:4, loudness:3 },
+  { emoji:"🦂", name:"Pinchy",   size:2, fluffiness:0, spikiness:9, legs:8, loudness:1 },
+  { emoji:"🕷️", name:"Webby",    size:2, fluffiness:1, spikiness:7, legs:8, loudness:1 },
+  { emoji:"🦀", name:"Crabby",   size:3, fluffiness:0, spikiness:7, legs:8, loudness:2 },
+  { emoji:"🐍", name:"Hiss",     size:4, fluffiness:0, spikiness:5, legs:0, loudness:3 },
+  { emoji:"🐲", name:"Drago",    size:5, fluffiness:0, spikiness:10,legs:4, loudness:7 },
+  { emoji:"🐡", name:"Puff",     size:3, fluffiness:0, spikiness:9, legs:0, loudness:1 },
+  { emoji:"🦞", name:"Lobby",    size:4, fluffiness:0, spikiness:8, legs:8, loudness:2 },
+  { emoji:"🦎", name:"Lizzy",    size:3, fluffiness:0, spikiness:4, legs:4, loudness:1 },
+  { emoji:"🐢", name:"Slowpoke", size:4, fluffiness:1, spikiness:6, legs:4, loudness:1 }
+];
+
+const COLORS = ["#E53935", "#1E88E5", "#43A047", "#FB8C00", "#8E24AA"];
+const STORE_KEY = "cluster-quest-v1";
+
+// ============================================================
+// State
+// ============================================================
+let state = {
+  axisX: "size",
+  axisY: "fluffiness",
+  k: 3,
+  centroids: [], // {x,y} in feature space
+  assignments: new Array(CREATURES.length).fill(-1),
+  iteration: 0,
+  placing: false,        // true when user is dragging centroids in
+  placedCount: 0,
+  autoRunning: false,
+  pendingPrediction: null,
+  challengesDone: loadStore().challengesDone || {},
+  predictions: loadStore().predictions || []  // {challenge, predicted, actual, correct}
+};
+
+function loadStore() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch(e) { return {}; }
+}
+function saveStore() {
+  localStorage.setItem(STORE_KEY, JSON.stringify({
+    challengesDone: state.challengesDone,
+    predictions: state.predictions
+  }));
+}
+
+// ============================================================
+// Challenges
+// ============================================================
+const CHALLENGES = [
+  {
+    id: "natural3",
+    title: "🎯 Find the 3 natural groups",
+    desc: "With X=Size and Y=Fluffiness, run k=3 and reach convergence. Predict the count before iterating!",
+    check: () => state.axisX === "size" && state.axisY === "fluffiness" && state.k === 3 && state.converged
+  },
+  {
+    id: "spiky",
+    title: "🌵 Make the spiky ones cluster",
+    desc: "Find an axis pair where spiky creatures (spikiness ≥ 6) end up in the SAME cluster after convergence.",
+    check: () => {
+      if (!state.converged) return false;
+      const spikyIdx = CREATURES.map((c,i)=>c.spikiness>=6?i:-1).filter(i=>i>=0);
+      if (spikyIdx.length < 3) return false;
+      const cl = state.assignments[spikyIdx[0]];
+      if (cl < 0) return false;
+      return spikyIdx.every(i => state.assignments[i] === cl);
+    }
+  },
+  {
+    id: "k5",
+    title: "🤔 Try k = 5",
+    desc: "Run with k=5 and notice — do the new clusters help, or are some clusters tiny / overlapping?",
+    check: () => state.k === 5 && state.converged
+  },
+  {
+    id: "swap",
+    title: "🔄 Swap axes & re-run",
+    desc: "Run k-means once, then switch X or Y to a different feature and run again. Watch clusters reshape!",
+    check: () => state.swapsAfterRun >= 1
+  }
+];
+
+// ============================================================
+// Plot helpers
+// ============================================================
+const PAD = 50;
+const W = 600, H = 600;
+function fxToPx(v) { return PAD + (v/10) * (W - 2*PAD); }
+function fyToPx(v) { return (H - PAD) - (v/10) * (H - 2*PAD); }
+function pxToFx(px) { return Math.max(0, Math.min(10, ((px - PAD) / (W - 2*PAD)) * 10)); }
+function pxToFy(py) { return Math.max(0, Math.min(10, ((H - PAD - py) / (H - 2*PAD)) * 10)); }
+
+function dist(a, b) {
+  const dx = a.x - b.x, dy = a.y - b.y;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+// ============================================================
+// K-means
+// ============================================================
+function assignAll() {
+  let moved = 0;
+  CREATURES.forEach((c, i) => {
+    const pt = { x: c[state.axisX], y: c[state.axisY] };
+    let best = -1, bestD = Infinity;
+    state.centroids.forEach((cen, ci) => {
+      const d = dist(pt, cen);
+      if (d < bestD) { bestD = d; best = ci; }
+    });
+    if (state.assignments[i] !== best) moved++;
+    state.assignments[i] = best;
+  });
+  return moved;
+}
+
+function recomputeCentroids() {
+  let drift = 0;
+  state.centroids = state.centroids.map((cen, ci) => {
+    const members = CREATURES.filter((_, i) => state.assignments[i] === ci);
+    if (members.length === 0) return cen; // empty cluster: stay put
+    const mx = members.reduce((s,c) => s + c[state.axisX], 0) / members.length;
+    const my = members.reduce((s,c) => s + c[state.axisY], 0) / members.length;
+    drift += dist(cen, {x:mx, y:my});
+    return { x: mx, y: my };
+  });
+  return drift;
+}
+
+function iterateOnce() {
+  if (state.centroids.length === 0) return { moved: 0, drift: 0 };
+  const moved = assignAll();
+  const drift = recomputeCentroids();
+  state.iteration++;
+  state.converged = (moved === 0 && drift < 0.001) || state.iteration > 20;
+  return { moved, drift };
+}
+
+// ============================================================
+// Rendering
+// ============================================================
+const svg = document.getElementById("plot");
+
+function render() {
+  // Build SVG
+  let html = "";
+
+  // Grid
+  for (let i = 0; i <= 10; i+=2) {
+    const x = fxToPx(i), y = fyToPx(i);
+    html += `<line class="grid-line" x1="${x}" y1="${PAD}" x2="${x}" y2="${H-PAD}"/>`;
+    html += `<line class="grid-line" x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}"/>`;
+  }
+  // Axes
+  html += `<line x1="${PAD}" y1="${H-PAD}" x2="${W-PAD}" y2="${H-PAD}" stroke="#607D8B" stroke-width="2"/>`;
+  html += `<line x1="${PAD}" y1="${PAD}" x2="${PAD}" y2="${H-PAD}" stroke="#607D8B" stroke-width="2"/>`;
+  // Labels
+  html += `<text class="axis-label" x="${W/2}" y="${H-12}" text-anchor="middle">${FEATURE_LABEL[state.axisX]} →</text>`;
+  html += `<text class="axis-label" x="18" y="${H/2}" text-anchor="middle" transform="rotate(-90 18 ${H/2})">${FEATURE_LABEL[state.axisY]} →</text>`;
+  // tick labels
+  html += `<text class="axis-label" x="${PAD}" y="${H-PAD+18}" text-anchor="middle">0</text>`;
+  html += `<text class="axis-label" x="${W-PAD}" y="${H-PAD+18}" text-anchor="middle">10</text>`;
+  html += `<text class="axis-label" x="${PAD-12}" y="${H-PAD+4}" text-anchor="end">0</text>`;
+  html += `<text class="axis-label" x="${PAD-12}" y="${PAD+4}" text-anchor="end">10</text>`;
+
+  // Creatures
+  CREATURES.forEach((c, i) => {
+    const x = fxToPx(c[state.axisX]);
+    const y = fyToPx(c[state.axisY]);
+    const cl = state.assignments[i];
+    const color = cl >= 0 ? COLORS[cl] : "#B0BEC5";
+    html += `<g class="creature" data-i="${i}" transform="translate(${x},${y})">
+      <circle class="halo" r="16" stroke="${color}"/>
+      <text x="0" y="0" text-anchor="middle" dominant-baseline="central">${c.emoji}</text>
+    </g>`;
+  });
+
+  // Centroids
+  state.centroids.forEach((cen, ci) => {
+    const x = fxToPx(cen.x), y = fyToPx(cen.y);
+    html += `<g class="centroid" data-ci="${ci}" transform="translate(${x},${y})">
+      <circle class="core" r="18" fill="${COLORS[ci]}"/>
+      <text>${ci+1}</text>
+    </g>`;
+  });
+
+  svg.innerHTML = html;
+
+  // Wire interactions
+  svg.querySelectorAll(".centroid").forEach(g => {
+    g.addEventListener("pointerdown", startDrag);
+  });
+  svg.querySelectorAll(".creature").forEach(g => {
+    g.addEventListener("click", e => showCreatureInfo(+g.dataset.i));
+  });
+
+  renderLegend();
+  renderChallenges();
+}
+
+function renderLegend() {
+  const legend = document.getElementById("legend");
+  let html = "";
+  state.centroids.forEach((c, i) => {
+    const count = state.assignments.filter(a => a === i).length;
+    html += `<span class="item"><span class="dot" style="background:${COLORS[i]}"></span> Cluster ${i+1} (${count})</span>`;
+  });
+  if (state.iteration > 0) {
+    html += `<span class="item">📊 Iteration: ${state.iteration}</span>`;
+  }
+  legend.innerHTML = html;
+}
+
+function renderChallenges() {
+  const el = document.getElementById("tab-challenges");
+  let html = "";
+  CHALLENGES.forEach(ch => {
+    const done = state.challengesDone[ch.id];
+    html += `<div class="challenge ${done?'done':''}">
+      <div class="title">${ch.title}</div>
+      <div class="desc">${ch.desc}</div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// ============================================================
+// Drag centroids
+// ============================================================
+let dragCi = -1;
+function startDrag(e) {
+  e.preventDefault();
+  dragCi = +e.currentTarget.dataset.ci;
+  window.addEventListener("pointermove", onDrag);
+  window.addEventListener("pointerup", endDrag);
+}
+function onDrag(e) {
+  if (dragCi < 0) return;
+  const rect = svg.getBoundingClientRect();
+  const sx = (e.clientX - rect.left) * (W / rect.width);
+  const sy = (e.clientY - rect.top)  * (H / rect.height);
+  state.centroids[dragCi] = { x: pxToFx(sx), y: pxToFy(sy) };
+  // re-assign live so colors follow
+  assignAll();
+  render();
+}
+function endDrag() {
+  dragCi = -1;
+  window.removeEventListener("pointermove", onDrag);
+  window.removeEventListener("pointerup", endDrag);
+}
+
+// ============================================================
+// Centroid placement (click to place)
+// ============================================================
+function startPlacing() {
+  state.placing = true;
+  state.placedCount = 0;
+  state.centroids = [];
+  state.assignments = new Array(CREATURES.length).fill(-1);
+  state.iteration = 0;
+  state.converged = false;
+  setStatus(`👉 Click on the plot to place centroid 1 of ${state.k}`, "info");
+  render();
+}
+
+svg.addEventListener("click", e => {
+  if (!state.placing) return;
+  if (e.target.closest(".centroid")) return;
+  const rect = svg.getBoundingClientRect();
+  const sx = (e.clientX - rect.left) * (W / rect.width);
+  const sy = (e.clientY - rect.top)  * (H / rect.height);
+  state.centroids.push({ x: pxToFx(sx), y: pxToFy(sy) });
+  state.placedCount++;
+  if (state.placedCount >= state.k) {
+    state.placing = false;
+    assignAll();
+    setStatus(`✅ ${state.k} centroids placed. Press <b>Iterate</b> to start k-means!`, "info");
+  } else {
+    setStatus(`👉 Click to place centroid ${state.placedCount+1} of ${state.k}`, "info");
+  }
+  render();
+});
+
+// ============================================================
+// Iterate
+// ============================================================
+let runsThisAxis = 0;
+let lastRunAxis = "";
+function doIterate() {
+  if (state.centroids.length === 0) {
+    setStatus("First press <b>📍 Place Centroids</b> and place them on the plot.", "");
+    return;
+  }
+  const { moved, drift } = iterateOnce();
+  let msg = `Iteration ${state.iteration} — ${moved} creatures moved, centroids drifted ${drift.toFixed(2)}.`;
+  let cls = "info";
+  if (state.converged) {
+    msg += " ✅ <b>Converged!</b> The clusters have settled.";
+    cls = "success";
+    runsThisAxis++;
+    checkChallenges();
+  }
+  setStatus(msg, cls);
+  render();
+}
+
+function doAutoRun() {
+  if (state.autoRunning) return;
+  if (state.centroids.length === 0) { doIterate(); return; }
+  state.autoRunning = true;
+  const tick = () => {
+    if (!state.autoRunning) return;
+    const before = state.iteration;
+    doIterate();
+    if (state.converged || state.iteration > 20) {
+      state.autoRunning = false;
+      return;
+    }
+    setTimeout(tick, 700);
+  };
+  tick();
+}
+
+function doReset() {
+  state.centroids = [];
+  state.assignments = new Array(CREATURES.length).fill(-1);
+  state.iteration = 0;
+  state.converged = false;
+  state.placing = false;
+  state.autoRunning = false;
+  setStatus("Reset. Pick k and place new centroids!", "info");
+  render();
+}
+
+function setStatus(msg, cls) {
+  const el = document.getElementById("status");
+  el.innerHTML = msg;
+  el.className = "status " + (cls || "");
+}
+
+// ============================================================
+// Challenges + axis-swap tracking
+// ============================================================
+state.swapsAfterRun = 0;
+function checkChallenges() {
+  CHALLENGES.forEach(ch => {
+    if (!state.challengesDone[ch.id] && ch.check()) {
+      state.challengesDone[ch.id] = true;
+      saveStore();
+      setTimeout(() => showToast(`🏆 Challenge complete: ${ch.title}`), 200);
+    }
+  });
+  renderChallenges();
+}
+
+function showToast(msg) {
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.cssText = "position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#43A047;color:white;padding:14px 22px;border-radius:14px;font-weight:bold;box-shadow:0 6px 20px rgba(0,0,0,0.25);z-index:200;";
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2800);
+}
+
+// ============================================================
+// Predict-then-reveal
+// ============================================================
+function askKPrediction(cb) {
+  const m = document.getElementById("modal");
+  m.innerHTML = `
+    <h2>🔮 Predict first!</h2>
+    <p>Look at the plot. <b>How many groups</b> do you see in the creatures?</p>
+    <div class="pred-buttons" id="pred-k">
+      ${[1,2,3,4,5].map(n=>`<button class="pred-btn" data-k="${n}">${n}</button>`).join("")}
+    </div>
+    <p class="muted">No wrong guesses — predicting helps you learn!</p>
+    <div class="row">
+      <button class="btn gray" id="pred-skip">Skip</button>
+      <button class="btn" id="pred-go" disabled>Place centroids →</button>
+    </div>
+  `;
+  let chosen = null;
+  m.querySelectorAll(".pred-btn").forEach(b => {
+    b.addEventListener("click", () => {
+      m.querySelectorAll(".pred-btn").forEach(x => x.classList.remove("selected"));
+      b.classList.add("selected");
+      chosen = +b.dataset.k;
+      m.querySelector("#pred-go").disabled = false;
+    });
+  });
+  m.querySelector("#pred-skip").addEventListener("click", () => { hideModal(); cb(null); });
+  m.querySelector("#pred-go").addEventListener("click", () => { hideModal(); cb(chosen); });
+  showModal();
+}
+
+function showCreatureInfo(i) {
+  const c = CREATURES[i];
+  const cl = state.assignments[i];
+  const m = document.getElementById("modal");
+  m.innerHTML = `
+    <h2><span style="font-size:2rem">${c.emoji}</span> ${c.name}</h2>
+    <div class="creature-info">
+      <div class="traits">
+        ${FEATURES.map(f => `<div><b>${FEATURE_LABEL[f]}:</b> ${c[f]}</div>`).join("")}
+      </div>
+    </div>
+    <p>${cl >= 0 ? `Currently in <b style="color:${COLORS[cl]}">Cluster ${cl+1}</b>.` : "Not yet assigned to a cluster."}</p>
+    <div class="row">
+      <button class="btn" onclick="hideModal()">Got it</button>
+    </div>
+  `;
+  showModal();
+}
+
+function showModal() { document.getElementById("modal-bg").classList.add("show"); }
+function hideModal() { document.getElementById("modal-bg").classList.remove("show"); }
+document.getElementById("modal-bg").addEventListener("click", e => {
+  if (e.target.id === "modal-bg") hideModal();
+});
+window.hideModal = hideModal;
+
+// ============================================================
+// Parent dashboard
+// ============================================================
+function showParentDashboard() {
+  const m = document.getElementById("modal");
+  const done = Object.keys(state.challengesDone).length;
+  const total = CHALLENGES.length;
+  const preds = state.predictions;
+  const correct = preds.filter(p => p.correct).length;
+  const accuracy = preds.length ? Math.round(100 * correct / preds.length) : 0;
+  let html = `
+    <h2>👪 Parent Dashboard</h2>
+    <h3>Challenges complete: ${done} / ${total}</h3>
+  `;
+  CHALLENGES.forEach(ch => {
+    html += `<div class="dashboard-row"><span>${ch.title}</span><span>${state.challengesDone[ch.id]?'✅':'⬜'}</span></div>`;
+  });
+  html += `<h3 style="margin-top:14px">Predictions: ${preds.length} (accuracy ${accuracy}%)</h3>`;
+  if (preds.length === 0) {
+    html += `<p class="muted">No predictions yet — encourage your kid to use the "Predict first!" pattern.</p>`;
+  } else {
+    preds.slice(-6).reverse().forEach(p => {
+      html += `<div class="dashboard-row"><span>${p.challenge}: guessed ${p.predicted}, actual ${p.actual}</span><span>${p.correct?'✅':'❌'}</span></div>`;
+    });
+  }
+  html += `<div class="row">
+    <button class="btn gray" id="reset-progress">Reset Progress</button>
+    <button class="btn" onclick="hideModal()">Close</button>
+  </div>`;
+  m.innerHTML = html;
+  m.querySelector("#reset-progress").addEventListener("click", () => {
+    if (confirm("Clear all challenge progress and predictions?")) {
+      state.challengesDone = {};
+      state.predictions = [];
+      saveStore();
+      renderChallenges();
+      hideModal();
+    }
+  });
+  showModal();
+}
+
+function showHelp() {
+  const m = document.getElementById("modal");
+  m.innerHTML = `
+    <h2>❓ How to Play</h2>
+    <ol style="margin: 8px 0 8px 20px; line-height: 1.6;">
+      <li>Look at the plot of creatures. How many natural groups do you see?</li>
+      <li>Pick that number as <b>k</b>, then press <b>📍 Place Centroids</b>.</li>
+      <li>Click on the plot to drop each starting centroid.</li>
+      <li>Press <b>▶ Iterate</b> step-by-step, or <b>⏩ Auto-Run</b> to watch.</li>
+      <li>Drag centroids around any time to see what changes!</li>
+      <li>Try swapping the X or Y axis — same creatures, new clusters!</li>
+    </ol>
+    <p class="muted">This is exactly how the AI algorithm <b>k-means</b> works. You ARE the algorithm 🤖</p>
+    <div class="row"><button class="btn" onclick="hideModal()">Let's go!</button></div>
+  `;
+  showModal();
+}
+
+// ============================================================
+// Wire up UI
+// ============================================================
+function initAxes() {
+  const xSel = document.getElementById("axis-x");
+  const ySel = document.getElementById("axis-y");
+  FEATURES.forEach(f => {
+    xSel.innerHTML += `<option value="${f}">${FEATURE_LABEL[f]}</option>`;
+    ySel.innerHTML += `<option value="${f}">${FEATURE_LABEL[f]}</option>`;
+  });
+  xSel.value = state.axisX;
+  ySel.value = state.axisY;
+  xSel.addEventListener("change", () => {
+    state.axisX = xSel.value;
+    if (state.iteration > 0) state.swapsAfterRun++;
+    doReset();
+    checkChallenges();
+  });
+  ySel.addEventListener("change", () => {
+    state.axisY = ySel.value;
+    if (state.iteration > 0) state.swapsAfterRun++;
+    doReset();
+    checkChallenges();
+  });
+}
+
+document.getElementById("k-select").addEventListener("change", e => {
+  state.k = +e.target.value;
+  doReset();
+});
+
+document.getElementById("btn-place").addEventListener("click", () => {
+  askKPrediction(predicted => {
+    // After predicting, count "actual" as the user-set k (so the prediction is recorded vs their final choice).
+    // For real "actual cluster count", we'd need ground truth — but the natural well-separated case is 3.
+    if (predicted != null) {
+      // We use the kid's k as the "they chose" value; comparison happens after convergence vs natural=3 only on default axes.
+      const naturalK = (state.axisX === "size" && state.axisY === "fluffiness") ? 3 : null;
+      if (naturalK) {
+        const correct = predicted === naturalK;
+        state.predictions.push({
+          challenge: `How many groups (${FEATURE_LABEL[state.axisX]} vs ${FEATURE_LABEL[state.axisY]})`,
+          predicted, actual: naturalK, correct
+        });
+        saveStore();
+        setTimeout(() => {
+          setStatus(`You predicted <b>${predicted}</b> group${predicted===1?'':'s'}. The natural answer here is <b>${naturalK}</b>. ${correct?'🎯 Nice!':'Close — try and see!'}`, correct?'success':'info');
+        }, 50);
+      } else {
+        state.predictions.push({
+          challenge: `How many groups (${FEATURE_LABEL[state.axisX]} vs ${FEATURE_LABEL[state.axisY]})`,
+          predicted, actual: "?", correct: false
+        });
+        saveStore();
+      }
+    }
+    startPlacing();
+  });
+});
+
+document.getElementById("btn-iterate").addEventListener("click", doIterate);
+document.getElementById("btn-auto").addEventListener("click", doAutoRun);
+document.getElementById("btn-reset").addEventListener("click", doReset);
+document.getElementById("btn-parent").addEventListener("click", showParentDashboard);
+document.getElementById("btn-help").addEventListener("click", showHelp);
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("tab-challenges").style.display = tab.dataset.tab==="challenges" ? "block" : "none";
+    document.getElementById("tab-info").style.display      = tab.dataset.tab==="info"       ? "block" : "none";
+  });
+});
+
+// ============================================================
+// Boot
+// ============================================================
+initAxes();
+render();
+</script>
+</body>
+</html>
