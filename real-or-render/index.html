@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Real or Render?</title>
+<style>
+  :root{
+    --bg:#f5f3ef;
+    --panel:#ffffff;
+    --ink:#1c1d22;
+    --ink-soft:#5a5d68;
+    --line:#e3e1da;
+    --accent:#3a5bdc;
+    --accent-soft:#e6ecff;
+    --real:#1f8f5a;
+    --ai:#c63a6b;
+    --warn:#d97706;
+    --shadow: 0 1px 0 rgba(0,0,0,0.04), 0 8px 24px rgba(20,22,28,0.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:880px;margin:0 auto;padding:24px 18px 80px;}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-0.01em;font-size:18px;}
+  .brand .dot{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--ai));box-shadow:0 0 0 3px var(--accent-soft);}
+  .pill{font-size:12px;color:var(--ink-soft);background:#fff;border:1px solid var(--line);padding:6px 10px;border-radius:999px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:22px;}
+  h1{font-size:32px;line-height:1.1;margin:0 0 8px;letter-spacing:-0.02em;}
+  h2{font-size:20px;margin:0 0 6px;letter-spacing:-0.01em;}
+  p{line-height:1.55;color:var(--ink-soft);margin:0 0 12px;}
+  .lede{font-size:17px;color:var(--ink);}
+  .row{display:flex;gap:12px;flex-wrap:wrap;}
+  button{font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line);
+    padding:14px 18px;border-radius:12px;cursor:pointer;transition:transform .05s ease, box-shadow .15s ease, background .15s ease;
+    font-weight:600;}
+  button:hover{box-shadow:var(--shadow);}
+  button:active{transform:translateY(1px);}
+  button.primary{background:var(--ink);color:#fff;border-color:var(--ink);}
+  button.primary:hover{background:#000;}
+  button.real{background:var(--real);color:#fff;border-color:var(--real);min-width:160px;font-size:17px;}
+  button.ai{background:var(--ai);color:#fff;border-color:var(--ai);min-width:160px;font-size:17px;}
+  button.ghost{background:transparent;}
+  button[disabled]{opacity:.55;cursor:not-allowed;}
+  .scene{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fafaf7;}
+  .scene svg{display:block;width:100%;height:auto;}
+  .caption{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);background:#fff;font-size:14px;color:var(--ink-soft);}
+  .meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap;}
+  .progress{flex:1;height:8px;background:#ece9e0;border-radius:99px;overflow:hidden;min-width:140px;}
+  .progress > div{height:100%;background:linear-gradient(90deg,var(--accent),var(--ai));transition:width .3s ease;}
+  .score-chip{font-variant-numeric:tabular-nums;background:#fff;border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:13px;color:var(--ink);}
+  .conf{margin:18px 0 8px;}
+  .conf label{font-size:13px;color:var(--ink-soft);display:flex;justify-content:space-between;}
+  input[type=range]{width:100%;accent-color:var(--accent);}
+  .actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+  .reveal{margin-top:14px;padding:14px;border-radius:12px;border:1px solid var(--line);background:#fff;}
+  .reveal.correct{border-color:#bfe3cf;background:#f1fbf5;}
+  .reveal.wrong{border-color:#f3c6d4;background:#fdf2f6;}
+  .reveal h3{margin:0 0 6px;font-size:16px;}
+  .tells{margin-top:8px;padding-left:18px;}
+  .tells li{margin:4px 0;color:var(--ink);font-size:14px;}
+  .tells li b{color:var(--ai);}
+  .overlay-toggle{font-size:13px;color:var(--ink-soft);}
+  /* Detective overlay circles drawn on top of svg */
+  .annot{position:absolute;inset:0;pointer-events:none;}
+  .annot svg{width:100%;height:100%;display:block;}
+  .annot circle{fill:none;stroke:#ff2e63;stroke-width:3;stroke-dasharray:6 4;opacity:0;transform-origin:center;animation:pop .4s ease forwards;}
+  .annot.show circle{opacity:1;}
+  .annot text{fill:#ff2e63;font:600 12px ui-sans-serif,system-ui,sans-serif;opacity:0;}
+  .annot.show text{opacity:1;}
+  @keyframes pop{ from{opacity:0;transform:scale(.7);} to{opacity:1;transform:scale(1);} }
+  .nav{display:flex;justify-content:space-between;margin-top:16px;gap:10px;flex-wrap:wrap;}
+  .tabs{display:flex;gap:6px;margin:18px 0 12px;}
+  .tabs button{padding:8px 12px;font-size:14px;background:#fff;}
+  .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .guide{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .guide .card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;}
+  .guide .card.locked{opacity:.45;}
+  .guide .card h4{margin:0 0 6px;font-size:14px;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-soft);}
+  .guide .card p{margin:0;color:var(--ink);font-size:14px;}
+  .badge{display:inline-block;font-size:11px;background:var(--accent-soft);color:var(--accent);padding:3px 8px;border-radius:999px;margin-left:6px;vertical-align:middle;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:10px;}
+  .stat{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;}
+  .stat .v{font-size:24px;font-weight:700;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;}
+  .stat .k{font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;}
+  footer.foot{margin-top:24px;color:var(--ink-soft);font-size:12px;text-align:center;}
+  .hint{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+  .hidden{display:none !important;}
+  .topline{font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+  .verdict{font-size:20px;font-weight:700;letter-spacing:-0.01em;}
+  .verdict.correct{color:var(--real);}
+  .verdict.wrong{color:var(--ai);}
+  .deltapts{margin-left:8px;font-size:14px;color:var(--ink-soft);font-weight:500;}
+  .label-real{color:var(--real);font-weight:600;}
+  .label-ai{color:var(--ai);font-weight:600;}
+  @media (max-width:560px){
+    h1{font-size:26px;}
+    button.real, button.ai{min-width:0;flex:1;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="dot"></span>Real or Render?</div>
+    <span class="pill">Spot AI images · ages 10–11</span>
+  </header>
+
+  <!-- TITLE SCREEN -->
+  <section id="title" class="panel">
+    <div class="topline">Media literacy mini-game</div>
+    <h1>Can you spot the AI?</h1>
+    <p class="lede">AI image generators are getting really good. Adults get fooled all the time. Let's practice the small "tells" that give a fake away — and learn to know when you <em>actually</em> know.</p>
+    <p>You'll see a series of scenes. For each one, pick <span class="label-real">Real</span> or <span class="label-ai">AI-generated</span>, and set how confident you are. You'll score more when you're confident and right — and lose more when you're confident and wrong.</p>
+    <div class="actions">
+      <button class="primary" id="startBtn">Start →</button>
+      <button class="ghost" id="howBtn">How scoring works</button>
+    </div>
+    <div id="howBox" class="reveal hidden" style="margin-top:14px;">
+      <h3>Scoring & calibration</h3>
+      <p style="margin:0;">Each round: <b>points = ±confidence</b>. If you're 90% confident and right, +90. If 90% confident and wrong, −90. Set 50% if you're just guessing — that move barely changes your score. Over time, your <b>calibration %</b> shows how well your confidence matches reality.</p>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="panel hidden">
+    <div class="meta">
+      <span class="topline" id="roundLabel">Round 1 of 12</span>
+      <div class="progress"><div id="progressBar" style="width:0%"></div></div>
+      <span class="score-chip">Score: <b id="scoreNow">0</b></span>
+    </div>
+
+    <div id="sceneHost" class="scene">
+      <div id="sceneSvg"></div>
+      <div id="sceneAnnot" class="annot"></div>
+      <div class="caption">
+        <span id="sceneCaption">—</span>
+        <span class="overlay-toggle" id="overlayToggle"></span>
+      </div>
+    </div>
+
+    <div class="conf">
+      <label><span>Your confidence</span><span><b id="confVal">75</b>%</span></label>
+      <input type="range" id="confSlider" min="50" max="100" step="1" value="75" />
+      <div class="hint">50% = pure guess · 100% = totally sure</div>
+    </div>
+
+    <div class="actions" id="guessRow">
+      <button class="real" id="btnReal">Real photo</button>
+      <button class="ai"   id="btnAI">AI-generated</button>
+    </div>
+
+    <div id="revealBox" class="hidden"></div>
+
+    <div class="nav">
+      <button class="ghost" id="quitBtn">End game</button>
+      <button class="primary hidden" id="nextBtn">Next round →</button>
+    </div>
+  </section>
+
+  <!-- END SCREEN -->
+  <section id="end" class="panel hidden">
+    <div class="topline">Game over</div>
+    <h1 id="endHeadline">Nice work, detective.</h1>
+    <p id="endBlurb" class="lede"></p>
+    <div class="stats">
+      <div class="stat"><div class="k">Final score</div><div class="v" id="endScore">0</div></div>
+      <div class="stat"><div class="k">Accuracy</div><div class="v" id="endAcc">0%</div></div>
+      <div class="stat"><div class="k">Calibration</div><div class="v" id="endCal">—</div></div>
+      <div class="stat"><div class="k">Tells unlocked</div><div class="v" id="endTells">0 / 6</div></div>
+    </div>
+    <div class="tabs">
+      <button id="tabGuide" class="on">Field Guide</button>
+      <button id="tabAgain">Play again</button>
+    </div>
+    <div id="guidePanel" class="guide"></div>
+    <div id="againPanel" class="hidden">
+      <p>Practice again to see if your calibration improves. Scenes will be shuffled.</p>
+      <button class="primary" id="againBtn">Play again →</button>
+    </div>
+  </section>
+
+  <footer class="foot">Made for curious kids. No photos used — all scenes are hand-drawn SVG mockups so we can circle the tells.</footer>
+</div>
+
+<script>
+/* ===========================================================
+   REAL OR RENDER?
+   - 12 SVG scenes (mix of real and AI-styled)
+   - Each AI scene has authored tells with overlay annotations
+   - Confidence slider + simple calibration scoring
+   - Field Guide unlocks tell categories as encountered
+   =========================================================== */
+
+/* ---------- TELL TAXONOMY (Field Guide) ---------- */
+const TELLS = {
+  hands:        { name:"Hands",        blurb:"AI often gets fingers wrong — extra ones, fused ones, weird thumbs, or wonky proportions." },
+  text:         { name:"Text & signs", blurb:"Letters in signs, logos, or labels often come out melted, repeated, or made-up." },
+  reflections:  { name:"Reflections",  blurb:"Mirrors, windows, and water rarely reflect the right thing in AI images." },
+  symmetry:     { name:"Symmetry",     blurb:"Earrings, eyes, shoes, buttons: things that should match — often don't." },
+  backgrounds:  { name:"Backgrounds",  blurb:"People in the background blur into nonsense — extra limbs, fused bodies, broken faces." },
+  logic:        { name:"Object logic", blurb:"Clocks with impossible times, shadows pointing the wrong way, items floating, broken physics." },
+};
+
+/* ---------- SCENES ----------
+   Each scene: { id, caption, kind:'real'|'ai', svg, tells:[{cx,cy,r,note,cat}] }
+   svg viewBox is 400x300. Annotations use the same coordinates.
+*/
+const SCENES = [
+  /* 1. Portrait — REAL (symmetric) */
+  {
+    id:"portrait_real",
+    caption:"Portrait of a person",
+    kind:"real",
+    svg: portraitSVG(false),
+    tells: []
+  },
+  /* 2. Portrait — AI (asymmetric earrings + extra ear stud) */
+  {
+    id:"portrait_ai",
+    caption:"Portrait of a person",
+    kind:"ai",
+    svg: portraitSVG(true),
+    tells: [
+      { cx:138, cy:170, r:22, note:"Two earrings on this side, one on the other.", cat:"symmetry" },
+      { cx:262, cy:170, r:22, note:"This ear has no earring at all.",                cat:"symmetry" }
+    ]
+  },
+  /* 3. Hand — REAL (5 fingers) */
+  {
+    id:"hand_real",
+    caption:"A person holding up a hand",
+    kind:"real",
+    svg: handSVG(false),
+    tells: []
+  },
+  /* 4. Hand — AI (6 fingers + bent thumb) */
+  {
+    id:"hand_ai",
+    caption:"A person holding up a hand",
+    kind:"ai",
+    svg: handSVG(true),
+    tells: [
+      { cx:230, cy:110, r:34, note:"Count the fingers — there are six.",          cat:"hands" },
+      { cx:120, cy:180, r:28, note:"The thumb bends the wrong way and melts in.", cat:"hands" }
+    ]
+  },
+  /* 5. Storefront — REAL (clean text) */
+  {
+    id:"shop_real",
+    caption:"A small bakery storefront",
+    kind:"real",
+    svg: storefrontSVG(false),
+    tells: []
+  },
+  /* 6. Storefront — AI (melted lettering) */
+  {
+    id:"shop_ai",
+    caption:"A small bakery storefront",
+    kind:"ai",
+    svg: storefrontSVG(true),
+    tells: [
+      { cx:200, cy:80,  r:80, note:"The sign letters melt and repeat — that's not a real word.", cat:"text" },
+      { cx:200, cy:220, r:40, note:"The price tag in the window says \"$$8.0\" with extra symbols.", cat:"text" }
+    ]
+  },
+  /* 7. Mirror — REAL (matches scene) */
+  {
+    id:"mirror_real",
+    caption:"A person in front of a mirror",
+    kind:"real",
+    svg: mirrorSVG(false),
+    tells: []
+  },
+  /* 8. Mirror — AI (reflection doesn't match) */
+  {
+    id:"mirror_ai",
+    caption:"A person in front of a mirror",
+    kind:"ai",
+    svg: mirrorSVG(true),
+    tells: [
+      { cx:120, cy:150, r:55, note:"The reflection is facing the wrong way — and the shirt color doesn't match.", cat:"reflections" }
+    ]
+  },
+  /* 9. Clock — REAL (sensible time) */
+  {
+    id:"clock_real",
+    caption:"An analog wall clock",
+    kind:"real",
+    svg: clockSVG(false),
+    tells: []
+  },
+  /* 10. Clock — AI (numbers wrong, hands impossible) */
+  {
+    id:"clock_ai",
+    caption:"An analog wall clock",
+    kind:"ai",
+    svg: clockSVG(true),
+    tells: [
+      { cx:200, cy:150, r:120, note:"Three hands instead of two, and the numbers skip (no 4, two 9s).", cat:"logic" }
+    ]
+  },
+  /* 11. Crowd — AI (background people fuse) */
+  {
+    id:"crowd_ai",
+    caption:"A crowded park scene",
+    kind:"ai",
+    svg: crowdSVG(true),
+    tells: [
+      { cx:300, cy:170, r:40, note:"Two people in the background share a single body.", cat:"backgrounds" },
+      { cx:90,  cy:200, r:30, note:"This figure has three legs.",                       cat:"backgrounds" }
+    ]
+  },
+  /* 12. Glasses — AI (frames mismatch + reflection off) */
+  {
+    id:"glasses_ai",
+    caption:"Close-up of a person with glasses",
+    kind:"ai",
+    svg: glassesSVG(true),
+    tells: [
+      { cx:148, cy:150, r:38, note:"Left lens is round, right lens is rectangular.", cat:"symmetry" },
+      { cx:252, cy:148, r:38, note:"The reflection in one lens shows a window — the other shows trees.", cat:"reflections" }
+    ]
+  },
+];
+
+/* ---------- SVG BUILDERS ---------- */
+function svgWrap(inner){
+  return '<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">'+inner+'</svg>';
+}
+
+function portraitSVG(ai){
+  // gradient background
+  let s = '';
+  s += '<defs><linearGradient id="pbg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e9e4d8"/><stop offset="1" stop-color="#cbb89a"/></linearGradient></defs>';
+  s += '<rect width="400" height="300" fill="url(#pbg)"/>';
+  // shoulders
+  s += '<path d="M60,300 Q200,210 340,300 Z" fill="#3a4a6a"/>';
+  // neck
+  s += '<rect x="180" y="170" width="40" height="40" fill="#d8b48c"/>';
+  // head
+  s += '<ellipse cx="200" cy="140" rx="70" ry="80" fill="#e6c39a"/>';
+  // hair
+  s += '<path d="M130,120 Q200,40 270,120 Q260,90 200,80 Q140,90 130,120 Z" fill="#3d2a1d"/>';
+  // eyes
+  s += '<ellipse cx="175" cy="140" rx="6" ry="4" fill="#2b2b2b"/>';
+  s += '<ellipse cx="225" cy="140" rx="6" ry="4" fill="#2b2b2b"/>';
+  // nose
+  s += '<path d="M200,150 Q198,168 205,172" stroke="#a87f55" stroke-width="2" fill="none"/>';
+  // mouth
+  s += '<path d="M183,185 Q200,195 217,185" stroke="#7a3a3a" stroke-width="3" fill="none"/>';
+  // ears
+  s += '<ellipse cx="135" cy="150" rx="10" ry="16" fill="#d8b48c"/>';
+  s += '<ellipse cx="265" cy="150" rx="10" ry="16" fill="#d8b48c"/>';
+  if(!ai){
+    // matching earrings, one per ear
+    s += '<circle cx="135" cy="170" r="4" fill="#e5b13a"/>';
+    s += '<circle cx="265" cy="170" r="4" fill="#e5b13a"/>';
+  } else {
+    // two earrings on left ear, none on right
+    s += '<circle cx="132" cy="168" r="4" fill="#e5b13a"/>';
+    s += '<circle cx="142" cy="176" r="4" fill="#e5b13a"/>';
+    // (right ear left bare)
+  }
+  return svgWrap(s);
+}
+
+function handSVG(ai){
+  let s = '';
+  s += '<rect width="400" height="300" fill="#f0eadd"/>';
+  // wrist/arm
+  s += '<rect x="140" y="200" width="80" height="100" fill="#d8b48c"/>';
+  // palm
+  s += '<rect x="120" y="140" width="120" height="80" rx="20" fill="#e6c39a"/>';
+  // fingers
+  const baseX = 130;
+  const gap = 22;
+  const fingerCount = ai ? 5 : 4; // four "fingers" + 1 thumb-area drawn separately
+  // We'll draw the count: real=4 fingers + 1 thumb = 5 total. AI=5 fingers + 1 thumb = 6.
+  for(let i=0;i<fingerCount;i++){
+    const x = baseX + i*gap;
+    s += `<rect x="${x}" y="60" width="16" height="90" rx="8" fill="#e6c39a"/>`;
+  }
+  // thumb
+  if(!ai){
+    s += '<rect x="100" y="150" width="22" height="60" rx="11" fill="#e6c39a" transform="rotate(-30 111 180)"/>';
+  } else {
+    // melted, bent wrong way
+    s += '<path d="M120,180 Q80,170 90,210 Q110,220 130,210 Z" fill="#e6c39a"/>';
+    s += '<path d="M120,195 Q100,205 115,215" stroke="#a87f55" stroke-width="2" fill="none"/>';
+  }
+  return svgWrap(s);
+}
+
+function storefrontSVG(ai){
+  let s = '';
+  s += '<rect width="400" height="300" fill="#dfe9f1"/>';
+  // building
+  s += '<rect x="40" y="60" width="320" height="220" fill="#f4e4c1" stroke="#a98a5a" stroke-width="2"/>';
+  // awning
+  s += '<path d="M40,120 L360,120 L340,150 L60,150 Z" fill="#c0392b"/>';
+  // window
+  s += '<rect x="70" y="170" width="120" height="90" fill="#cfe7ff" stroke="#888"/>';
+  // door
+  s += '<rect x="220" y="160" width="100" height="120" fill="#7b4a2a"/>';
+  s += '<circle cx="305" cy="220" r="3" fill="#e5b13a"/>';
+  // sign text
+  if(!ai){
+    s += '<text x="200" y="100" text-anchor="middle" font-family="ui-sans-serif" font-size="34" fill="#fff" font-weight="700">BAKERY</text>';
+    s += '<text x="130" y="225" text-anchor="middle" font-family="ui-sans-serif" font-size="14" fill="#333">Fresh Bread $4</text>';
+  } else {
+    // melted, repeated lettering
+    s += '<text x="200" y="100" text-anchor="middle" font-family="ui-sans-serif" font-size="34" fill="#fff" font-weight="700" font-style="italic">BAKEERY</text>';
+    s += '<text x="195" y="108" text-anchor="middle" font-family="ui-sans-serif" font-size="34" fill="#fff" font-weight="700" opacity="0.4">BAKERRY</text>';
+    s += '<text x="130" y="225" text-anchor="middle" font-family="ui-sans-serif" font-size="14" fill="#333">Frech Bredd $$8.0</text>';
+  }
+  return svgWrap(s);
+}
+
+function mirrorSVG(ai){
+  let s = '';
+  s += '<rect width="400" height="300" fill="#ede4d1"/>';
+  // mirror frame
+  s += '<rect x="40" y="40" width="180" height="240" fill="#bfa37a" rx="6"/>';
+  s += '<rect x="55" y="55" width="150" height="210" fill="#cfe7ff"/>';
+  // person (right side)
+  s += '<circle cx="300" cy="130" r="30" fill="#e6c39a"/>';
+  s += '<rect x="270" y="160" width="60" height="100" fill="#2e7d4f"/>'; // green shirt
+  // reflection
+  if(!ai){
+    // mirrored: facing left, green shirt
+    s += '<circle cx="130" cy="130" r="28" fill="#e6c39a"/>';
+    s += '<rect x="100" y="160" width="60" height="100" fill="#2e7d4f"/>';
+  } else {
+    // wrong way + different color
+    s += '<circle cx="130" cy="130" r="28" fill="#e6c39a"/>';
+    s += '<rect x="100" y="160" width="60" height="100" fill="#c63a6b"/>';
+    // back of head instead of face
+    s += '<path d="M105,115 Q130,90 155,115" stroke="#3d2a1d" stroke-width="6" fill="none"/>';
+  }
+  return svgWrap(s);
+}
+
+function clockSVG(ai){
+  let s = '';
+  s += '<rect width="400" height="300" fill="#f5efe2"/>';
+  s += '<circle cx="200" cy="150" r="110" fill="#fff" stroke="#222" stroke-width="4"/>';
+  // numbers
+  const nums = ai ? ["12","1","2","3","5","6","7","8","9","9","11","10"] : ["12","1","2","3","4","5","6","7","8","9","10","11"];
+  for(let i=0;i<12;i++){
+    const a = (i*30 - 90) * Math.PI/180;
+    const x = 200 + Math.cos(a)*88;
+    const y = 150 + Math.sin(a)*88 + 5;
+    s += `<text x="${x}" y="${y}" text-anchor="middle" font-family="ui-sans-serif" font-size="18" font-weight="700" fill="#222">${nums[i]}</text>`;
+  }
+  // hands
+  s += '<line x1="200" y1="150" x2="200" y2="80"  stroke="#222" stroke-width="4"/>'; // minute
+  s += '<line x1="200" y1="150" x2="250" y2="150" stroke="#222" stroke-width="6"/>'; // hour
+  if(ai){
+    s += '<line x1="200" y1="150" x2="140" y2="200" stroke="#c63a6b" stroke-width="3"/>'; // extra 3rd hand
+  }
+  s += '<circle cx="200" cy="150" r="6" fill="#222"/>';
+  return svgWrap(s);
+}
+
+function crowdSVG(ai){
+  let s = '';
+  s += '<defs><linearGradient id="sky" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#bcdcff"/><stop offset="1" stop-color="#e8f3df"/></linearGradient></defs>';
+  s += '<rect width="400" height="300" fill="url(#sky)"/>';
+  s += '<rect y="220" width="400" height="80" fill="#9bc079"/>'; // ground
+  // tree
+  s += '<rect x="40" y="140" width="14" height="90" fill="#6b4a2a"/>';
+  s += '<circle cx="47" cy="130" r="30" fill="#3f7a3f"/>';
+  // foreground person (ok)
+  s += '<circle cx="200" cy="180" r="18" fill="#e6c39a"/>';
+  s += '<rect x="182" y="198" width="36" height="60" fill="#3a5bdc"/>';
+  // background fused pair (AI)
+  s += '<circle cx="280" cy="165" r="14" fill="#e6c39a"/>';
+  s += '<circle cx="320" cy="165" r="14" fill="#e6c39a"/>';
+  // shared body
+  s += '<rect x="270" y="180" width="60" height="50" fill="#c63a6b"/>';
+  // three-legged figure on left
+  s += '<circle cx="90" cy="180" r="14" fill="#e6c39a"/>';
+  s += '<rect x="78" y="195" width="24" height="35" fill="#444"/>';
+  s += '<rect x="78" y="225" width="6"  height="20" fill="#222"/>';
+  s += '<rect x="88" y="225" width="6"  height="20" fill="#222"/>';
+  s += '<rect x="98" y="225" width="6"  height="20" fill="#222"/>';
+  return svgWrap(s);
+}
+
+function glassesSVG(ai){
+  let s = '';
+  s += '<rect width="400" height="300" fill="#f1e7d6"/>';
+  // face
+  s += '<ellipse cx="200" cy="160" rx="130" ry="120" fill="#e6c39a"/>';
+  // hair top
+  s += '<path d="M70,140 Q200,40 330,140 Q300,80 200,70 Q100,80 70,140 Z" fill="#2c2018"/>';
+  // eyes
+  s += '<ellipse cx="148" cy="150" rx="8" ry="5" fill="#2b2b2b"/>';
+  s += '<ellipse cx="252" cy="148" rx="8" ry="5" fill="#2b2b2b"/>';
+  // mouth
+  s += '<path d="M170,210 Q200,225 230,210" stroke="#7a3a3a" stroke-width="3" fill="none"/>';
+  // glasses
+  if(!ai){
+    s += '<rect x="120" y="130" width="60" height="40" rx="8" fill="none" stroke="#222" stroke-width="3"/>';
+    s += '<rect x="220" y="130" width="60" height="40" rx="8" fill="none" stroke="#222" stroke-width="3"/>';
+    s += '<line x1="180" y1="150" x2="220" y2="150" stroke="#222" stroke-width="3"/>';
+  } else {
+    // left round, right rectangular
+    s += '<circle cx="150" cy="150" r="26" fill="rgba(180,200,230,0.5)" stroke="#222" stroke-width="3"/>';
+    s += '<rect x="222" y="130" width="60" height="40" rx="2" fill="rgba(180,210,180,0.5)" stroke="#222" stroke-width="3"/>';
+    s += '<line x1="176" y1="150" x2="222" y2="150" stroke="#222" stroke-width="3"/>';
+    // reflections: window in left, trees in right
+    s += '<rect x="140" y="140" width="20" height="14" fill="#fff" opacity="0.7"/>';
+    s += '<line x1="150" y1="140" x2="150" y2="154" stroke="#888" stroke-width="1"/>';
+    s += '<line x1="140" y1="147" x2="160" y2="147" stroke="#888" stroke-width="1"/>';
+    s += '<circle cx="240" cy="148" r="5" fill="#3f7a3f" opacity="0.8"/>';
+    s += '<circle cx="252" cy="150" r="6" fill="#3f7a3f" opacity="0.8"/>';
+    s += '<circle cx="266" cy="148" r="5" fill="#3f7a3f" opacity="0.8"/>';
+  }
+  return svgWrap(s);
+}
+
+/* ---------- GAME STATE ---------- */
+const state = {
+  order: [],
+  idx: 0,
+  score: 0,
+  correctCount: 0,
+  confSumCorrect: 0,
+  confSumWrong: 0,
+  rounds: 0,
+  unlockedTells: new Set(),
+  lastGuess: null,
+};
+
+function shuffled(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+/* ---------- DOM REFS ---------- */
+const $ = (id)=>document.getElementById(id);
+const titleEl   = $("title");
+const gameEl    = $("game");
+const endEl     = $("end");
+const sceneSvgEl= $("sceneSvg");
+const annotEl   = $("sceneAnnot");
+const captionEl = $("sceneCaption");
+const overlayToggleEl = $("overlayToggle");
+const confSlider= $("confSlider");
+const confVal   = $("confVal");
+const btnReal   = $("btnReal");
+const btnAI     = $("btnAI");
+const revealBox = $("revealBox");
+const nextBtn   = $("nextBtn");
+const guessRow  = $("guessRow");
+const roundLabel= $("roundLabel");
+const progressBar = $("progressBar");
+const scoreNow  = $("scoreNow");
+
+/* ---------- WIRE UP ---------- */
+$("startBtn").addEventListener("click", startGame);
+$("howBtn").addEventListener("click", ()=>$("howBox").classList.toggle("hidden"));
+$("quitBtn").addEventListener("click", finishGame);
+nextBtn.addEventListener("click", ()=>{ state.idx++; renderRound(); });
+btnReal.addEventListener("click", ()=>commitGuess("real"));
+btnAI.addEventListener("click",   ()=>commitGuess("ai"));
+confSlider.addEventListener("input", ()=>{ confVal.textContent = confSlider.value; });
+$("tabGuide").addEventListener("click", ()=>switchEndTab("guide"));
+$("tabAgain").addEventListener("click", ()=>switchEndTab("again"));
+$("againBtn").addEventListener("click", startGame);
+
+/* ---------- FLOW ---------- */
+function startGame(){
+  state.order = shuffled(SCENES);
+  state.idx = 0;
+  state.score = 0;
+  state.correctCount = 0;
+  state.confSumCorrect = 0;
+  state.confSumWrong = 0;
+  state.rounds = 0;
+  state.unlockedTells = new Set();
+  titleEl.classList.add("hidden");
+  endEl.classList.add("hidden");
+  gameEl.classList.remove("hidden");
+  renderRound();
+}
+
+function renderRound(){
+  if(state.idx >= state.order.length){ finishGame(); return; }
+  const scene = state.order[state.idx];
+  roundLabel.textContent = `Round ${state.idx+1} of ${state.order.length}`;
+  progressBar.style.width = `${(state.idx/state.order.length)*100}%`;
+  scoreNow.textContent = state.score;
+  sceneSvgEl.innerHTML = scene.svg;
+  annotEl.innerHTML = "";
+  annotEl.classList.remove("show");
+  captionEl.textContent = scene.caption;
+  overlayToggleEl.textContent = "";
+  revealBox.classList.add("hidden");
+  revealBox.innerHTML = "";
+  guessRow.classList.remove("hidden");
+  nextBtn.classList.add("hidden");
+  btnReal.disabled = false;
+  btnAI.disabled = false;
+  confSlider.value = 75;
+  confVal.textContent = "75";
+}
+
+function commitGuess(choice){
+  const scene = state.order[state.idx];
+  const conf = parseInt(confSlider.value,10);
+  const correct = (choice === scene.kind);
+  // Calibration scoring: signed confidence as points.
+  // delta = +conf if right, -conf if wrong. 50% means ±50 (still some pressure).
+  const delta = correct ? conf : -conf;
+  state.score += delta;
+  state.rounds += 1;
+  if(correct){ state.correctCount += 1; state.confSumCorrect += conf; }
+  else       { state.confSumWrong += conf; }
+
+  // Unlock tells from this scene
+  for(const t of scene.tells){ state.unlockedTells.add(t.cat); }
+
+  // Draw annotations overlay
+  renderAnnotations(scene);
+
+  // Lock guess UI
+  btnReal.disabled = true;
+  btnAI.disabled = true;
+  scoreNow.textContent = state.score;
+  state.lastGuess = { choice, conf, correct, delta };
+
+  // Reveal
+  revealBox.className = "reveal " + (correct?"correct":"wrong");
+  const verdictClass = correct?"correct":"wrong";
+  const verdictText  = correct?"You got it.":"Not quite.";
+  const truth        = scene.kind === "real" ? `It was a <span class="label-real">real photo</span>.` : `It was <span class="label-ai">AI-generated</span>.`;
+  const sign = delta >= 0 ? "+" : "";
+  let html = `<h3><span class="verdict ${verdictClass}">${verdictText}</span><span class="deltapts">${sign}${delta} pts (${conf}% confidence)</span></h3>`;
+  html += `<p style="margin:0 0 6px;">${truth}</p>`;
+  if(scene.tells.length){
+    html += `<p style="margin:0;"><b>Detective Mode</b> — the tells:</p><ul class="tells">`;
+    for(const t of scene.tells){
+      html += `<li><b>${TELLS[t.cat].name}:</b> ${t.note}</li>`;
+    }
+    html += `</ul>`;
+    overlayToggleEl.innerHTML = `<button class="ghost" id="toggleAnnot" style="padding:4px 10px;font-size:12px;">Hide tells</button>`;
+    setTimeout(()=>{
+      const b = document.getElementById("toggleAnnot");
+      if(b) b.addEventListener("click", ()=>{
+        annotEl.classList.toggle("show");
+        b.textContent = annotEl.classList.contains("show") ? "Hide tells" : "Show tells";
+      });
+    },0);
+  } else {
+    html += `<p style="margin:0;color:var(--ink-soft);">No fakery here — this one was the real deal.</p>`;
+  }
+  revealBox.innerHTML = html;
+  revealBox.classList.remove("hidden");
+  nextBtn.classList.remove("hidden");
+  nextBtn.textContent = (state.idx === state.order.length-1) ? "See results →" : "Next round →";
+}
+
+function renderAnnotations(scene){
+  if(!scene.tells.length){ annotEl.innerHTML = ""; return; }
+  let inner = '<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet">';
+  scene.tells.forEach((t,i)=>{
+    inner += `<circle cx="${t.cx}" cy="${t.cy}" r="${t.r}" />`;
+    // small numeric label
+    const lx = t.cx + t.r + 4;
+    const ly = t.cy - t.r;
+    inner += `<text x="${lx}" y="${ly}">${i+1}</text>`;
+  });
+  inner += '</svg>';
+  annotEl.innerHTML = inner;
+  annotEl.classList.add("show");
+}
+
+function finishGame(){
+  gameEl.classList.add("hidden");
+  endEl.classList.remove("hidden");
+  progressBar.style.width = "100%";
+  const total = state.rounds || 1;
+  const acc = Math.round((state.correctCount / total) * 100);
+  // Calibration: average confidence on correct minus average confidence on wrong.
+  // Perfect = high conf when right, low conf when wrong. Reported on 0-100 scale.
+  const cc = state.correctCount;
+  const cw = total - state.correctCount;
+  const avgCorrectConf = cc ? state.confSumCorrect / cc : 0;
+  const avgWrongConf   = cw ? state.confSumWrong   / cw : 0;
+  let cal;
+  if(cc === 0 && cw === 0){ cal = "—"; }
+  else if(cc === 0){ cal = `${Math.max(0, Math.round(100 - avgWrongConf))}%`; }
+  else if(cw === 0){ cal = `${Math.round(avgCorrectConf)}%`; }
+  else {
+    // 50 + half the gap; clamp 0-100
+    const raw = 50 + (avgCorrectConf - avgWrongConf)/2;
+    cal = `${Math.max(0,Math.min(100,Math.round(raw)))}%`;
+  }
+  $("endScore").textContent = state.score;
+  $("endAcc").textContent   = acc + "%";
+  $("endCal").textContent   = cal;
+  $("endTells").textContent = `${state.unlockedTells.size} / ${Object.keys(TELLS).length}`;
+
+  let head, blurb;
+  if(acc >= 85){ head="Sharp eyes."; blurb="You're catching the tells most adults miss. Try this on real images you scroll past."; }
+  else if(acc >= 65){ head="Solid detective work."; blurb="You're spotting patterns. Watch your confidence — being humble when unsure is a real skill."; }
+  else if(acc >= 45){ head="Good start."; blurb="The categories in the Field Guide below will sharpen your eye. Play again in a week."; }
+  else { head="Tricky, right?"; blurb="That's the point — AI images are hard. Read the Field Guide below and try again."; }
+  $("endHeadline").textContent = head;
+  $("endBlurb").textContent = blurb;
+
+  // Render field guide
+  renderGuide();
+  switchEndTab("guide");
+}
+
+function switchEndTab(which){
+  const a = $("tabGuide"), b = $("tabAgain");
+  const ap = $("guidePanel"), bp = $("againPanel");
+  if(which === "guide"){
+    a.classList.add("on"); b.classList.remove("on");
+    ap.classList.remove("hidden"); bp.classList.add("hidden");
+  } else {
+    b.classList.add("on"); a.classList.remove("on");
+    bp.classList.remove("hidden"); ap.classList.add("hidden");
+  }
+}
+
+function renderGuide(){
+  const host = $("guidePanel");
+  host.innerHTML = "";
+  for(const k of Object.keys(TELLS)){
+    const t = TELLS[k];
+    const unlocked = state.unlockedTells.has(k);
+    const card = document.createElement("div");
+    card.className = "card" + (unlocked?"":" locked");
+    card.innerHTML = `<h4>${t.name}${unlocked?'<span class="badge">unlocked</span>':''}</h4><p>${unlocked? t.blurb : "Spot this category in a round to unlock."}</p>`;
+    host.appendChild(card);
+  }
+}
+</script>
+</body>
+</html>
