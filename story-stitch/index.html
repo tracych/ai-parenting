@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Story Stitch — a story your family writes together</title>
+<style>
+  :root {
+    --cream: #fbf5e9;
+    --cream-2: #f3e8cf;
+    --paper: #fffdf6;
+    --ink: #29262d;
+    --ink-soft: #5e5868;
+    --line: #e6dcc4;
+    --plum: #6c3a8c;
+    --plum-soft: #ecdcf6;
+    --rose: #d9486b;
+    --rose-soft: #fbdde4;
+    --gold: #d99b1f;
+    --gold-soft: #fbecc6;
+    --teal: #2e8a8a;
+    --teal-soft: #cfe9e6;
+    --green: #5b8c3f;
+    --green-soft: #dceccc;
+    --shadow: 0 4px 14px rgba(41, 38, 45, 0.08);
+    --shadow-lift: 0 10px 28px rgba(41, 38, 45, 0.16);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: "Georgia", "Iowan Old Style", "Palatino", serif;
+    line-height: 1.55;
+  }
+  body.printing { background: white; }
+  button, input, select, textarea {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 1rem;
+    color: var(--ink);
+  }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 18px;
+    background: var(--plum);
+    color: white;
+    font-weight: 600;
+    transition: transform .08s ease, box-shadow .15s ease, background .15s ease;
+    box-shadow: var(--shadow);
+  }
+  button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+  button:active:not(:disabled) { transform: translateY(0); }
+  button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+  button.ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    box-shadow: none;
+    border: 1px solid var(--line);
+  }
+  button.ghost:hover:not(:disabled) { background: var(--cream-2); color: var(--ink); }
+  button.warn { background: var(--rose); }
+  button.gold { background: var(--gold); color: #3a2a06; }
+  button.small { padding: 6px 12px; font-size: .88rem; }
+
+  header.app-header {
+    padding: 22px 20px 10px;
+    text-align: center;
+    background: linear-gradient(180deg, var(--cream-2) 0%, var(--cream) 100%);
+    border-bottom: 1px solid var(--line);
+  }
+  .app-header h1 {
+    margin: 0 0 4px;
+    font-size: 1.85rem;
+    letter-spacing: -.4px;
+  }
+  .app-header h1 .stitch { color: var(--plum); font-style: italic; }
+  .app-header p.tagline {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: .98rem;
+  }
+  nav.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 14px auto 0;
+    flex-wrap: wrap;
+    max-width: 720px;
+  }
+  nav.tabs button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--ink-soft);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: .92rem;
+    font-weight: 500;
+    box-shadow: none;
+  }
+  nav.tabs button:hover { background: var(--cream-2); color: var(--ink); transform: none; box-shadow: none; }
+  nav.tabs button.active {
+    background: var(--plum);
+    color: white;
+    font-weight: 600;
+  }
+
+  main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 22px 16px 80px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* === SETUP === */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow);
+    margin-bottom: 18px;
+  }
+  .card h2 {
+    margin: 0 0 6px;
+    font-size: 1.25rem;
+    color: var(--plum);
+  }
+  .card .hint {
+    margin: 0 0 16px;
+    color: var(--ink-soft);
+    font-size: .95rem;
+  }
+  .players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .player-row .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-family: system-ui, sans-serif;
+  }
+  .player-row input[type="text"] {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--cream);
+  }
+  .player-row input[type="text"]:focus {
+    outline: 2px solid var(--plum);
+    background: white;
+  }
+  .player-row .x-btn {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1;
+    box-shadow: none;
+  }
+  .player-row .x-btn:hover { background: var(--rose-soft); color: var(--rose); }
+  .add-player-btn {
+    background: var(--cream-2);
+    color: var(--ink);
+    box-shadow: none;
+    border: 1px dashed var(--line);
+    font-size: .92rem;
+  }
+  .add-player-btn:hover { background: var(--gold-soft); }
+
+  .genre-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .genre-tile {
+    background: var(--cream);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .15s ease;
+    color: var(--ink);
+    box-shadow: none;
+    font-weight: 500;
+    font-size: .95rem;
+    font-family: inherit;
+  }
+  .genre-tile .gicon { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+  .genre-tile:hover { border-color: var(--plum); background: var(--plum-soft); transform: none; box-shadow: var(--shadow); }
+  .genre-tile.selected {
+    border-color: var(--plum);
+    background: var(--plum-soft);
+    color: var(--plum);
+    font-weight: 700;
+    box-shadow: var(--shadow-lift);
+  }
+
+  .setup-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+
+  /* === WRITE === */
+  .write-layout {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .write-layout { grid-template-columns: 1fr; }
+  }
+
+  .turn-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--plum);
+  }
+  .turn-banner .avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    font-family: system-ui, sans-serif;
+  }
+  .turn-banner .turn-text { flex: 1; }
+  .turn-banner .turn-text strong { color: var(--plum); font-size: 1.1rem; }
+  .turn-banner .turn-text small { color: var(--ink-soft); display: block; }
+  .turn-meta {
+    color: var(--ink-soft);
+    font-size: .85rem;
+    text-align: right;
+    font-family: system-ui, sans-serif;
+  }
+  .turn-meta div { line-height: 1.3; }
+
+  .story-so-far {
+    background: var(--paper);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    line-height: 1.7;
+    font-size: 1.05rem;
+  }
+  .story-so-far .empty {
+    color: var(--ink-soft);
+    font-style: italic;
+    text-align: center;
+    padding: 20px 0;
+  }
+  .story-so-far .contribution {
+    display: inline;
+  }
+  .story-so-far .contribution-text {
+    color: var(--ink);
+  }
+  .story-so-far .attribution {
+    color: var(--ink-soft);
+    font-size: .75rem;
+    font-family: system-ui, sans-serif;
+    margin-left: 4px;
+    opacity: .55;
+  }
+  .story-so-far .contribution + .contribution::before {
+    content: " ";
+  }
+
+  .write-box {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  textarea.write-area {
+    width: 100%;
+    min-height: 110px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--cream);
+    resize: vertical;
+    line-height: 1.55;
+    font-family: inherit;
+    font-size: 1.05rem;
+  }
+  textarea.write-area:focus { outline: 2px solid var(--plum); background: white; }
+  .write-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .write-footer .counter {
+    color: var(--ink-soft);
+    font-size: .88rem;
+    font-family: system-ui, sans-serif;
+  }
+  .write-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* === IDEA SPARK PANEL === */
+  .spark-panel {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+  .spark-panel h3 {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .spark-panel .spark-hint {
+    margin: 0 0 12px;
+    font-size: .82rem;
+    color: var(--ink-soft);
+  }
+  .twist-btn {
+    width: 100%;
+    margin-bottom: 12px;
+    background: var(--gold);
+    color: #3a2a06;
+    font-weight: 700;
+  }
+  .twist-out {
+    background: var(--gold-soft);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    font-style: italic;
+    font-size: .95rem;
+    color: #5a3a06;
+    border-left: 3px solid var(--gold);
+    display: none;
+  }
+  .twist-out.show { display: block; animation: fadein .25s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+  .spark-cats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .spark-cat {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .spark-cat-btn {
+    width: 100%;
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+    border-radius: 0;
+    padding: 9px 12px;
+    font-size: .9rem;
+    font-weight: 500;
+    box-shadow: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .spark-cat-btn:hover { background: var(--plum-soft); color: var(--plum); transform: none; box-shadow: none; }
+  .spark-cat-btn .arrow { font-size: .8rem; color: var(--ink-soft); }
+  .spark-cat-content {
+    padding: 10px 14px;
+    font-size: .92rem;
+    line-height: 1.5;
+    color: var(--ink);
+    background: white;
+    border-top: 1px solid var(--line);
+    display: none;
+    font-style: italic;
+  }
+  .spark-cat-content.show { display: block; }
+  .spark-cat-content .reroll {
+    display: block;
+    margin-top: 8px;
+    background: transparent;
+    color: var(--plum);
+    box-shadow: none;
+    border: none;
+    padding: 2px 0;
+    font-size: .82rem;
+    text-decoration: underline;
+    font-style: normal;
+  }
+  .spark-cat-content .reroll:hover { background: transparent; color: var(--rose); }
+
+  /* === STORYBOOK / FINAL === */
+  .storybook {
+    background: var(--paper);
+    border-radius: var(--radius);
+    padding: 36px 40px;
+    box-shadow: var(--shadow-lift);
+    border: 1px solid var(--line);
+    position: relative;
+  }
+  @media (max-width: 600px) {
+    .storybook { padding: 24px 20px; }
+  }
+  .storybook .genre-badge {
+    display: inline-block;
+    background: var(--plum-soft);
+    color: var(--plum);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+    font-family: system-ui, sans-serif;
+    margin-bottom: 8px;
+  }
+  .storybook h2.story-title {
+    margin: 0 0 6px;
+    font-size: 2.1rem;
+    line-height: 1.15;
+    color: var(--ink);
+    font-style: italic;
+  }
+  .storybook .byline {
+    margin: 0 0 22px;
+    color: var(--ink-soft);
+    font-size: .92rem;
+    font-family: system-ui, sans-serif;
+  }
+  .storybook .body p {
+    margin: 0 0 14px;
+    font-size: 1.1rem;
+    line-height: 1.75;
+    text-indent: 1.4em;
+  }
+  .storybook .body p:first-of-type { text-indent: 0; }
+  .storybook .body p:first-of-type::first-letter {
+    font-size: 2.6rem;
+    float: left;
+    line-height: 1;
+    padding-right: 6px;
+    color: var(--plum);
+    font-weight: 700;
+  }
+  .storybook .flourish {
+    text-align: center;
+    margin: 10px 0 18px;
+    color: var(--gold);
+  }
+  .storybook .body .attrib {
+    color: var(--ink-soft);
+    font-size: .72rem;
+    font-family: system-ui, sans-serif;
+    opacity: .55;
+    margin-left: 4px;
+    vertical-align: super;
+  }
+  .storybook .end-mark {
+    text-align: center;
+    margin-top: 24px;
+    color: var(--plum);
+    font-style: italic;
+    letter-spacing: 4px;
+    font-size: .95rem;
+  }
+
+  .final-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+
+  /* === LIBRARY === */
+  .lib-empty {
+    text-align: center;
+    color: var(--ink-soft);
+    padding: 40px 20px;
+    font-style: italic;
+  }
+  .lib-item {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    box-shadow: var(--shadow);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .lib-item:hover { box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+  .lib-item .lib-meta { flex: 1; }
+  .lib-item .lib-title { font-size: 1.1rem; font-style: italic; margin: 0 0 4px; }
+  .lib-item .lib-sub { font-size: .85rem; color: var(--ink-soft); font-family: system-ui, sans-serif; }
+  .lib-item .del-btn {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    box-shadow: none;
+    font-size: .85rem;
+  }
+  .lib-item .del-btn:hover { background: var(--rose-soft); color: var(--rose); }
+
+  /* === MODAL === */
+  .modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(41, 38, 45, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: white;
+    border-radius: var(--radius);
+    padding: 22px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: var(--shadow-lift);
+  }
+  .modal h3 { margin: 0 0 8px; color: var(--plum); }
+  .modal p { margin: 0 0 16px; color: var(--ink-soft); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* === PRINT === */
+  @media print {
+    body { background: white; }
+    header.app-header, nav.tabs, .final-actions, .modal-bg, .nav-back { display: none !important; }
+    main { padding: 0; max-width: none; }
+    .storybook { box-shadow: none; border: none; padding: 20px; }
+    .panel { display: none !important; }
+    .panel.print-show { display: block !important; }
+  }
+
+  .scroll-tip {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: .82rem;
+    margin-top: 6px;
+    font-family: system-ui, sans-serif;
+  }
+</style>
+</head>
+<body>
+<header class="app-header">
+  <h1>Story <span class="stitch">Stitch</span> ✍️</h1>
+  <p class="tagline">A story your family writes together, one sentence at a time.</p>
+  <nav class="tabs" id="tabs">
+    <button data-tab="setup" class="active">New Story</button>
+    <button data-tab="library">Library</button>
+  </nav>
+</header>
+
+<main>
+  <!-- SETUP PANEL -->
+  <section class="panel active" id="panel-setup">
+    <div class="card">
+      <h2>Who's playing?</h2>
+      <p class="hint">2 to 6 storytellers. Add yourself and the people around you.</p>
+      <div class="players-list" id="players-list"></div>
+      <button class="add-player-btn" id="add-player-btn">+ Add player</button>
+    </div>
+
+    <div class="card">
+      <h2>Pick a genre</h2>
+      <p class="hint">This tints the idea sparks and gives your story a feeling.</p>
+      <div class="genre-grid" id="genre-grid"></div>
+    </div>
+
+    <div class="setup-actions">
+      <button id="start-btn">Begin the story →</button>
+    </div>
+  </section>
+
+  <!-- WRITE PANEL -->
+  <section class="panel" id="panel-write">
+    <div class="write-layout">
+      <div>
+        <div class="turn-banner" id="turn-banner"></div>
+
+        <div class="story-so-far" id="story-so-far"></div>
+
+        <div class="write-box">
+          <textarea class="write-area" id="write-area" placeholder="Add 1–3 sentences to the story..."></textarea>
+          <div class="write-footer">
+            <div class="counter" id="counter">0 words · turn 1</div>
+            <div class="write-actions">
+              <button class="ghost small" id="end-btn">End story</button>
+              <button id="add-btn">Add to story →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="spark-panel" id="spark-panel">
+        <h3>💡 Idea Spark</h3>
+        <p class="spark-hint">Stuck? Tap a category for a curated nudge.</p>
+        <button class="twist-btn" id="twist-btn">🌀 Throw in a twist</button>
+        <div class="twist-out" id="twist-out"></div>
+        <div class="spark-cats" id="spark-cats"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- FINAL PANEL -->
+  <section class="panel" id="panel-final">
+    <div class="storybook" id="storybook"></div>
+    <div class="final-actions">
+      <button class="ghost" id="back-to-write-btn">← Keep writing</button>
+      <button class="gold" id="save-btn">💾 Save to library</button>
+      <button id="print-btn">🖨 Print storybook page</button>
+      <button class="ghost" id="new-story-btn">Start a new story</button>
+    </div>
+  </section>
+
+  <!-- LIBRARY PANEL -->
+  <section class="panel" id="panel-library">
+    <div class="card">
+      <h2>Family story library</h2>
+      <p class="hint">Stories your family has stitched together. Click one to re-read.</p>
+      <div id="library-list"></div>
+    </div>
+  </section>
+
+  <!-- LIBRARY READ PANEL -->
+  <section class="panel" id="panel-libread">
+    <button class="ghost small nav-back" id="lib-back-btn" style="margin-bottom:12px;">← Back to library</button>
+    <div class="storybook" id="libread-book"></div>
+    <div class="final-actions">
+      <button id="libread-print-btn">🖨 Print</button>
+    </div>
+  </section>
+</main>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h3 id="modal-title">Are you sure?</h3>
+    <p id="modal-body">This story is pretty short — are you sure you want to end it?</p>
+    <div class="modal-actions">
+      <button class="ghost" id="modal-cancel">Cancel</button>
+      <button class="warn" id="modal-ok">Yes, end story</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// =============================================================
+// DATA: genres
+// =============================================================
+const GENRES = [
+  { id: 'mystery',  name: 'Mystery',       icon: '🔍', tintWords: ['clue', 'footprint', 'whisper', 'shadow', 'locked', 'secret'] },
+  { id: 'adventure',name: 'Adventure',     icon: '🗺️', tintWords: ['cliff', 'jungle', 'compass', 'rope bridge', 'map', 'horizon'] },
+  { id: 'silly',    name: 'Silly',         icon: '🤪', tintWords: ['noodle', 'pickle', 'wobbly', 'honk', 'jellybean', 'sock'] },
+  { id: 'scary',    name: 'Gentle Scary',  icon: '🕯️', tintWords: ['creaky', 'foggy', 'cold breath', 'rustle', 'attic', 'flicker'] },
+  { id: 'scifi',    name: 'Sci-Fi',        icon: '🚀', tintWords: ['hover', 'circuit', 'star map', 'pod', 'signal', 'orbit'] },
+  { id: 'fairy',    name: 'Fairy Tale',    icon: '🏰', tintWords: ['mossy', 'thorned', 'enchanted', 'crown', 'goblin', 'wishing well'] }
+];
+
+// =============================================================
+// DATA: idea spark categories — each has 10+ prompts
+// =============================================================
+const SPARK_CATEGORIES = [
+  { id:'stranger', label:'Introduce a stranger', prompts:[
+    "A traveler appears at the edge of the path, asking for directions to nowhere in particular.",
+    "Someone is sitting where nobody was sitting a moment ago.",
+    "A child neither of them has seen before is waving from a window.",
+    "A figure in a long coat steps out from behind a tree, smiling like an old friend.",
+    "An old person carrying a wrapped package says they've been waiting.",
+    "A delivery person hands them a parcel with no name on it.",
+    "A new neighbor knocks, holding a plate of something steaming.",
+    "Someone runs up, breathless, and says one word, then leaves.",
+    "A small voice calls from beneath the floorboards.",
+    "A musician with a strange instrument asks if they may play.",
+    "A baker passes by with a tray and offers one to each person."
+  ]},
+  { id:'secret', label:'Reveal a secret', prompts:[
+    "It turns out the door was never locked at all.",
+    "She finally admits she's been doing this for years.",
+    "He pulls a folded letter out of his pocket and unfolds it carefully.",
+    "The note in the drawer was written in their own handwriting — but they don't remember writing it.",
+    "There is a room nobody is allowed to mention.",
+    "The photograph on the wall was taken yesterday, not decades ago.",
+    "She knew his real name all along.",
+    "What everyone thought was an accident, wasn't.",
+    "The voice on the radio is someone they know.",
+    "He has done this exact thing before, but nobody else remembers.",
+    "She has been talking to the cat, and the cat has been answering."
+  ]},
+  { id:'twist', label:'Throw in a twist', prompts:[
+    "Suddenly, it starts raining frogs.",
+    "The clock on the wall begins counting backwards.",
+    "Every mirror in the room shows a different season outside.",
+    "They realize they've been here before — exactly here — but they can't remember when.",
+    "What looked like a stuffed animal turns its head and looks back.",
+    "The map they were following begins to redraw itself.",
+    "Their shadows separate from them and walk in another direction.",
+    "Everyone in the room realizes they're holding the same key.",
+    "The story they were reading is the story they're living in.",
+    "Outside, the sky is upside down.",
+    "The dog says, very clearly, 'don't'."
+  ]},
+  { id:'setting', label:'Describe the setting', prompts:[
+    "Paint the smell — what does the air feel like in their nose?",
+    "What's the loudest sound nobody is paying attention to?",
+    "Is the light soft or sharp? Where is it coming from?",
+    "Describe the floor under their feet — what does it feel like?",
+    "What's hanging in the corner that nobody has noticed yet?",
+    "Is it warm enough? Too warm? How do their hands feel?",
+    "What color is the most important thing in the room?",
+    "What's just out of sight, around the corner?",
+    "Is there water somewhere — dripping, lapping, rushing?",
+    "How old does this place feel? What lived here before?",
+    "What time of day is it, really?"
+  ]},
+  { id:'problem', label:'Add a problem', prompts:[
+    "Something they needed is suddenly missing.",
+    "The way they came in has closed behind them.",
+    "Someone they trusted has gone quiet.",
+    "A sound is getting closer.",
+    "They have to choose, and they have to choose now.",
+    "Time is running out — and there's no clock.",
+    "Two of them want very different things.",
+    "What worked yesterday won't work today.",
+    "An old promise has come due.",
+    "Someone is hurt, and they don't know how badly.",
+    "The light is going out."
+  ]},
+  { id:'timeskip', label:'Skip ahead in time', prompts:[
+    "Three days later, everything looks different.",
+    "By morning, nobody is where they were last night.",
+    "A whole season passes in one breath.",
+    "When she finally opens her eyes, it is winter.",
+    "Years go by, and the story finds them again.",
+    "Just an hour later — but an hour is a long time when everything changes.",
+    "They wake up, and the room is not the same room.",
+    "By the time the sun is up, two of them are gone.",
+    "A week passes. Nobody mentions what happened.",
+    "The next thing anyone remembers is being far, far from where they started.",
+    "When they look up, the leaves are red."
+  ]},
+  { id:'callback', label:'Bring back something from before', prompts:[
+    "The thing they thought they'd lost is suddenly in their hand again.",
+    "Someone from earlier in the story walks back through the door.",
+    "The first clue they ignored turns out to matter most.",
+    "A word that was said hours ago echoes back, in a new voice.",
+    "What was once broken is whole again, and nobody can explain it.",
+    "The song from the very beginning is playing somewhere far off.",
+    "An old friend appears — but they're younger than they should be.",
+    "Something they buried has been uncovered.",
+    "The smell of that one place is suddenly here, too.",
+    "The animal from chapter one is back, and it remembers.",
+    "Two strangers finally recognize each other."
+  ]},
+  { id:'sense', label:'Add a sound or smell', prompts:[
+    "Somewhere very far away, a bell begins to ring.",
+    "A faint smell of warm bread drifts in from nowhere.",
+    "There's a humming — low, steady, and not quite human.",
+    "The air smells like rain about to fall.",
+    "A door slams in a room they cannot see.",
+    "Cinnamon. Definitely cinnamon. But who is baking?",
+    "Footsteps overhead, slow and careful.",
+    "A faint music, like someone singing in their sleep.",
+    "The sharp, metal smell of something old being opened.",
+    "Wind chimes — but there is no wind.",
+    "The unmistakable smell of the sea, indoors."
+  ]},
+  { id:'feeling', label:'Show how they feel', prompts:[
+    "Her hands won't quite stop shaking.",
+    "He laughs, but it doesn't sound like his laugh.",
+    "She wants to run, but her feet have other ideas.",
+    "Something in his chest gets very quiet.",
+    "Tears come without warning and without permission.",
+    "She is surprised by how brave she suddenly feels.",
+    "Relief washes over them like warm water.",
+    "He doesn't know whether to be furious or to cry.",
+    "Just for a second, everything feels exactly right.",
+    "The silence between them says everything.",
+    "She realizes, with a small shock, that she's happy."
+  ]},
+  { id:'dialog', label:'Let someone speak', prompts:[
+    "'I knew you'd come,' she said, without turning around.",
+    "'We have to leave. Now.'",
+    "'You're not going to believe me, but —'",
+    "'I'm sorry. I should have told you sooner.'",
+    "'What if we just... didn't?'",
+    "'Wait. Listen.'",
+    "'That's not what it looks like. It's worse.'",
+    "'I've been here before. In a dream.'",
+    "'Promise me you won't open it.'",
+    "'Where did you get that?'",
+    "'It's me. It's really me.'"
+  ]},
+  { id:'object', label:'Introduce an object', prompts:[
+    "A small wooden box, no bigger than a fist, sits on the table.",
+    "There is a key on a red ribbon, hanging from a nail.",
+    "A single photograph, curled at the edges, lies face-down on the floor.",
+    "An umbrella that wasn't there a moment ago.",
+    "A glass marble rolls across the floor and stops, as if it meant to.",
+    "A locket, warm to the touch.",
+    "A folded paper bird, with writing on one wing.",
+    "An old coat, far too big for anyone in the room.",
+    "A jar of buttons. Every button is different.",
+    "A pair of shoes by the door, still wet.",
+    "A book with no title, and no last page."
+  ]},
+  { id:'choice', label:'Force a choice', prompts:[
+    "Two doors. One won't open again once you close it.",
+    "Stay together, or split up to cover more ground.",
+    "Tell the truth, or keep the secret one more day.",
+    "Trust the stranger, or trust the warning.",
+    "Take the shortcut you don't know, or the long way you do.",
+    "Help the person in front of you, or chase what you came for.",
+    "Open it, or leave it sealed forever.",
+    "Speak now, or never get the chance again.",
+    "Go back the way you came, or push deeper in.",
+    "Keep the gift, or give it away.",
+    "Save the thing, or save the person."
+  ]}
+];
+
+// =============================================================
+// DATA: 50+ twists for the Twist button
+// =============================================================
+const TWISTS = [
+  "Suddenly it starts raining frogs.",
+  "They realize they've been here before.",
+  "The lights cut out — but only for one of them.",
+  "A door appears in a wall that used to be solid.",
+  "Their reflection waves first.",
+  "Someone they thought was a stranger says their full name.",
+  "An animal begins, very politely, to speak.",
+  "The ground tilts, just a little, and nobody else notices.",
+  "A clock everyone forgot strikes thirteen.",
+  "What looked like one person was always two.",
+  "The youngest one in the room is suddenly the oldest.",
+  "Everything they wrote down has rearranged itself.",
+  "A song they've never heard becomes the song they've always known.",
+  "They open the box. The box is empty. The box is heavier.",
+  "Someone they love stands in the doorway, soaking wet.",
+  "A letter arrives — postmarked tomorrow.",
+  "Their pockets are full of seeds they didn't pick.",
+  "The window now shows a different town.",
+  "A child laughs in the next room. There is no next room.",
+  "Their shoes are on the wrong feet, and they didn't change them.",
+  "The lights come back on, and one chair has moved.",
+  "The radio plays a voice asking if they can hear it.",
+  "A staircase appears, going down.",
+  "Their phone rings. The caller is them.",
+  "What they came for is gone. What they didn't come for is here.",
+  "An old enemy offers to help.",
+  "The dog is missing. The dog was never there.",
+  "Everyone's coat fits someone else better.",
+  "Outside, snow. It is July.",
+  "Their hands won't stop drawing the same symbol.",
+  "Someone laughs from inside the wall.",
+  "The mirror has cracked along a face they recognize.",
+  "Time skips back exactly four minutes.",
+  "They taste salt water on their tongue. They are far inland.",
+  "Their name is on a list pinned to the door.",
+  "The picture frame is empty now.",
+  "The youngest knows the way.",
+  "A small voice says, 'finally.'",
+  "Their compass spins, then points up.",
+  "A flower blooms out of season at their feet.",
+  "Someone hands them their own handwriting.",
+  "The food on the table is still warm.",
+  "Their shadow is talking to someone else's shadow.",
+  "A child they've never met calls them Mom. Or Dad. Or both.",
+  "The path behind them is gone.",
+  "The lock turns from the inside.",
+  "Their oldest memory is happening again, now.",
+  "A door they pass through closes behind them with a sigh.",
+  "Every candle in the room lights itself.",
+  "The thing they buried has come back.",
+  "The story they're telling is being told back to them.",
+  "A bird flies in through a closed window.",
+  "What the youngest one drew on a napkin is now hanging on the wall.",
+  "Someone says 'don't say it' before anyone has said anything."
+];
+
+// =============================================================
+// DATA: title word banks per genre (for auto-title generation)
+// =============================================================
+const TITLE_PATTERNS = {
+  mystery:   ["The %% of %%", "The Case of the %%", "What Happened to %%", "The %% Mystery", "The %% Who Knew", "Behind the %%"],
+  adventure: ["The %% Beyond %%", "Into the %%", "The Last %%", "The %% Quest", "%% and the %%", "Across the %%"],
+  silly:     ["The Day the %% %%", "%%-%% Trouble", "Too Many %%", "The Great %% Caper", "Why the %% %%"],
+  scary:     ["The %% in the %%", "Don't Look at the %%", "The %% Comes Back", "Whispers from the %%", "A %% Kind of Night"],
+  scifi:     ["The %% Signal", "Beyond the %% Belt", "When the %% Woke Up", "The Last %% on %%", "Voyage of the %%"],
+  fairy:     ["The %% and the %%", "The Princess Who %%", "The %% Wood", "A Wish for %%", "The %% King"]
+};
+const TITLE_NOUNS = {
+  mystery:   ["Clue","Footprint","Stranger","Letter","Whisper","Stairway","Locked Room","Garden","Mirror","Watchmaker","Lighthouse","Neighbor"],
+  adventure: ["Mountain","Island","River","Cave","Map","Compass","Bridge","Storm","Valley","Cliff","Jungle","Horizon"],
+  silly:     ["Pickle","Goose","Sock","Pancake","Noodle","Hamster","Wobble","Honk","Pajamas","Mayor","Submarine","Mustache"],
+  scary:     ["Attic","Hollow","Whisper","Lantern","Shadow","Door","Stairs","Hush","Cellar","Fog","Closet","Mirror"],
+  scifi:     ["Comet","Pod","Signal","Orbit","Drone","Cipher","Station","Crystal","Engine","Nebula","Moon","Mars"],
+  fairy:     ["Frog","Crown","Tower","Wolf","Witch","Spindle","Spell","Goblin","Rose","Mirror","Apple","Acorn"]
+};
+const TITLE_VERBS = {
+  mystery:   ["Vanished","Knew","Lied","Hid","Returned","Spoke"],
+  adventure: ["Climbed","Sailed","Crossed","Found","Lost","Dared"],
+  silly:     ["Exploded","Hiccupped","Wore Hats","Forgot Pants","Got Loose","Sang Opera"],
+  scary:     ["Came Back","Watched","Knocked","Hummed","Walked Again","Listened"],
+  scifi:     ["Woke","Glitched","Phased","Landed","Pinged","Refused"],
+  fairy:     ["Refused","Sang","Forgave","Saved","Bargained","Outsmarted"]
+};
+
+// =============================================================
+// PRNG (deterministic, seedable) — Mulberry32
+// =============================================================
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function pick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
+
+// =============================================================
+// STATE
+// =============================================================
+const STORAGE_KEY = 'story-stitch-v1';
+const AVATAR_COLORS = ['#6c3a8c','#d9486b','#d99b1f','#2e8a8a','#5b8c3f','#a04a3a','#3a5ca0','#7a3a8c'];
+
+const state = {
+  players: [
+    { name:'', color: AVATAR_COLORS[0] },
+    { name:'', color: AVATAR_COLORS[1] }
+  ],
+  genre: 'mystery',
+  contributions: [], // [{playerIdx, text}]
+  currentPlayer: 0,
+  turn: 1,
+  rngSeed: Math.floor(Math.random() * 0xFFFFFFFF),
+  twistCursor: 0,
+  expandedCats: {}, // catId -> current prompt index
+};
+
+let pendingModalAction = null;
+let currentLibraryItem = null;
+
+// =============================================================
+// SAVED LIBRARY
+// =============================================================
+function loadLibrary() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch(e) { return []; }
+}
+function saveLibrary(list) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+  catch(e) { console.warn('save failed', e); }
+}
+
+// =============================================================
+// SETUP UI
+// =============================================================
+const playersList = document.getElementById('players-list');
+const addPlayerBtn = document.getElementById('add-player-btn');
+const genreGrid = document.getElementById('genre-grid');
+const startBtn = document.getElementById('start-btn');
+
+function avatarLetter(name, idx) {
+  const trimmed = (name || '').trim();
+  if (trimmed) return trimmed.charAt(0).toUpperCase();
+  return String.fromCharCode(65 + idx); // A, B, C ...
+}
+
+function renderPlayersSetup() {
+  playersList.innerHTML = '';
+  state.players.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    const letter = avatarLetter(p.name, i);
+    row.innerHTML = `
+      <span class="avatar" style="background:${p.color}">${letter}</span>
+      <input type="text" placeholder="Player ${i+1} name" value="${escapeHtml(p.name)}" />
+      <button class="x-btn" title="Remove" aria-label="Remove player">×</button>
+    `;
+    const input = row.querySelector('input');
+    input.addEventListener('input', (e) => {
+      state.players[i].name = e.target.value;
+      row.querySelector('.avatar').textContent = avatarLetter(e.target.value, i);
+    });
+    const x = row.querySelector('.x-btn');
+    x.addEventListener('click', () => {
+      if (state.players.length <= 2) {
+        flashHint(row, 'Need at least 2 players');
+        return;
+      }
+      state.players.splice(i, 1);
+      renderPlayersSetup();
+    });
+    playersList.appendChild(row);
+  });
+  addPlayerBtn.disabled = state.players.length >= 6;
+  addPlayerBtn.textContent = state.players.length >= 6 ? '6 player max' : '+ Add player';
+}
+
+function flashHint(el, msg) {
+  const old = el.style.background;
+  el.style.transition = 'background .2s';
+  el.style.background = '#fbdde4';
+  setTimeout(()=>{ el.style.background = old; }, 400);
+}
+
+addPlayerBtn.addEventListener('click', () => {
+  if (state.players.length >= 6) return;
+  state.players.push({ name:'', color: AVATAR_COLORS[state.players.length % AVATAR_COLORS.length] });
+  renderPlayersSetup();
+});
+
+function renderGenres() {
+  genreGrid.innerHTML = '';
+  GENRES.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'genre-tile' + (state.genre === g.id ? ' selected' : '');
+    btn.type = 'button';
+    btn.innerHTML = `<span class="gicon">${g.icon}</span>${g.name}`;
+    btn.addEventListener('click', () => {
+      state.genre = g.id;
+      renderGenres();
+    });
+    genreGrid.appendChild(btn);
+  });
+}
+
+startBtn.addEventListener('click', () => {
+  // Validate
+  const filled = state.players.filter(p => (p.name||'').trim().length > 0);
+  if (filled.length < 2) {
+    // Auto-fill blanks with "Player N"
+    state.players.forEach((p, i) => {
+      if (!(p.name||'').trim()) p.name = `Player ${i+1}`;
+    });
+    renderPlayersSetup();
+  }
+  // Reset story state
+  state.contributions = [];
+  state.currentPlayer = 0;
+  state.turn = 1;
+  state.rngSeed = Math.floor(Math.random() * 0xFFFFFFFF);
+  state.twistCursor = 0;
+  state.expandedCats = {};
+  showPanel('write');
+  renderWrite();
+});
+
+// =============================================================
+// TABS
+// =============================================================
+const tabsEl = document.getElementById('tabs');
+tabsEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-tab]');
+  if (!btn) return;
+  const tab = btn.dataset.tab;
+  if (tab === 'setup') showPanel('setup');
+  else if (tab === 'library') { showPanel('library'); renderLibrary(); }
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b === btn));
+});
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active', 'print-show'));
+  const target = document.getElementById('panel-' + name);
+  if (target) target.classList.add('active');
+  // mark print-show on final/libread for print
+  if (name === 'final') target.classList.add('print-show');
+  if (name === 'libread') target.classList.add('print-show');
+  // tab visual
+  document.querySelectorAll('#tabs button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === (name === 'library' || name === 'libread' ? 'library' : (name === 'setup' ? 'setup' : '')));
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// =============================================================
+// WRITE PANEL
+// =============================================================
+const turnBanner = document.getElementById('turn-banner');
+const storySoFar = document.getElementById('story-so-far');
+const writeArea = document.getElementById('write-area');
+const counterEl = document.getElementById('counter');
+const addBtn = document.getElementById('add-btn');
+const endBtn = document.getElementById('end-btn');
+const sparkCats = document.getElementById('spark-cats');
+const twistBtn = document.getElementById('twist-btn');
+const twistOut = document.getElementById('twist-out');
+
+function renderWrite() {
+  renderTurnBanner();
+  renderStorySoFar();
+  renderSparkCats();
+  writeArea.value = '';
+  twistOut.classList.remove('show');
+  twistOut.textContent = '';
+  updateCounter();
+  setTimeout(()=>writeArea.focus(), 30);
+}
+
+function renderTurnBanner() {
+  const p = state.players[state.currentPlayer];
+  const letter = avatarLetter(p.name, state.currentPlayer);
+  const wordCount = totalWordCount();
+  turnBanner.innerHTML = `
+    <span class="avatar" style="background:${p.color}">${letter}</span>
+    <div class="turn-text">
+      <strong>${escapeHtml(p.name)}</strong>'s turn
+      <small>Read the story so far, then add 1–3 sentences.</small>
+    </div>
+    <div class="turn-meta">
+      <div>Turn ${state.turn}</div>
+      <div>${wordCount} words</div>
+    </div>
+  `;
+}
+
+function renderStorySoFar() {
+  if (state.contributions.length === 0) {
+    storySoFar.innerHTML = `<div class="empty">A blank page. Whoever's up first sets the scene — a place, a moment, a who. Anything is allowed.</div>`;
+    return;
+  }
+  const html = state.contributions.map(c => {
+    const p = state.players[c.playerIdx];
+    const initial = avatarLetter(p.name, c.playerIdx);
+    return `<span class="contribution"><span class="contribution-text">${escapeHtml(c.text)}</span><span class="attribution" title="${escapeHtml(p.name)}">— ${escapeHtml(initial)}</span></span>`;
+  }).join(' ');
+  storySoFar.innerHTML = html;
+  // scroll to bottom so latest is visible
+  storySoFar.scrollTop = storySoFar.scrollHeight;
+}
+
+function totalWordCount() {
+  return state.contributions.reduce((sum, c) => sum + countWords(c.text), 0);
+}
+function countWords(s) {
+  return (s.trim().match(/\S+/g) || []).length;
+}
+
+function updateCounter() {
+  const draft = writeArea.value;
+  const draftWords = countWords(draft);
+  counterEl.textContent = `${draftWords} word${draftWords===1?'':'s'} · turn ${state.turn}`;
+  addBtn.disabled = draftWords === 0;
+}
+
+writeArea.addEventListener('input', updateCounter);
+
+addBtn.addEventListener('click', () => {
+  const text = writeArea.value.trim();
+  if (!text) return;
+  state.contributions.push({ playerIdx: state.currentPlayer, text });
+  state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
+  state.turn += 1;
+  renderWrite();
+});
+
+endBtn.addEventListener('click', () => {
+  const words = totalWordCount();
+  if (state.contributions.length === 0) {
+    openModal('Nothing to end yet', 'The story hasn\'t started. Add the first sentences first!', 'Okay', null);
+    return;
+  }
+  if (words < 60 || state.contributions.length < state.players.length) {
+    openModal(
+      'End the story already?',
+      `This story is pretty short (${words} words, ${state.contributions.length} turn${state.contributions.length===1?'':'s'}). Are you sure you want to finish it?`,
+      'Yes, end it',
+      () => finishStory()
+    );
+    return;
+  }
+  finishStory();
+});
+
+// =============================================================
+// IDEA SPARK
+// =============================================================
+function genreTinted(prompt) {
+  // For tinted genres we don't rewrite prompts (curated already), but we mix in a tint word for "Describe the setting" + a couple others
+  return prompt;
+}
+
+function renderSparkCats() {
+  sparkCats.innerHTML = '';
+  SPARK_CATEGORIES.forEach(cat => {
+    const wrap = document.createElement('div');
+    wrap.className = 'spark-cat';
+    wrap.innerHTML = `
+      <button class="spark-cat-btn" type="button">
+        <span>${escapeHtml(cat.label)}</span>
+        <span class="arrow">▾</span>
+      </button>
+      <div class="spark-cat-content"></div>
+    `;
+    const btn = wrap.querySelector('.spark-cat-btn');
+    const content = wrap.querySelector('.spark-cat-content');
+    btn.addEventListener('click', () => {
+      const isOpen = content.classList.contains('show');
+      // Close others
+      sparkCats.querySelectorAll('.spark-cat-content.show').forEach(el => el.classList.remove('show'));
+      sparkCats.querySelectorAll('.spark-cat-btn .arrow').forEach(a => a.textContent = '▾');
+      if (!isOpen) {
+        showSparkPrompt(cat, content);
+        content.classList.add('show');
+        btn.querySelector('.arrow').textContent = '▴';
+      }
+    });
+    sparkCats.appendChild(wrap);
+  });
+}
+
+function showSparkPrompt(cat, container) {
+  const rng = mulberry32(state.rngSeed + cat.id.charCodeAt(0) + (state.expandedCats[cat.id] || 0) * 1009);
+  const prompt = pick(rng, cat.prompts);
+  state.expandedCats[cat.id] = (state.expandedCats[cat.id] || 0) + 1;
+  container.innerHTML = `<span>${escapeHtml(genreTinted(prompt))}</span>`;
+  const reroll = document.createElement('button');
+  reroll.className = 'reroll';
+  reroll.type = 'button';
+  reroll.textContent = '↻ another one';
+  reroll.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showSparkPrompt(cat, container);
+  });
+  container.appendChild(reroll);
+}
+
+twistBtn.addEventListener('click', () => {
+  const rng = mulberry32(state.rngSeed + state.twistCursor * 7919 + 31);
+  // Use cursor + rng to pick — guarantees variety even with same seed
+  const idx = (Math.floor(rng() * TWISTS.length) + state.twistCursor) % TWISTS.length;
+  state.twistCursor += 1;
+  twistOut.textContent = '"' + TWISTS[idx] + '"';
+  twistOut.classList.add('show');
+});
+
+// =============================================================
+// FINAL STORYBOOK
+// =============================================================
+const storybookEl = document.getElementById('storybook');
+const finalActions = {
+  back: document.getElementById('back-to-write-btn'),
+  save: document.getElementById('save-btn'),
+  print: document.getElementById('print-btn'),
+  newStory: document.getElementById('new-story-btn'),
+};
+
+let lastFinalStory = null;
+let savedThisStory = false;
+
+function finishStory() {
+  const storyObj = buildStoryObject();
+  lastFinalStory = storyObj;
+  savedThisStory = false;
+  finalActions.save.disabled = false;
+  finalActions.save.textContent = '💾 Save to library';
+  renderStorybook(storybookEl, storyObj);
+  showPanel('final');
+}
+
+function buildStoryObject() {
+  const title = generateTitle(state.contributions, state.genre, state.rngSeed);
+  const players = state.players.map(p => ({ name: p.name, color: p.color }));
+  return {
+    id: 'story_' + Date.now(),
+    createdAt: new Date().toISOString(),
+    title,
+    genre: state.genre,
+    players,
+    contributions: state.contributions.slice(),
+    seed: state.rngSeed
+  };
+}
+
+function generateTitle(contribs, genreId, seed) {
+  const rng = mulberry32(seed ^ 0xA11CE);
+  // Try to find proper nouns or distinctive nouns from the story
+  const text = contribs.map(c => c.text).join(' ');
+  const words = text.match(/[A-Z][a-z]+/g) || [];
+  const cleanWords = words.filter(w => !['The','A','An','And','But','So','I','He','She','They','We','It','Then','Now','One','Two','When','Where'].includes(w));
+  const pattern = pick(rng, TITLE_PATTERNS[genreId] || TITLE_PATTERNS.adventure);
+  const nounBank = TITLE_NOUNS[genreId] || TITLE_NOUNS.adventure;
+  const verbBank = TITLE_VERBS[genreId] || TITLE_VERBS.adventure;
+
+  // Replace each %% in pattern. Strategy:
+  // - first %% → use a story noun if available, else from bank
+  // - if pattern contains a verb position (we detect by word "Who"/"Day the"), use a verb
+  const parts = pattern.split('%%');
+  let out = parts[0];
+  for (let i = 1; i < parts.length; i++) {
+    const before = parts[i-1].toLowerCase();
+    let fill;
+    if (/who $|day the $/.test(before) || /\b(who|that)\s*$/.test(before)) {
+      // sometimes a verb fits
+      fill = pick(rng, verbBank);
+    } else if (cleanWords.length > 0 && rng() < 0.55) {
+      const idx = Math.floor(rng() * cleanWords.length);
+      fill = cleanWords.splice(idx, 1)[0];
+    } else {
+      fill = pick(rng, nounBank);
+    }
+    out += fill + parts[i];
+  }
+  return out;
+}
+
+// Group contributions into paragraphs (every 3-4 contributions, or by length)
+function groupIntoParagraphs(contribs) {
+  const paras = [];
+  let current = [];
+  let currentLen = 0;
+  contribs.forEach((c, i) => {
+    current.push(c);
+    currentLen += c.text.length;
+    if (currentLen > 280 || current.length >= 4 || i === contribs.length - 1) {
+      paras.push(current);
+      current = [];
+      currentLen = 0;
+    }
+  });
+  if (current.length) paras.push(current);
+  return paras;
+}
+
+function renderStorybook(targetEl, story) {
+  const genre = GENRES.find(g => g.id === story.genre) || GENRES[0];
+  const paras = groupIntoParagraphs(story.contributions);
+  const byline = story.players.map(p => p.name).join(' · ');
+  const dateStr = new Date(story.createdAt).toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+
+  const flourishSvg = `<svg class="flourish-svg" width="80" height="14" viewBox="0 0 80 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2 7 Q 20 1, 40 7 T 78 7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="40" cy="7" r="2" fill="currentColor"/></svg>`;
+
+  const bodyHtml = paras.map((para, pi) => {
+    const inner = para.map(c => {
+      const p = story.players[c.playerIdx];
+      const initial = avatarLetter(p.name, c.playerIdx);
+      return `${escapeHtml(c.text)}<span class="attrib" title="${escapeHtml(p.name)}">${escapeHtml(initial)}</span>`;
+    }).join(' ');
+    const flourish = pi < paras.length - 1 ? `<div class="flourish">${flourishSvg}</div>` : '';
+    return `<p>${inner}</p>${flourish}`;
+  }).join('');
+
+  targetEl.innerHTML = `
+    <span class="genre-badge">${genre.icon} ${genre.name}</span>
+    <h2 class="story-title">${escapeHtml(story.title)}</h2>
+    <p class="byline">Stitched together by ${escapeHtml(byline)} · ${dateStr}</p>
+    <div class="body">${bodyHtml}</div>
+    <div class="end-mark">· · ·  THE END  · · ·</div>
+  `;
+}
+
+finalActions.back.addEventListener('click', () => {
+  showPanel('write');
+  renderWrite();
+});
+finalActions.save.addEventListener('click', () => {
+  if (!lastFinalStory || savedThisStory) return;
+  const lib = loadLibrary();
+  lib.unshift(lastFinalStory);
+  saveLibrary(lib);
+  savedThisStory = true;
+  finalActions.save.textContent = '✓ Saved';
+  finalActions.save.disabled = true;
+});
+finalActions.print.addEventListener('click', () => {
+  window.print();
+});
+finalActions.newStory.addEventListener('click', () => {
+  if (!savedThisStory && lastFinalStory) {
+    openModal(
+      'Start a new story?',
+      'You haven\'t saved this story to the library yet. Start a new one anyway?',
+      'Yes, start new',
+      () => resetToSetup()
+    );
+  } else {
+    resetToSetup();
+  }
+});
+
+function resetToSetup() {
+  state.contributions = [];
+  state.currentPlayer = 0;
+  state.turn = 1;
+  state.expandedCats = {};
+  state.twistCursor = 0;
+  lastFinalStory = null;
+  savedThisStory = false;
+  showPanel('setup');
+  // re-mark tab
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === 'setup'));
+}
+
+// =============================================================
+// LIBRARY
+// =============================================================
+const libraryList = document.getElementById('library-list');
+const libreadBook = document.getElementById('libread-book');
+const libBackBtn = document.getElementById('lib-back-btn');
+const libreadPrintBtn = document.getElementById('libread-print-btn');
+
+function renderLibrary() {
+  const lib = loadLibrary();
+  if (lib.length === 0) {
+    libraryList.innerHTML = `<div class="lib-empty">No stories saved yet.<br>Finish a story and tap "Save to library" to keep it here forever.</div>`;
+    return;
+  }
+  libraryList.innerHTML = '';
+  lib.forEach((story, idx) => {
+    const genre = GENRES.find(g => g.id === story.genre) || GENRES[0];
+    const dateStr = new Date(story.createdAt).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+    const byline = story.players.map(p => p.name).join(', ');
+    const item = document.createElement('div');
+    item.className = 'lib-item';
+    item.innerHTML = `
+      <div class="lib-meta">
+        <p class="lib-title">${genre.icon} ${escapeHtml(story.title)}</p>
+        <div class="lib-sub">${escapeHtml(genre.name)} · ${dateStr} · ${escapeHtml(byline)}</div>
+      </div>
+      <button class="del-btn small" type="button">Delete</button>
+    `;
+    item.addEventListener('click', (e) => {
+      if (e.target.classList.contains('del-btn')) return;
+      currentLibraryItem = story;
+      renderStorybook(libreadBook, story);
+      showPanel('libread');
+    });
+    item.querySelector('.del-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openModal('Delete this story?', `"${story.title}" will be gone forever. Are you sure?`, 'Delete it', () => {
+        const cur = loadLibrary();
+        const filtered = cur.filter(s => s.id !== story.id);
+        saveLibrary(filtered);
+        renderLibrary();
+      });
+    });
+    libraryList.appendChild(item);
+  });
+}
+
+libBackBtn.addEventListener('click', () => { showPanel('library'); renderLibrary(); });
+libreadPrintBtn.addEventListener('click', () => { window.print(); });
+
+// =============================================================
+// MODAL
+// =============================================================
+const modalBg = document.getElementById('modal-bg');
+const modalTitle = document.getElementById('modal-title');
+const modalBody = document.getElementById('modal-body');
+const modalOk = document.getElementById('modal-ok');
+const modalCancel = document.getElementById('modal-cancel');
+
+function openModal(title, body, okLabel, onOk) {
+  modalTitle.textContent = title;
+  modalBody.textContent = body;
+  modalOk.textContent = okLabel;
+  pendingModalAction = onOk;
+  if (onOk) {
+    modalOk.style.display = '';
+    modalCancel.textContent = 'Cancel';
+  } else {
+    modalOk.style.display = 'none';
+    modalCancel.textContent = 'Close';
+  }
+  modalBg.classList.add('show');
+}
+function closeModal() {
+  modalBg.classList.remove('show');
+  pendingModalAction = null;
+}
+modalCancel.addEventListener('click', closeModal);
+modalOk.addEventListener('click', () => {
+  const fn = pendingModalAction;
+  closeModal();
+  if (fn) fn();
+});
+modalBg.addEventListener('click', (e) => { if (e.target === modalBg) closeModal(); });
+
+// =============================================================
+// UTIL
+// =============================================================
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// =============================================================
+// INIT
+// =============================================================
+renderPlayersSetup();
+renderGenres();
+
+</script>
+</body>
+</html>

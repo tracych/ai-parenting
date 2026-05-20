@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coding Story Builder 📖</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: 'Comic Sans MS', 'Chalkboard SE', system-ui, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #FFE9C7 0%, #C7E9FF 100%);
+    min-height: 100vh;
+    user-select: none;
+  }
+  #app { width: 100%; min-height: 100vh; display: flex; flex-direction: column; }
+
+  h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); color: #8E44AD; text-shadow: 2px 2px 0 #fff; }
+  h2 { font-size: clamp(1.2rem, 3vw, 1.7rem); color: #2E86AB; margin: 8px 0; }
+  h3 { font-size: 1.1rem; color: #555; margin: 6px 0; }
+  p { line-height: 1.4; color: #333; }
+
+  /* ===== Buttons ===== */
+  .btn {
+    font-family: inherit; font-weight: bold; cursor: pointer;
+    border: 3px solid #fff; border-radius: 16px;
+    padding: 10px 18px; font-size: 1rem;
+    background: #8E44AD; color: white;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.25), 0 6px 12px rgba(0,0,0,0.15);
+    transition: transform 0.08s, box-shadow 0.08s;
+    margin: 4px;
+  }
+  .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.25), 0 4px 8px rgba(0,0,0,0.15); }
+  .btn.big { font-size: 1.2rem; padding: 14px 22px; border-radius: 20px; }
+  .btn.green { background: #4CAF50; }
+  .btn.blue { background: #2E86AB; }
+  .btn.orange { background: #E67E22; }
+  .btn.red { background: #E74C3C; }
+  .btn.gray { background: #888; }
+  .btn.purple { background: #8E44AD; }
+  .btn.small { font-size: 0.85rem; padding: 6px 12px; border-radius: 12px; border-width: 2px; }
+
+  /* ===== Header ===== */
+  .header {
+    background: white; padding: 10px 18px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    flex-wrap: wrap; gap: 8px;
+  }
+  .header-title { display: flex; align-items: center; gap: 10px; }
+  .header-title .emoji { font-size: 2rem; }
+  .header-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  /* ===== Screens ===== */
+  .screen { padding: 16px; flex: 1; }
+  .home-screen { max-width: 900px; margin: 0 auto; text-align: center; }
+  .home-hero { font-size: 4rem; margin: 20px 0 10px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  .home-tag { font-size: 1.1rem; color: #555; margin-bottom: 24px; }
+
+  .home-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 18px 0 28px; }
+
+  .templates {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px; margin: 12px 0 24px;
+  }
+  .template-card {
+    background: white; border-radius: 18px; padding: 16px;
+    border: 4px solid transparent; cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.1), 0 6px 14px rgba(0,0,0,0.08);
+    transition: transform 0.1s, border-color 0.1s;
+    text-align: center;
+  }
+  .template-card:hover { border-color: #8E44AD; transform: translateY(-3px); }
+  .template-card .em { font-size: 3rem; }
+  .template-card h3 { color: #8E44AD; }
+
+  .my-stories {
+    background: white; border-radius: 18px; padding: 16px;
+    margin: 12px 0; box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    text-align: left;
+  }
+  .story-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px; border-radius: 10px; margin: 6px 0;
+    background: #F8F4FC;
+  }
+  .story-row .meta { font-size: 0.85rem; color: #777; }
+
+  /* ===== Builder layout ===== */
+  .builder {
+    display: grid;
+    grid-template-columns: 200px 1fr 340px;
+    gap: 12px;
+    height: calc(100vh - 70px);
+    padding: 12px;
+  }
+  @media (max-width: 900px) {
+    .builder { grid-template-columns: 1fr; height: auto; }
+    .palette { flex-direction: row !important; flex-wrap: wrap; max-height: 200px; }
+    .preview-pane { max-height: 500px; }
+  }
+  .palette {
+    background: #FFF8E7; border: 4px dashed #FFB347; border-radius: 18px;
+    padding: 12px; display: flex; flex-direction: column; gap: 8px;
+    overflow-y: auto;
+  }
+  .palette-title { font-size: 0.95rem; color: #E67E22; font-weight: bold; text-align: center; margin-bottom: 4px; }
+  .palette-block {
+    color: white; font-weight: bold; padding: 10px 12px;
+    border-radius: 12px; border: 3px solid #fff;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.2);
+    cursor: grab; text-align: center;
+    font-size: 0.95rem;
+  }
+  .palette-block:active { cursor: grabbing; }
+  .palette-block.scene { background: #2E86AB; }
+  .palette-block.choice { background: #E67E22; }
+  .palette-block.if { background: #E74C3C; }
+  .palette-block.loop { background: #16A085; }
+  .palette-block.variable { background: #8E44AD; }
+  .palette-block.end { background: #555; }
+
+  /* ===== Script (script + scenes editor) ===== */
+  .script-pane {
+    background: white; border-radius: 18px; padding: 14px;
+    overflow-y: auto;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  }
+  .script-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tab-btn {
+    background: #eee; color: #555; border: none;
+    padding: 8px 14px; border-radius: 10px;
+    font-family: inherit; font-weight: bold; cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .tab-btn.active { background: #8E44AD; color: white; }
+
+  .scene-list { display: flex; flex-direction: column; gap: 10px; }
+  .scene-card {
+    background: #F4F8FC; border: 3px solid #2E86AB;
+    border-radius: 14px; padding: 12px;
+  }
+  .scene-card.start { border-color: #4CAF50; background: #EAF8EC; }
+  .scene-card.end { border-color: #555; background: #F0F0F0; }
+  .scene-card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 8px; margin-bottom: 8px; flex-wrap: wrap;
+  }
+  .scene-card-head .label {
+    background: #2E86AB; color: white; font-weight: bold;
+    padding: 4px 10px; border-radius: 10px; font-size: 0.8rem;
+  }
+  .scene-card.start .label { background: #4CAF50; }
+  .scene-card.end .label { background: #555; }
+  .scene-card input, .scene-card textarea, .scene-card select {
+    width: 100%; padding: 8px; border: 2px solid #ccc; border-radius: 8px;
+    font-family: inherit; font-size: 0.95rem; background: white;
+    margin-bottom: 6px;
+  }
+  .scene-card textarea { min-height: 60px; resize: vertical; }
+  .scene-card .emoji-pick { font-size: 1.5rem; padding: 4px 8px; width: auto; display: inline-block; }
+
+  .blocks-area {
+    margin-top: 6px;
+    min-height: 60px;
+    background: #FAFAFA; border: 2px dashed #ccc; border-radius: 10px;
+    padding: 8px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .blocks-area.drop-target { background: #FFFACD; border-color: #FFD700; }
+  .blocks-area:empty::before {
+    content: 'Drop blocks here →';
+    color: #aaa; font-style: italic; font-size: 0.85rem;
+  }
+
+  .script-block {
+    color: white; font-weight: bold;
+    border-radius: 10px; border: 2px solid #fff;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+    padding: 8px 10px; cursor: grab;
+    font-size: 0.9rem;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .script-block .row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .script-block.choice { background: #E67E22; }
+  .script-block.if { background: #E74C3C; }
+  .script-block.loop { background: #16A085; }
+  .script-block.variable { background: #8E44AD; }
+  .script-block.end { background: #555; }
+  .script-block input, .script-block select {
+    background: rgba(255,255,255,0.95); color: #333;
+    border: none; padding: 4px 6px; border-radius: 6px;
+    font-family: inherit; font-size: 0.85rem;
+    min-width: 50px;
+  }
+  .script-block .x-btn {
+    background: rgba(0,0,0,0.25); color: white;
+    border: none; width: 22px; height: 22px;
+    border-radius: 50%; cursor: pointer; font-weight: bold;
+    margin-left: auto;
+  }
+  .nested {
+    background: rgba(255,255,255,0.25); border-radius: 8px;
+    padding: 6px; margin-top: 4px; min-height: 40px;
+    border: 2px dashed rgba(255,255,255,0.5);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .nested.drop-target { background: rgba(255,255,255,0.6); }
+  .nested:empty::before {
+    content: '↓ drop blocks here';
+    color: rgba(255,255,255,0.8); font-size: 0.8rem; font-style: italic;
+  }
+
+  .choice-rows { display: flex; flex-direction: column; gap: 4px; }
+  .choice-row { display: flex; gap: 4px; align-items: center; }
+  .choice-row input { flex: 1; }
+  .small-btn {
+    background: rgba(0,0,0,0.2); color: white;
+    border: none; padding: 4px 8px; border-radius: 6px;
+    cursor: pointer; font-weight: bold; font-size: 0.8rem;
+    font-family: inherit;
+  }
+
+  .scene-add-btn {
+    margin-top: 10px;
+    border: 3px dashed #2E86AB; background: white; color: #2E86AB;
+    padding: 12px; border-radius: 14px; width: 100%; cursor: pointer;
+    font-family: inherit; font-weight: bold; font-size: 1rem;
+  }
+  .scene-add-btn:hover { background: #F4F8FC; }
+
+  /* ===== Preview pane ===== */
+  .preview-pane {
+    background: white; border-radius: 18px; padding: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .preview-head {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;
+  }
+  .preview-stage {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%);
+    color: white; border-radius: 14px; padding: 18px;
+    min-height: 280px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .preview-stage .stage-emoji { font-size: 3.5rem; text-align: center; }
+  .preview-stage .stage-title { font-size: 1.3rem; font-weight: bold; text-align: center; }
+  .preview-stage .stage-body { font-size: 1rem; line-height: 1.5; white-space: pre-wrap; }
+  .preview-stage .stage-buttons { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+  .preview-stage .choice-btn {
+    background: rgba(255,255,255,0.15); color: white;
+    border: 2px solid rgba(255,255,255,0.5); border-radius: 12px;
+    padding: 10px 14px; font-family: inherit; cursor: pointer;
+    font-size: 0.95rem; font-weight: bold;
+    transition: background 0.15s;
+  }
+  .preview-stage .choice-btn:hover { background: rgba(255,255,255,0.3); }
+  .preview-stage .end-badge {
+    background: #FFD700; color: #333; font-weight: bold;
+    padding: 6px 12px; border-radius: 12px; text-align: center;
+    display: inline-block; margin: 0 auto;
+  }
+
+  .var-inspector {
+    background: #1f2937; color: #a7f3d0; border-radius: 10px;
+    padding: 8px; font-family: 'Courier New', monospace; font-size: 0.85rem;
+    max-height: 90px; overflow-y: auto;
+  }
+  .var-inspector .label { color: #fbbf24; font-weight: bold; margin-bottom: 4px; }
+  .var-inspector .empty { color: #6b7280; font-style: italic; }
+
+  /* ===== Scene graph modal ===== */
+  .modal-back {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center; z-index: 300;
+    padding: 16px;
+  }
+  .modal {
+    background: white; border-radius: 20px; padding: 20px;
+    max-width: 90vw; max-height: 90vh; overflow: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    width: 100%; max-width: 900px;
+  }
+  .modal-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .modal-close {
+    background: #E74C3C; color: white; border: none;
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    font-size: 1.1rem; font-weight: bold;
+  }
+  .graph-svg {
+    width: 100%; height: 500px;
+    background: #F8F4FC; border-radius: 14px;
+  }
+  .graph-node { cursor: pointer; }
+  .graph-node circle { stroke: #fff; stroke-width: 3; }
+  .graph-node text { fill: white; font-weight: bold; text-anchor: middle; font-size: 11px; pointer-events: none; }
+
+  /* ===== Tutorial overlay ===== */
+  .tutorial-bubble {
+    position: fixed; bottom: 20px; left: 20px;
+    background: white; border: 4px solid #FFD700;
+    border-radius: 18px; padding: 16px;
+    max-width: 320px; z-index: 250;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+  .tutorial-bubble .step-label {
+    color: #E67E22; font-weight: bold; font-size: 0.85rem;
+  }
+  .tutorial-bubble .step-text { margin: 6px 0; font-size: 0.95rem; }
+  .tutorial-bubble .step-actions { display: flex; justify-content: space-between; gap: 6px; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: #4CAF50; color: white; padding: 12px 22px;
+    border-radius: 14px; font-weight: bold; z-index: 400;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    animation: toast-pop 0.3s ease-out;
+  }
+  @keyframes toast-pop { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  .toast.error { background: #E74C3C; }
+
+  /* utility */
+  .hidden { display: none !important; }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .spacer { flex: 1; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+'use strict';
+
+/* ===================================================================
+   STATE
+   =================================================================== */
+const STATE = {
+  screen: 'home',           // 'home' | 'builder'
+  project: null,             // current loaded project
+  activeTab: 'scenes',       // 'scenes' | 'variables'
+  preview: {
+    running: false,
+    currentScene: null,
+    vars: {},
+    log: []
+  },
+  tutorial: {
+    active: false,
+    step: 0
+  },
+  graphOpen: false
+};
+
+/* ===================================================================
+   PROJECT MODEL
+   - project = { id, name, createdAt, updatedAt, startSceneId, scenes: [Scene], variables: {} }
+   - Scene = { id, title, body, emoji, blocks: [Block] }
+   - Block:
+     - { kind:'choice', options: [{label, target}] }     // up to 4
+     - { kind:'if', varName, op, value, thenTarget, elseTarget }
+     - { kind:'loop', count, body: [Block] }
+     - { kind:'variable', op:'set'|'add', name, value }
+     - { kind:'end', label }
+   =================================================================== */
+
+function uid() { return 'id_' + Math.random().toString(36).slice(2, 10); }
+
+function blankProject(name) {
+  const startId = uid();
+  return {
+    id: uid(),
+    name: name || 'My New Story',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    startSceneId: startId,
+    variables: {},
+    scenes: [
+      { id: startId, title: 'The Beginning', body: 'Your story starts here. What happens first?', emoji: '✨', blocks: [] }
+    ]
+  };
+}
+
+/* ===================================================================
+   TEMPLATES
+   =================================================================== */
+function templateMagicForest() {
+  const s1 = uid(), s2 = uid(), s3 = uid(), s4 = uid();
+  return {
+    id: uid(), name: 'The Magic Forest',
+    createdAt: Date.now(), updatedAt: Date.now(),
+    startSceneId: s1, variables: {},
+    scenes: [
+      { id: s1, title: 'The Magic Forest', emoji: '🌲',
+        body: 'You walk into a glowing forest. The path splits into two — a sunny path and a dark path.',
+        blocks: [ { id: uid(), kind: 'choice', options: [
+          { label: 'Take the sunny path', target: s2 },
+          { label: 'Take the dark path', target: s3 }
+        ]}] },
+      { id: s2, title: 'Sunny Meadow', emoji: '🌻',
+        body: 'You find a meadow full of butterflies. A friendly fox waves at you.',
+        blocks: [ { id: uid(), kind: 'end', label: 'You made a new friend!' }] },
+      { id: s3, title: 'Dark Cave', emoji: '🦇',
+        body: 'It is dark and spooky. You hear something move.',
+        blocks: [ { id: uid(), kind: 'end', label: 'You discovered a hidden cave!' }] },
+      { id: s4, title: 'Spare scene', emoji: '⭐', body: '', blocks: [] }
+    ].slice(0, 3) // drop the spare; keep 3
+  };
+}
+
+function templateDragonsCave() {
+  const intro = uid(), village = uid(), cave = uid(), fight = uid(), runAway = uid(), victory = uid();
+  return {
+    id: uid(), name: "Dragon's Cave",
+    createdAt: Date.now(), updatedAt: Date.now(),
+    startSceneId: intro, variables: { has_sword: 0 },
+    scenes: [
+      { id: intro, title: 'The Village', emoji: '🏰',
+        body: 'The dragon is attacking! The blacksmith offers you a sword.',
+        blocks: [ { id: uid(), kind: 'choice', options: [
+          { label: 'Take the sword', target: village },
+          { label: 'Go without it', target: cave }
+        ]}] },
+      { id: village, title: 'Sword in hand', emoji: '⚔️',
+        body: 'You grab the gleaming sword. It feels heavy but brave.',
+        blocks: [
+          { id: uid(), kind: 'variable', op: 'set', name: 'has_sword', value: 1 },
+          { id: uid(), kind: 'choice', options: [{ label: 'Head to the cave', target: cave }] }
+        ]},
+      { id: cave, title: "Dragon's Cave", emoji: '🐉',
+        body: 'The dragon glares at you, smoke rising from its nose.',
+        blocks: [
+          { id: uid(), kind: 'if', varName: 'has_sword', op: '==', value: 1, thenTarget: fight, elseTarget: runAway }
+        ]},
+      { id: fight, title: 'You fight bravely!', emoji: '⚡',
+        body: 'With your sword, you defeat the dragon and save the village.',
+        blocks: [ { id: uid(), kind: 'end', label: 'Dragon Slayer!' }] },
+      { id: runAway, title: 'You run!', emoji: '💨',
+        body: 'Without a weapon, you flee back to the village. Wise choice — live to fight another day.',
+        blocks: [ { id: uid(), kind: 'end', label: 'You escaped... for now.' }] }
+    ]
+  };
+}
+
+function templateRobotPet() {
+  const s = {}; ['start','play','feed','sleep','overfed','happy','sad'].forEach(k => s[k] = uid());
+  return {
+    id: uid(), name: 'Robot Pet',
+    createdAt: Date.now(), updatedAt: Date.now(),
+    startSceneId: s.start, variables: { happy: 5, hunger: 5 },
+    scenes: [
+      { id: s.start, title: 'Meet Beep', emoji: '🤖',
+        body: 'You just got Beep, a robot pet! What do you want to do?',
+        blocks: [ { id: uid(), kind: 'choice', options: [
+          { label: 'Play with Beep', target: s.play },
+          { label: 'Feed Beep', target: s.feed },
+          { label: 'Put Beep to sleep', target: s.sleep }
+        ]}] },
+      { id: s.play, title: 'Playtime!', emoji: '🎾',
+        body: 'You toss a ball. Beep chases it three times.',
+        blocks: [
+          { id: uid(), kind: 'loop', count: 3, body: [
+            { id: uid(), kind: 'variable', op: 'add', name: 'happy', value: 1 }
+          ]},
+          { id: uid(), kind: 'choice', options: [{ label: 'Continue', target: s.happy }] }
+        ]},
+      { id: s.feed, title: 'Snack time', emoji: '🍪',
+        body: 'You give Beep a snack. Yum!',
+        blocks: [
+          { id: uid(), kind: 'variable', op: 'add', name: 'hunger', value: 3 },
+          { id: uid(), kind: 'if', varName: 'hunger', op: '>', value: 7, thenTarget: s.overfed, elseTarget: s.happy }
+        ]},
+      { id: s.sleep, title: 'Sleepy bot', emoji: '😴',
+        body: 'Beep powers down with a soft beeeep...',
+        blocks: [ { id: uid(), kind: 'end', label: 'Sweet dreams, Beep!' }] },
+      { id: s.overfed, title: 'Too full!', emoji: '🤢',
+        body: 'Beep ate too much and his circuits are bubbling.',
+        blocks: [ { id: uid(), kind: 'end', label: 'Lesson learned: moderation!' }] },
+      { id: s.happy, title: 'Beep is happy!', emoji: '💖',
+        body: "Beep's lights blink in joy. You are a great pet owner.",
+        blocks: [ { id: uid(), kind: 'end', label: 'Best Robot Buddy!' }] },
+      { id: s.sad, title: 'Beep is sad', emoji: '😔',
+        body: 'Beep needs more attention.',
+        blocks: [ { id: uid(), kind: 'end', label: 'Try again!' }] }
+    ]
+  };
+}
+
+/* ===================================================================
+   STORAGE
+   =================================================================== */
+const STORAGE_KEY = 'csb_projects_v1';
+function loadProjects() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+function saveProjects(arr) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+}
+function saveProject(p) {
+  const arr = loadProjects();
+  p.updatedAt = Date.now();
+  const i = arr.findIndex(x => x.id === p.id);
+  if (i >= 0) arr[i] = p; else arr.push(p);
+  saveProjects(arr);
+}
+function deleteProject(id) {
+  saveProjects(loadProjects().filter(p => p.id !== id));
+}
+
+/* ===================================================================
+   RENDER ROOT
+   =================================================================== */
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  if (STATE.screen === 'home') app.appendChild(renderHome());
+  else if (STATE.screen === 'builder') app.appendChild(renderBuilder());
+  if (STATE.graphOpen) document.body.appendChild(renderGraphModal());
+  if (STATE.tutorial.active) document.body.appendChild(renderTutorialBubble());
+}
+
+/* ===================================================================
+   HOME SCREEN
+   =================================================================== */
+function renderHome() {
+  const root = document.createElement('div');
+  root.className = 'screen home-screen';
+  root.innerHTML = `
+    <div class="home-hero">📖✨</div>
+    <h1>Coding Story Builder</h1>
+    <p class="home-tag">Code your own choose-your-own-adventure story — then share it.</p>
+    <div class="home-actions">
+      <button class="btn big purple" id="btn-new">✨ Start a New Story</button>
+      <button class="btn big orange" id="btn-tutorial">🦉 Tutorial: Magic Forest</button>
+    </div>
+    <h2>🎨 Templates to Remix</h2>
+    <div class="templates">
+      <div class="template-card" data-tpl="forest">
+        <div class="em">🌲</div>
+        <h3>The Magic Forest</h3>
+        <p>3 scenes · 1 choice<br><small>Gentle intro</small></p>
+      </div>
+      <div class="template-card" data-tpl="dragon">
+        <div class="em">🐉</div>
+        <h3>Dragon's Cave</h3>
+        <p>5 scenes · 2 choices · 1 variable<br><small>Intermediate</small></p>
+      </div>
+      <div class="template-card" data-tpl="robot">
+        <div class="em">🤖</div>
+        <h3>Robot Pet</h3>
+        <p>7 scenes · branching · variables<br><small>Advanced</small></p>
+      </div>
+    </div>
+    <div class="my-stories">
+      <h2>💾 My Stories</h2>
+      <div id="stories-list"></div>
+    </div>
+  `;
+
+  root.querySelector('#btn-new').onclick = () => {
+    STATE.project = blankProject();
+    STATE.screen = 'builder';
+    saveProject(STATE.project);
+    render();
+  };
+  root.querySelector('#btn-tutorial').onclick = () => {
+    STATE.project = blankProject('Magic Forest (Tutorial)');
+    STATE.screen = 'builder';
+    STATE.tutorial = { active: true, step: 0 };
+    saveProject(STATE.project);
+    render();
+  };
+  root.querySelectorAll('.template-card').forEach(card => {
+    card.onclick = () => {
+      const t = card.dataset.tpl;
+      let p;
+      if (t === 'forest') p = templateMagicForest();
+      else if (t === 'dragon') p = templateDragonsCave();
+      else if (t === 'robot') p = templateRobotPet();
+      STATE.project = p;
+      STATE.screen = 'builder';
+      saveProject(STATE.project);
+      render();
+    };
+  });
+
+  // My Stories
+  const list = root.querySelector('#stories-list');
+  const stories = loadProjects().sort((a, b) => b.updatedAt - a.updatedAt);
+  if (stories.length === 0) {
+    list.innerHTML = '<p style="color:#888; font-style:italic;">No saved stories yet. Start a new one above!</p>';
+  } else {
+    stories.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'story-row';
+      const dt = new Date(s.updatedAt).toLocaleString();
+      row.innerHTML = `
+        <div>
+          <div style="font-weight:bold;color:#8E44AD;">${escapeHtml(s.name)}</div>
+          <div class="meta">${s.scenes.length} scenes · saved ${dt}</div>
+        </div>
+        <div>
+          <button class="btn small green" data-act="open">Open</button>
+          <button class="btn small red" data-act="del">Delete</button>
+        </div>
+      `;
+      row.querySelector('[data-act="open"]').onclick = () => {
+        STATE.project = s;
+        STATE.screen = 'builder';
+        render();
+      };
+      row.querySelector('[data-act="del"]').onclick = () => {
+        if (confirm('Delete "' + s.name + '"?')) {
+          deleteProject(s.id);
+          render();
+        }
+      };
+      list.appendChild(row);
+    });
+  }
+  return root;
+}
+
+/* ===================================================================
+   BUILDER SCREEN
+   =================================================================== */
+function renderBuilder() {
+  const root = document.createElement('div');
+  root.innerHTML = `
+    <div class="header">
+      <div class="header-title">
+        <span class="emoji">📖</span>
+        <input id="project-name" value="${escapeAttr(STATE.project.name)}" style="font-family:inherit;font-size:1.1rem;font-weight:bold;padding:6px 10px;border:2px solid #ddd;border-radius:8px;">
+      </div>
+      <div class="header-actions">
+        <button class="btn small gray" id="btn-home">🏠 Home</button>
+        <button class="btn small blue" id="btn-graph">🕸 Scene Graph</button>
+        <button class="btn small green" id="btn-export">📤 Export Story</button>
+      </div>
+    </div>
+    <div class="builder">
+      <div class="palette" id="palette"></div>
+      <div class="script-pane" id="script-pane"></div>
+      <div class="preview-pane" id="preview-pane"></div>
+    </div>
+  `;
+
+  // header buttons
+  root.querySelector('#btn-home').onclick = () => {
+    saveProject(STATE.project);
+    STATE.screen = 'home';
+    STATE.tutorial.active = false;
+    render();
+  };
+  root.querySelector('#btn-graph').onclick = () => {
+    STATE.graphOpen = true; render();
+  };
+  root.querySelector('#btn-export').onclick = () => doExport();
+  root.querySelector('#project-name').oninput = (e) => {
+    STATE.project.name = e.target.value;
+    saveProject(STATE.project);
+  };
+
+  // we have to append BEFORE we populate the sub-panes so the dom nodes exist
+  setTimeout(() => {
+    renderPalette();
+    renderScriptPane();
+    renderPreviewPane();
+  }, 0);
+
+  return root;
+}
+
+/* ===================================================================
+   PALETTE
+   =================================================================== */
+const PALETTE_BLOCKS = [
+  { kind: 'choice', label: '🔀 CHOICE', cls: 'choice' },
+  { kind: 'if', label: '❓ IF / ELSE', cls: 'if' },
+  { kind: 'loop', label: '🔁 LOOP', cls: 'loop' },
+  { kind: 'variable', label: '🧮 VARIABLE', cls: 'variable' },
+  { kind: 'end', label: '🏁 END', cls: 'end' }
+];
+
+function renderPalette() {
+  const p = document.getElementById('palette');
+  if (!p) return;
+  p.innerHTML = '<div class="palette-title">📦 BLOCKS</div>';
+  PALETTE_BLOCKS.forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'palette-block ' + b.cls;
+    el.textContent = b.label;
+    el.draggable = true;
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData('text/plain', JSON.stringify({ source: 'palette', kind: b.kind }));
+    });
+    p.appendChild(el);
+  });
+  // hint
+  const hint = document.createElement('div');
+  hint.style.cssText = 'font-size:0.75rem; color:#888; margin-top:8px; text-align:center; line-height:1.3;';
+  hint.innerHTML = 'Drag blocks into a<br>scene to build it.<br><br>Scenes connect by<br>CHOICE or IF blocks.';
+  p.appendChild(hint);
+}
+
+/* ===================================================================
+   SCRIPT PANE — list of scenes, each with a blocks area
+   =================================================================== */
+function renderScriptPane() {
+  const pane = document.getElementById('script-pane');
+  if (!pane) return;
+  pane.innerHTML = `
+    <div class="script-tabs">
+      <button class="tab-btn ${STATE.activeTab === 'scenes' ? 'active' : ''}" data-tab="scenes">🎬 Scenes</button>
+      <button class="tab-btn ${STATE.activeTab === 'variables' ? 'active' : ''}" data-tab="variables">🧮 Variables</button>
+    </div>
+    <div id="tab-content"></div>
+  `;
+  pane.querySelectorAll('.tab-btn').forEach(b => {
+    b.onclick = () => { STATE.activeTab = b.dataset.tab; renderScriptPane(); };
+  });
+  const tc = pane.querySelector('#tab-content');
+  if (STATE.activeTab === 'scenes') renderScenesTab(tc);
+  else renderVariablesTab(tc);
+}
+
+function renderScenesTab(container) {
+  const list = document.createElement('div');
+  list.className = 'scene-list';
+  STATE.project.scenes.forEach(scene => list.appendChild(renderSceneCard(scene)));
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'scene-add-btn';
+  addBtn.textContent = '+ Add new scene';
+  addBtn.onclick = () => {
+    STATE.project.scenes.push({
+      id: uid(), title: 'New scene', body: '', emoji: '⭐', blocks: []
+    });
+    saveProject(STATE.project);
+    renderScriptPane();
+  };
+
+  container.innerHTML = '';
+  container.appendChild(list);
+  container.appendChild(addBtn);
+}
+
+function renderSceneCard(scene) {
+  const isStart = scene.id === STATE.project.startSceneId;
+  const hasEnd = (scene.blocks || []).some(b => b.kind === 'end');
+  const card = document.createElement('div');
+  card.className = 'scene-card' + (isStart ? ' start' : '') + (hasEnd ? ' end' : '');
+  card.innerHTML = `
+    <div class="scene-card-head">
+      <span class="label">${isStart ? '🚀 START SCENE' : hasEnd ? '🏁 END SCENE' : '🎬 SCENE'}</span>
+      <input class="emoji-pick" maxlength="3" value="${escapeAttr(scene.emoji || '')}" placeholder="🎨" data-field="emoji">
+      <div class="spacer"></div>
+      ${isStart ? '' : '<button class="small-btn" data-act="setStart" style="background:#4CAF50">⭐ Make Start</button>'}
+      <button class="small-btn" data-act="delScene" style="background:#E74C3C">🗑 Delete</button>
+    </div>
+    <input type="text" data-field="title" value="${escapeAttr(scene.title)}" placeholder="Scene title">
+    <textarea data-field="body" placeholder="What happens in this scene? Describe it for the reader.">${escapeHtml(scene.body)}</textarea>
+    <div class="blocks-area" data-scene-id="${scene.id}"></div>
+  `;
+
+  // field bindings
+  card.querySelector('[data-field="title"]').oninput = (e) => {
+    scene.title = e.target.value; saveProject(STATE.project); refreshPreviewIfNeeded();
+  };
+  card.querySelector('[data-field="body"]').oninput = (e) => {
+    scene.body = e.target.value; saveProject(STATE.project); refreshPreviewIfNeeded();
+  };
+  card.querySelector('[data-field="emoji"]').oninput = (e) => {
+    scene.emoji = e.target.value; saveProject(STATE.project); refreshPreviewIfNeeded();
+  };
+
+  // actions
+  const setStart = card.querySelector('[data-act="setStart"]');
+  if (setStart) setStart.onclick = () => {
+    STATE.project.startSceneId = scene.id;
+    saveProject(STATE.project);
+    renderScriptPane();
+    refreshPreviewIfNeeded();
+  };
+  card.querySelector('[data-act="delScene"]').onclick = () => {
+    if (STATE.project.scenes.length <= 1) { toast('Need at least one scene!', true); return; }
+    if (!confirm('Delete scene "' + scene.title + '"?')) return;
+    STATE.project.scenes = STATE.project.scenes.filter(s => s.id !== scene.id);
+    if (STATE.project.startSceneId === scene.id) {
+      STATE.project.startSceneId = STATE.project.scenes[0].id;
+    }
+    saveProject(STATE.project);
+    renderScriptPane();
+    refreshPreviewIfNeeded();
+  };
+
+  // blocks area drop
+  const area = card.querySelector('.blocks-area');
+  setupBlocksArea(area, scene.blocks, scene);
+
+  return card;
+}
+
+function setupBlocksArea(area, blocksArr, scene) {
+  // render blocks
+  blocksArr.forEach(b => area.appendChild(renderScriptBlock(b, blocksArr, scene)));
+  // dnd
+  area.addEventListener('dragover', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+    area.classList.add('drop-target');
+  });
+  area.addEventListener('dragleave', () => area.classList.remove('drop-target'));
+  area.addEventListener('drop', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    area.classList.remove('drop-target');
+    let data;
+    try { data = JSON.parse(e.dataTransfer.getData('text/plain') || '{}'); }
+    catch (err) { return; }
+    if (data.source === 'palette') {
+      const newBlock = makeBlock(data.kind);
+      blocksArr.push(newBlock);
+      saveProject(STATE.project);
+      renderScriptPane();
+      refreshPreviewIfNeeded();
+    }
+  });
+}
+
+function makeBlock(kind) {
+  const id = uid();
+  if (kind === 'choice') return { id, kind: 'choice', options: [
+    { label: 'Choice 1', target: '' }, { label: 'Choice 2', target: '' }
+  ]};
+  if (kind === 'if') return { id, kind: 'if', varName: '', op: '==', value: 1, thenTarget: '', elseTarget: '' };
+  if (kind === 'loop') return { id, kind: 'loop', count: 3, body: [] };
+  if (kind === 'variable') return { id, kind: 'variable', op: 'set', name: 'gold', value: 1 };
+  if (kind === 'end') return { id, kind: 'end', label: '' };
+  return { id, kind };
+}
+
+function renderScriptBlock(block, parentArr, scene) {
+  const el = document.createElement('div');
+  el.className = 'script-block ' + block.kind;
+  const sceneOptions = STATE.project.scenes.map(s =>
+    `<option value="${s.id}">${escapeHtml(s.title)}</option>`
+  ).join('');
+  const varNames = Object.keys(STATE.project.variables || {});
+
+  if (block.kind === 'choice') {
+    el.innerHTML = `
+      <div class="row">
+        <span>🔀 CHOICE — when reader picks...</span>
+        <button class="x-btn" data-x>×</button>
+      </div>
+      <div class="choice-rows"></div>
+      <button class="small-btn" data-act="addOpt">+ add option</button>
+    `;
+    const rows = el.querySelector('.choice-rows');
+    block.options.forEach((opt, idx) => {
+      const r = document.createElement('div');
+      r.className = 'choice-row';
+      r.innerHTML = `
+        <input type="text" value="${escapeAttr(opt.label)}" placeholder="Button text">
+        <span>→</span>
+        <select><option value="">(no scene)</option>${sceneOptions}</select>
+        ${block.options.length > 2 ? '<button class="small-btn" data-rm>×</button>' : ''}
+      `;
+      const inp = r.querySelector('input');
+      const sel = r.querySelector('select');
+      sel.value = opt.target || '';
+      inp.oninput = () => { opt.label = inp.value; saveProject(STATE.project); refreshPreviewIfNeeded(); };
+      sel.onchange = () => { opt.target = sel.value; saveProject(STATE.project); refreshPreviewIfNeeded(); };
+      const rm = r.querySelector('[data-rm]');
+      if (rm) rm.onclick = () => {
+        block.options.splice(idx, 1); saveProject(STATE.project); renderScriptPane(); refreshPreviewIfNeeded();
+      };
+      rows.appendChild(r);
+    });
+    el.querySelector('[data-act="addOpt"]').onclick = () => {
+      if (block.options.length >= 4) { toast('Max 4 choices!', true); return; }
+      block.options.push({ label: 'New choice', target: '' });
+      saveProject(STATE.project); renderScriptPane(); refreshPreviewIfNeeded();
+    };
+
+  } else if (block.kind === 'if') {
+    const varOpts = varNames.map(v => `<option value="${v}">${escapeHtml(v)}</option>`).join('');
+    el.innerHTML = `
+      <div class="row">
+        <span>❓ IF</span>
+        <select data-f="varName"><option value="">(pick var)</option>${varOpts}</select>
+        <select data-f="op">
+          ${['==','!=','>','<','>=','<='].map(o => `<option value="${o}">${o}</option>`).join('')}
+        </select>
+        <input type="number" data-f="value" value="${Number(block.value)}" style="width:60px">
+        <button class="x-btn" data-x>×</button>
+      </div>
+      <div class="row">
+        <span>THEN go to:</span>
+        <select data-f="thenTarget"><option value="">(pick scene)</option>${sceneOptions}</select>
+      </div>
+      <div class="row">
+        <span>ELSE go to:</span>
+        <select data-f="elseTarget"><option value="">(pick scene)</option>${sceneOptions}</select>
+      </div>
+    `;
+    el.querySelector('[data-f="varName"]').value = block.varName || '';
+    el.querySelector('[data-f="op"]').value = block.op || '==';
+    el.querySelector('[data-f="thenTarget"]').value = block.thenTarget || '';
+    el.querySelector('[data-f="elseTarget"]').value = block.elseTarget || '';
+    el.querySelectorAll('[data-f]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const f = inp.dataset.f;
+        block[f] = (f === 'value') ? Number(inp.value) : inp.value;
+        saveProject(STATE.project); refreshPreviewIfNeeded();
+      });
+    });
+
+  } else if (block.kind === 'loop') {
+    el.innerHTML = `
+      <div class="row">
+        <span>🔁 REPEAT</span>
+        <input type="number" min="1" max="20" data-f="count" value="${Number(block.count)}" style="width:60px">
+        <span>times:</span>
+        <button class="x-btn" data-x>×</button>
+      </div>
+      <div class="nested" data-nested></div>
+    `;
+    el.querySelector('[data-f="count"]').oninput = (e) => {
+      block.count = Math.max(1, Math.min(20, Number(e.target.value) || 1));
+      saveProject(STATE.project);
+    };
+    const nested = el.querySelector('[data-nested]');
+    setupBlocksArea(nested, block.body, scene);
+
+  } else if (block.kind === 'variable') {
+    el.innerHTML = `
+      <div class="row">
+        <span>🧮</span>
+        <select data-f="op">
+          <option value="set">set</option>
+          <option value="add">add to</option>
+        </select>
+        <input type="text" data-f="name" value="${escapeAttr(block.name)}" placeholder="var name" style="width:90px">
+        <span>=</span>
+        <input type="number" data-f="value" value="${Number(block.value)}" style="width:70px">
+        <button class="x-btn" data-x>×</button>
+      </div>
+    `;
+    el.querySelector('[data-f="op"]').value = block.op;
+    el.querySelectorAll('[data-f]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const f = inp.dataset.f;
+        block[f] = (f === 'value') ? Number(inp.value) : inp.value;
+        // auto-register variable
+        if (block.name && !(block.name in STATE.project.variables)) {
+          STATE.project.variables[block.name] = 0;
+        }
+        saveProject(STATE.project); refreshPreviewIfNeeded();
+      });
+    });
+
+  } else if (block.kind === 'end') {
+    el.innerHTML = `
+      <div class="row">
+        <span>🏁 END</span>
+        <input type="text" data-f="label" value="${escapeAttr(block.label || '')}" placeholder="Achievement (optional)" style="flex:1">
+        <button class="x-btn" data-x>×</button>
+      </div>
+    `;
+    el.querySelector('[data-f="label"]').oninput = (e) => {
+      block.label = e.target.value; saveProject(STATE.project); refreshPreviewIfNeeded();
+    };
+  }
+
+  // delete
+  const xb = el.querySelector('[data-x]');
+  if (xb) xb.onclick = () => {
+    const i = parentArr.findIndex(b => b.id === block.id);
+    if (i >= 0) parentArr.splice(i, 1);
+    saveProject(STATE.project); renderScriptPane(); refreshPreviewIfNeeded();
+  };
+
+  return el;
+}
+
+function renderVariablesTab(container) {
+  container.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <h3>🧮 Story Variables</h3>
+    <p style="font-size:0.9rem;color:#666;margin-bottom:10px;">
+      Variables let your story remember things — like how much gold the hero has,
+      whether they found the key, or how brave they feel. Use the VARIABLE block to
+      change them, and the IF block to check them.
+    </p>
+    <div id="var-list"></div>
+    <div style="margin-top:12px;display:flex;gap:6px;">
+      <input id="new-var" placeholder="new variable name" style="flex:1;padding:8px;border:2px solid #ccc;border-radius:8px;font-family:inherit;">
+      <input id="new-var-val" type="number" value="0" style="width:80px;padding:8px;border:2px solid #ccc;border-radius:8px;font-family:inherit;">
+      <button class="btn small purple" id="add-var">+ Add</button>
+    </div>
+  `;
+  container.appendChild(wrap);
+
+  const list = wrap.querySelector('#var-list');
+  const vars = STATE.project.variables || {};
+  if (Object.keys(vars).length === 0) {
+    list.innerHTML = '<p style="color:#888;font-style:italic;">No variables yet. Add one below!</p>';
+  } else {
+    Object.entries(vars).forEach(([name, val]) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:6px;align-items:center;padding:6px;background:#F8F4FC;border-radius:8px;margin-bottom:4px;';
+      row.innerHTML = `
+        <span style="font-weight:bold;color:#8E44AD;flex:1;">${escapeHtml(name)}</span>
+        <span style="color:#666;">starts at</span>
+        <input type="number" value="${Number(val)}" style="width:80px;padding:6px;border:2px solid #ccc;border-radius:6px;font-family:inherit;">
+        <button class="btn small red">×</button>
+      `;
+      row.querySelector('input').oninput = (e) => {
+        STATE.project.variables[name] = Number(e.target.value);
+        saveProject(STATE.project);
+      };
+      row.querySelector('button').onclick = () => {
+        delete STATE.project.variables[name];
+        saveProject(STATE.project); renderScriptPane();
+      };
+      list.appendChild(row);
+    });
+  }
+  wrap.querySelector('#add-var').onclick = () => {
+    const n = wrap.querySelector('#new-var').value.trim();
+    const v = Number(wrap.querySelector('#new-var-val').value);
+    if (!n) { toast('Give your variable a name', true); return; }
+    if (n in (STATE.project.variables || {})) { toast('Already exists!', true); return; }
+    STATE.project.variables[n] = v;
+    saveProject(STATE.project); renderScriptPane();
+  };
+}
+
+/* ===================================================================
+   PREVIEW PANE
+   =================================================================== */
+function renderPreviewPane() {
+  const pane = document.getElementById('preview-pane');
+  if (!pane) return;
+  pane.innerHTML = `
+    <div class="preview-head">
+      <h3>▶ Live Preview</h3>
+      <button class="btn small orange" id="restart">↻ Restart</button>
+    </div>
+    <div id="stage" class="preview-stage"></div>
+    <div>
+      <div class="var-inspector" id="var-inspector">
+        <div class="label">🔍 VARIABLES (live)</div>
+        <div id="var-vals"></div>
+      </div>
+    </div>
+  `;
+  pane.querySelector('#restart').onclick = () => { startPreview(); };
+  startPreview();
+}
+
+function startPreview() {
+  STATE.preview.vars = JSON.parse(JSON.stringify(STATE.project.variables || {}));
+  STATE.preview.currentScene = STATE.project.startSceneId;
+  STATE.preview.running = true;
+  showPreviewScene();
+}
+
+function refreshPreviewIfNeeded() {
+  // re-render the preview pane (it's cheap and avoids stale scene refs)
+  renderPreviewPane();
+}
+
+function getScene(id) { return STATE.project.scenes.find(s => s.id === id); }
+
+function processBlocks(blocks) {
+  // Returns either { jump: sceneId } if we hit a choice/if/end that determines next scene,
+  // or { done: true } if blocks consumed without redirect.
+  for (const b of blocks) {
+    if (b.kind === 'variable') {
+      const name = b.name;
+      if (!name) continue;
+      if (!(name in STATE.preview.vars)) STATE.preview.vars[name] = 0;
+      if (b.op === 'set') STATE.preview.vars[name] = Number(b.value);
+      else if (b.op === 'add') STATE.preview.vars[name] = Number(STATE.preview.vars[name]) + Number(b.value);
+    } else if (b.kind === 'loop') {
+      for (let i = 0; i < (b.count || 0); i++) {
+        const r = processBlocks(b.body || []);
+        if (r && r.jump) return r;
+      }
+    } else if (b.kind === 'if') {
+      const v = Number(STATE.preview.vars[b.varName] || 0);
+      const target = Number(b.value);
+      let pass = false;
+      switch (b.op) {
+        case '==': pass = v === target; break;
+        case '!=': pass = v !== target; break;
+        case '>': pass = v > target; break;
+        case '<': pass = v < target; break;
+        case '>=': pass = v >= target; break;
+        case '<=': pass = v <= target; break;
+      }
+      return { jump: pass ? b.thenTarget : b.elseTarget };
+    } else if (b.kind === 'choice') {
+      return { choice: b };
+    } else if (b.kind === 'end') {
+      return { end: b };
+    }
+  }
+  return { done: true };
+}
+
+function showPreviewScene() {
+  const stage = document.getElementById('stage');
+  if (!stage) return;
+  const scene = getScene(STATE.preview.currentScene);
+  if (!scene) {
+    stage.innerHTML = '<div style="text-align:center;color:#FFD700;font-weight:bold;">⚠ Scene not found — fix a CHOICE or IF target!</div>';
+    updateVarInspector();
+    return;
+  }
+  const result = processBlocks(scene.blocks || []);
+  updateVarInspector();
+
+  const html = [`<div class="stage-emoji">${escapeHtml(scene.emoji || '✨')}</div>`,
+    `<div class="stage-title">${escapeHtml(scene.title)}</div>`,
+    `<div class="stage-body">${escapeHtml(scene.body || '')}</div>`,
+    `<div class="stage-buttons" id="stage-buttons"></div>`];
+  stage.innerHTML = html.join('');
+
+  const btns = stage.querySelector('#stage-buttons');
+
+  if (result.jump) {
+    // IF or auto-jump — let kid click to advance
+    const b = document.createElement('button');
+    b.className = 'choice-btn';
+    b.textContent = '→ Continue';
+    b.onclick = () => { STATE.preview.currentScene = result.jump; showPreviewScene(); };
+    btns.appendChild(b);
+  } else if (result.choice) {
+    result.choice.options.forEach(opt => {
+      const b = document.createElement('button');
+      b.className = 'choice-btn';
+      b.textContent = opt.label;
+      b.onclick = () => {
+        if (opt.target) { STATE.preview.currentScene = opt.target; showPreviewScene(); }
+        else { toast('This button needs a scene target!', true); }
+      };
+      btns.appendChild(b);
+    });
+  } else if (result.end) {
+    if (result.end.label) {
+      const badge = document.createElement('div');
+      badge.className = 'end-badge';
+      badge.textContent = '🏆 ' + result.end.label;
+      btns.appendChild(badge);
+    }
+    const b = document.createElement('button');
+    b.className = 'choice-btn';
+    b.textContent = '↻ Play again';
+    b.onclick = startPreview;
+    btns.appendChild(b);
+  } else {
+    // no choice/end — dead end
+    const note = document.createElement('div');
+    note.style.cssText = 'color:#FFD700;font-style:italic;';
+    note.textContent = '(This scene has no CHOICE or END. Add one to continue the story!)';
+    btns.appendChild(note);
+  }
+}
+
+function updateVarInspector() {
+  const el = document.getElementById('var-vals');
+  if (!el) return;
+  const keys = Object.keys(STATE.preview.vars || {});
+  if (keys.length === 0) {
+    el.innerHTML = '<div class="empty">(no variables yet)</div>';
+  } else {
+    el.innerHTML = keys.map(k =>
+      `<div><span style="color:#fbbf24;">${escapeHtml(k)}</span> = <span style="color:#a7f3d0;">${STATE.preview.vars[k]}</span></div>`
+    ).join('');
+  }
+}
+
+/* ===================================================================
+   SCENE GRAPH MODAL
+   =================================================================== */
+function renderGraphModal() {
+  const back = document.createElement('div');
+  back.className = 'modal-back';
+  back.onclick = (e) => { if (e.target === back) { STATE.graphOpen = false; render(); } };
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-head">
+      <h2>🕸 Scene Graph</h2>
+      <button class="modal-close" id="close-graph">×</button>
+    </div>
+    <p style="color:#666;font-size:0.9rem;margin-bottom:10px;">
+      Each circle is a scene. Arrows show how choices connect them. 🚀 = start, 🏁 = end.
+    </p>
+    <div id="graph-container"></div>
+  `;
+  back.appendChild(modal);
+  modal.querySelector('#close-graph').onclick = () => { STATE.graphOpen = false; render(); };
+  setTimeout(() => drawGraph(modal.querySelector('#graph-container')), 0);
+  return back;
+}
+
+function drawGraph(container) {
+  const scenes = STATE.project.scenes;
+  const w = Math.min(800, container.clientWidth || 800);
+  const h = 500;
+  // simple layout: circle around the center, plus start at left
+  const cx = w / 2, cy = h / 2;
+  const r = Math.min(cx, cy) - 50;
+  const positions = {};
+  scenes.forEach((s, i) => {
+    const angle = (i / Math.max(1, scenes.length)) * Math.PI * 2 - Math.PI / 2;
+    positions[s.id] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  });
+
+  // Edges
+  const edges = [];
+  function collectEdges(blocks, from) {
+    blocks.forEach(b => {
+      if (b.kind === 'choice') {
+        b.options.forEach(o => o.target && edges.push({ from, to: o.target, label: o.label }));
+      } else if (b.kind === 'if') {
+        if (b.thenTarget) edges.push({ from, to: b.thenTarget, label: 'if ' + (b.varName || '') });
+        if (b.elseTarget) edges.push({ from, to: b.elseTarget, label: 'else' });
+      } else if (b.kind === 'loop') {
+        collectEdges(b.body || [], from);
+      }
+    });
+  }
+  scenes.forEach(s => collectEdges(s.blocks || [], s.id));
+
+  let svg = `<svg class="graph-svg" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#666"/></marker></defs>`;
+
+  // edges first
+  edges.forEach(e => {
+    const a = positions[e.from], b = positions[e.to];
+    if (!a || !b) return;
+    // shorten so arrow doesn't overlap circle
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.sqrt(dx*dx + dy*dy) || 1;
+    const ax = a.x + dx / len * 28;
+    const ay = a.y + dy / len * 28;
+    const bx = b.x - dx / len * 28;
+    const by = b.y - dy / len * 28;
+    svg += `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#666" stroke-width="2" marker-end="url(#arr)" opacity="0.7"/>`;
+  });
+
+  // nodes
+  scenes.forEach(s => {
+    const p = positions[s.id];
+    const isStart = s.id === STATE.project.startSceneId;
+    const isEnd = (s.blocks || []).some(b => b.kind === 'end');
+    const fill = isStart ? '#4CAF50' : isEnd ? '#555' : '#2E86AB';
+    const lab = isStart ? '🚀' : isEnd ? '🏁' : (s.emoji || '🎬');
+    svg += `<g class="graph-node">`;
+    svg += `<circle cx="${p.x}" cy="${p.y}" r="26" fill="${fill}"/>`;
+    svg += `<text x="${p.x}" y="${p.y - 2}" font-size="16">${escapeHtml(lab)}</text>`;
+    // title below
+    const t = (s.title || '').slice(0, 16);
+    svg += `<text x="${p.x}" y="${p.y + 44}" fill="#333" font-size="11" font-weight="bold">${escapeHtml(t)}</text>`;
+    svg += `</g>`;
+  });
+
+  svg += `</svg>`;
+  container.innerHTML = svg;
+}
+
+/* ===================================================================
+   EXPORT — generate a standalone HTML file with the story baked in
+   =================================================================== */
+function doExport() {
+  const html = buildExportHtml(STATE.project);
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safe = (STATE.project.name || 'story').replace(/[^a-z0-9-]+/gi, '_').slice(0, 40);
+  a.download = safe + '.html';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  toast('📤 Story exported! Check your downloads.');
+}
+
+function buildExportHtml(project) {
+  const json = JSON.stringify(project).replace(/<\/script>/g, '<\\/script>');
+  // The player is a minimal version of the runtime — pure player, no editor.
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${escapeHtml(project.name)}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Comic Sans MS','Chalkboard SE',system-ui,sans-serif;
+    background:linear-gradient(135deg,#1e1b4b 0%,#4c1d95 100%);
+    color:white;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+  .game{max-width:600px;width:100%;background:rgba(0,0,0,0.3);
+    border:3px solid rgba(255,255,255,0.3);border-radius:20px;padding:24px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.4)}
+  .title{font-size:1.8rem;text-align:center;margin-bottom:12px;color:#FFD700;text-shadow:2px 2px 0 rgba(0,0,0,0.4)}
+  .credit{font-size:0.8rem;text-align:center;color:rgba(255,255,255,0.6);margin-bottom:16px}
+  .stage-emoji{font-size:4rem;text-align:center;margin:10px 0}
+  .stage-title{font-size:1.4rem;text-align:center;font-weight:bold;margin-bottom:10px}
+  .stage-body{font-size:1.05rem;line-height:1.5;margin-bottom:16px;white-space:pre-wrap;background:rgba(0,0,0,0.2);padding:12px;border-radius:12px}
+  .btns{display:flex;flex-direction:column;gap:10px}
+  .btn{font-family:inherit;font-weight:bold;background:rgba(255,255,255,0.15);
+    color:white;border:2px solid rgba(255,255,255,0.5);border-radius:12px;
+    padding:12px 16px;font-size:1rem;cursor:pointer;transition:background 0.15s}
+  .btn:hover{background:rgba(255,255,255,0.3)}
+  .badge{background:#FFD700;color:#333;font-weight:bold;padding:10px 16px;
+    border-radius:14px;text-align:center;font-size:1.1rem}
+</style>
+</head>
+<body>
+<div class="game">
+  <div class="title">${escapeHtml(project.name)}</div>
+  <div class="credit">A story made with Coding Story Builder 📖</div>
+  <div id="stage"></div>
+</div>
+<script>
+'use strict';
+const PROJECT = ${json};
+let vars = {};
+let current = PROJECT.startSceneId;
+function getScene(id){return PROJECT.scenes.find(s=>s.id===id)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function processBlocks(blocks){
+  for(const b of blocks){
+    if(b.kind==='variable'){
+      const n=b.name;if(!n)continue;
+      if(!(n in vars))vars[n]=0;
+      if(b.op==='set')vars[n]=Number(b.value);
+      else if(b.op==='add')vars[n]=Number(vars[n])+Number(b.value);
+    }else if(b.kind==='loop'){
+      for(let i=0;i<(b.count||0);i++){const r=processBlocks(b.body||[]);if(r&&r.jump)return r;}
+    }else if(b.kind==='if'){
+      const v=Number(vars[b.varName]||0),t=Number(b.value);let p=false;
+      switch(b.op){case'==':p=v===t;break;case'!=':p=v!==t;break;case'>':p=v>t;break;case'<':p=v<t;break;case'>=':p=v>=t;break;case'<=':p=v<=t;break;}
+      return{jump:p?b.thenTarget:b.elseTarget}
+    }else if(b.kind==='choice')return{choice:b}
+    else if(b.kind==='end')return{end:b}
+  }
+  return{done:true}
+}
+function start(){
+  vars=JSON.parse(JSON.stringify(PROJECT.variables||{}));
+  current=PROJECT.startSceneId;show();
+}
+function show(){
+  const stage=document.getElementById('stage');
+  const sc=getScene(current);
+  if(!sc){stage.innerHTML='<p>Lost in the story...</p>';return;}
+  const r=processBlocks(sc.blocks||[]);
+  let html='<div class="stage-emoji">'+esc(sc.emoji||'✨')+'</div>';
+  html+='<div class="stage-title">'+esc(sc.title)+'</div>';
+  html+='<div class="stage-body">'+esc(sc.body||'')+'</div>';
+  html+='<div class="btns" id="btns"></div>';
+  stage.innerHTML=html;
+  const btns=document.getElementById('btns');
+  if(r.jump){
+    const b=document.createElement('button');b.className='btn';b.textContent='→ Continue';
+    b.onclick=()=>{current=r.jump;show();};btns.appendChild(b);
+  }else if(r.choice){
+    r.choice.options.forEach(o=>{
+      const b=document.createElement('button');b.className='btn';b.textContent=o.label;
+      b.onclick=()=>{if(o.target){current=o.target;show();}};
+      btns.appendChild(b);
+    });
+  }else if(r.end){
+    if(r.end.label){
+      const d=document.createElement('div');d.className='badge';d.textContent='🏆 '+r.end.label;btns.appendChild(d);
+    }
+    const b=document.createElement('button');b.className='btn';b.textContent='↻ Play again';b.onclick=start;btns.appendChild(b);
+  }
+}
+start();
+<\/script>
+</body>
+</html>`;
+}
+
+/* ===================================================================
+   TUTORIAL
+   =================================================================== */
+const TUTORIAL_STEPS = [
+  { text: "Welcome! Let's build 'The Magic Forest' together. First, click the title of your start scene and change it to 'The Magic Forest'." },
+  { text: "Now click in the big text area and type: 'You walk into a glowing forest. The path splits — sunny or dark?'" },
+  { text: "Add a tree emoji: click the emoji box (top-right of the scene) and type 🌲" },
+  { text: "Now drag the orange 🔀 CHOICE block from the left palette into the scene's blocks area." },
+  { text: "Click '+ Add new scene' twice to create two more scenes — one for 'Sunny Meadow' and one for 'Dark Cave'." },
+  { text: "In your CHOICE block, set choice 1 → 'Take sunny path' → Sunny Meadow. Set choice 2 → 'Take dark path' → Dark Cave." },
+  { text: "In each new scene, drag a gray 🏁 END block into the blocks area. Add an achievement label!" },
+  { text: "Watch the preview on the right — your story plays as you build! Click buttons to test it." },
+  { text: "When you're happy, click 📤 Export Story to download your game. You can email the file to anyone!" }
+];
+
+function renderTutorialBubble() {
+  const step = TUTORIAL_STEPS[STATE.tutorial.step];
+  const bubble = document.createElement('div');
+  bubble.className = 'tutorial-bubble';
+  bubble.innerHTML = `
+    <div class="step-label">🦉 Tutorial — Step ${STATE.tutorial.step + 1} of ${TUTORIAL_STEPS.length}</div>
+    <div class="step-text">${escapeHtml(step.text)}</div>
+    <div class="step-actions">
+      <button class="btn small gray" id="tut-close">Skip Tutorial</button>
+      <div class="spacer"></div>
+      ${STATE.tutorial.step > 0 ? '<button class="btn small blue" id="tut-prev">← Back</button>' : ''}
+      <button class="btn small green" id="tut-next">${STATE.tutorial.step === TUTORIAL_STEPS.length - 1 ? 'Done! 🎉' : 'Next →'}</button>
+    </div>
+  `;
+  bubble.querySelector('#tut-close').onclick = () => { STATE.tutorial.active = false; render(); };
+  const prev = bubble.querySelector('#tut-prev');
+  if (prev) prev.onclick = () => { STATE.tutorial.step--; render(); };
+  bubble.querySelector('#tut-next').onclick = () => {
+    if (STATE.tutorial.step === TUTORIAL_STEPS.length - 1) {
+      STATE.tutorial.active = false;
+      toast('🎉 Tutorial complete! Now build whatever you want.');
+    } else {
+      STATE.tutorial.step++;
+    }
+    render();
+  };
+  return bubble;
+}
+
+/* ===================================================================
+   UTILITIES
+   =================================================================== */
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+function toast(msg, isError) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+/* ===================================================================
+   AUTOSAVE — every 8 seconds
+   =================================================================== */
+setInterval(() => {
+  if (STATE.project && STATE.screen === 'builder') saveProject(STATE.project);
+}, 8000);
+
+/* ===================================================================
+   BOOT
+   =================================================================== */
+render();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Drawing Telephone 🎨📞</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; min-height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #fef9c3 0%, #fce7f3 50%, #dbeafe 100%);
+    color: #1f2937;
+    overscroll-behavior: none;
+  }
+  body { padding: 16px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 2rem; margin: 8px 0 4px; text-align: center; }
+  h2 { font-size: 1.4rem; margin: 16px 0 8px; }
+  .subtitle { text-align: center; color: #6b7280; margin-bottom: 20px; }
+  button {
+    font-family: inherit; font-size: 1rem;
+    border: none; border-radius: 14px; padding: 12px 20px;
+    cursor: pointer; font-weight: 600;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.12);
+  }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.12); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: #f97316; color: white; }
+  .btn-primary:hover { background: #ea580c; }
+  .btn-secondary { background: #e5e7eb; color: #1f2937; }
+  .btn-secondary:hover { background: #d1d5db; }
+  .btn-success { background: #10b981; color: white; }
+  .btn-danger { background: #ef4444; color: white; }
+  .btn-ghost { background: transparent; color: #6b7280; box-shadow: none; padding: 8px 12px; }
+
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* Top nav */
+  .topnav {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .topnav button { font-size: 0.9rem; padding: 8px 14px; }
+
+  /* Setup */
+  .player-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .player-row input {
+    flex: 1; padding: 12px; border: 2px solid #e5e7eb;
+    border-radius: 12px; font-size: 1rem;
+  }
+  .player-row input:focus { outline: none; border-color: #f97316; }
+  .player-row .remove-btn {
+    background: #fee2e2; color: #b91c1c;
+    border-radius: 50%; width: 36px; height: 36px;
+    padding: 0; font-size: 1.1rem; flex-shrink: 0;
+    box-shadow: none;
+  }
+  .setup-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .rounds-control {
+    display: flex; align-items: center; gap: 12px; margin-top: 16px;
+    padding: 12px; background: #f9fafb; border-radius: 12px;
+  }
+  .rounds-control button {
+    width: 40px; height: 40px; padding: 0;
+    background: #f97316; color: white;
+    border-radius: 50%;
+  }
+  .rounds-count { font-size: 1.4rem; font-weight: 700; min-width: 30px; text-align: center; }
+
+  /* Handoff */
+  .handoff {
+    text-align: center; padding: 40px 20px;
+  }
+  .handoff .big-name {
+    font-size: 2rem; font-weight: 800; color: #f97316; margin: 16px 0;
+  }
+  .handoff .task {
+    font-size: 1.2rem; color: #6b7280; margin-bottom: 24px;
+  }
+  .handoff .secret-icon {
+    font-size: 4rem; margin-bottom: 16px; display: block;
+  }
+  .progress-pill {
+    display: inline-block; padding: 6px 14px;
+    background: #fef3c7; color: #92400e;
+    border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  /* Prompt entry */
+  .prompt-area textarea {
+    width: 100%; min-height: 100px;
+    padding: 16px; border: 2px solid #e5e7eb;
+    border-radius: 14px; font-size: 1.1rem; font-family: inherit;
+    resize: vertical;
+  }
+  .prompt-area textarea:focus { outline: none; border-color: #f97316; }
+  .show-prompt {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    padding: 20px; border-radius: 14px;
+    font-size: 1.3rem; font-weight: 600;
+    text-align: center;
+    margin-bottom: 16px;
+    border: 3px dashed #f59e0b;
+  }
+  .show-drawing {
+    background: white; border-radius: 14px;
+    text-align: center; margin-bottom: 16px;
+    border: 3px dashed #f59e0b; padding: 12px;
+  }
+  .show-drawing img { max-width: 100%; height: auto; border-radius: 8px; }
+  .timer-hint {
+    text-align: center; color: #6b7280; font-size: 0.85rem; margin: 8px 0;
+  }
+
+  /* Canvas */
+  .canvas-wrap {
+    position: relative;
+    background: white; border-radius: 14px;
+    padding: 8px; margin-bottom: 12px;
+    box-shadow: inset 0 0 0 2px #e5e7eb;
+  }
+  canvas {
+    display: block; width: 100%;
+    background: white; border-radius: 8px;
+    touch-action: none; cursor: crosshair;
+  }
+  .tools {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin-bottom: 12px;
+  }
+  .color-swatch {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid white; cursor: pointer;
+    box-shadow: 0 0 0 2px #e5e7eb;
+    flex-shrink: 0;
+  }
+  .color-swatch.active { box-shadow: 0 0 0 3px #1f2937; transform: scale(1.1); }
+  .brush-btn {
+    background: white; border-radius: 50%;
+    width: 40px; height: 40px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 2px #e5e7eb;
+  }
+  .brush-btn.active { box-shadow: 0 0 0 3px #1f2937; }
+  .brush-dot { background: #1f2937; border-radius: 50%; }
+  .tool-btn {
+    background: white; padding: 8px 12px; font-size: 0.85rem;
+    box-shadow: 0 0 0 2px #e5e7eb; border-radius: 10px;
+  }
+  .tool-btn.active { background: #fef3c7; box-shadow: 0 0 0 2px #f59e0b; }
+
+  /* Reveal */
+  .reveal-stage {
+    text-align: center;
+    min-height: 400px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .reveal-author {
+    font-size: 1rem; color: #6b7280; margin-bottom: 8px;
+  }
+  .reveal-step-num {
+    display: inline-block; padding: 4px 12px;
+    background: #ede9fe; color: #6d28d9;
+    border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .reveal-content {
+    font-size: 1.5rem; font-weight: 600;
+    padding: 20px; max-width: 100%;
+    background: linear-gradient(135deg, #fff7ed, #fef3c7);
+    border-radius: 16px;
+    margin: 12px 0;
+    animation: pop 0.4s ease-out;
+  }
+  .reveal-content img {
+    max-width: 100%; max-height: 50vh;
+    border-radius: 8px; display: block; margin: 0 auto;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.7); opacity: 0; }
+    60% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .reveal-controls {
+    display: flex; gap: 10px; justify-content: center;
+    margin-top: 20px; flex-wrap: wrap;
+  }
+  .reveal-dots {
+    display: flex; gap: 6px; justify-content: center; margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .reveal-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #d1d5db;
+  }
+  .reveal-dot.active { background: #f97316; transform: scale(1.4); }
+  .reveal-dot.done { background: #a78bfa; }
+
+  /* Gallery */
+  .gallery-item {
+    background: white; border-radius: 16px;
+    padding: 16px; margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .gallery-item h3 { margin: 0 0 4px; font-size: 1.1rem; }
+  .gallery-item .meta {
+    color: #6b7280; font-size: 0.85rem; margin-bottom: 8px;
+  }
+  .gallery-item-actions {
+    display: flex; gap: 8px; margin-top: 8px;
+  }
+  .gallery-item-actions button { font-size: 0.85rem; padding: 6px 12px; }
+
+  .empty {
+    text-align: center; color: #6b7280; padding: 40px 20px;
+    font-size: 1rem;
+  }
+
+  /* Confetti */
+  .confetti {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 1000; overflow: hidden;
+  }
+  .confetti span {
+    position: absolute; top: -20px;
+    width: 10px; height: 14px;
+    animation: fall 2.5s linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0.4; }
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 10px; }
+    h1 { font-size: 1.6rem; }
+    .card { padding: 16px; }
+    .reveal-content { font-size: 1.2rem; padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Drawing Telephone 🎨📞</h1>
+<p class="subtitle">Pass the phone. Whisper-draw. Laugh at the chain.</p>
+
+<!-- ============== SETUP SCREEN ============== -->
+<div id="screen-setup" class="screen active">
+  <div class="topnav">
+    <span></span>
+    <button class="btn-ghost" onclick="showGallery()">📚 Gallery</button>
+  </div>
+  <div class="card">
+    <h2>Who's playing?</h2>
+    <p style="color:#6b7280; margin-top:0;">3 to 8 players. You'll pass the device around the circle.</p>
+    <div id="player-list"></div>
+    <button class="btn-secondary" onclick="addPlayer()" style="margin-top:8px;">+ Add player</button>
+
+    <div class="rounds-control">
+      <span style="flex:1; font-weight:600;">Rounds per player</span>
+      <button onclick="changeRoundsMul(-1)">−</button>
+      <span class="rounds-count" id="rounds-display">2</span>
+      <button onclick="changeRoundsMul(1)">+</button>
+    </div>
+    <p style="color:#6b7280; font-size:0.85rem; margin:8px 0 0;">
+      Each player takes this many turns. More turns = longer game, weirder chain.
+    </p>
+
+    <div class="setup-actions">
+      <button class="btn-primary" onclick="startGame()" style="flex:1;">Start Game 🚀</button>
+    </div>
+  </div>
+
+  <div class="card" style="background:rgba(255,255,255,0.6);">
+    <h2 style="margin-top:0;">How it works</h2>
+    <ol style="padding-left:20px; line-height:1.7; color:#374151;">
+      <li>Player 1 types a silly prompt (like "a panda eating spaghetti").</li>
+      <li>Pass the device. Player 2 sees the prompt, then <strong>draws it</strong>.</li>
+      <li>Pass again. Player 3 sees only the drawing, types what they think it is.</li>
+      <li>Keep going — draw, guess, draw, guess.</li>
+      <li>At the end, the <strong>Big Reveal</strong> walks through the whole chain. 🎉</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============== HANDOFF SCREEN ============== -->
+<div id="screen-handoff" class="screen">
+  <div class="card handoff">
+    <span class="progress-pill" id="handoff-progress">Turn 1 of 6</span>
+    <span class="secret-icon">🤫</span>
+    <p style="margin:0; color:#6b7280;">Pass the device to</p>
+    <div class="big-name" id="handoff-name">Alex</div>
+    <p class="task" id="handoff-task">It's your turn to draw!</p>
+    <button class="btn-primary" onclick="beginTurn()" style="font-size:1.1rem; padding:14px 28px;">
+      I'm <span id="handoff-name-btn">Alex</span> — Ready! 👀
+    </button>
+  </div>
+</div>
+
+<!-- ============== PROMPT ENTRY ============== -->
+<div id="screen-prompt" class="screen">
+  <div class="card">
+    <span class="progress-pill" id="prompt-progress">Turn 1 of 6</span>
+    <h2 id="prompt-heading">Start the chain ✏️</h2>
+    <p style="color:#6b7280; margin-top:0;" id="prompt-helper">
+      Type a silly, specific scene. The wackier, the better. (Examples: "a wizard cat ordering tacos",
+      "a robot doing the moonwalk in a bathtub")
+    </p>
+    <div class="prompt-area">
+      <div id="prompt-show-area"></div>
+      <textarea id="prompt-input" placeholder="Type your prompt here..." maxlength="120"></textarea>
+      <div class="timer-hint">Keep it short — about one sentence.</div>
+    </div>
+    <div class="setup-actions">
+      <button class="btn-primary" onclick="submitPrompt()" style="flex:1;">Done — Hide and Pass 🤐</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== DRAW SCREEN ============== -->
+<div id="screen-draw" class="screen">
+  <div class="card">
+    <span class="progress-pill" id="draw-progress">Turn 2 of 6</span>
+    <h2 style="margin-top:8px;">Draw what you see ✏️</h2>
+    <div class="show-prompt" id="draw-show-prompt"></div>
+
+    <div class="tools">
+      <div class="color-swatch" style="background:#1f2937" data-color="#1f2937"></div>
+      <div class="color-swatch" style="background:#ef4444" data-color="#ef4444"></div>
+      <div class="color-swatch" style="background:#f59e0b" data-color="#f59e0b"></div>
+      <div class="color-swatch" style="background:#10b981" data-color="#10b981"></div>
+      <div class="color-swatch" style="background:#3b82f6" data-color="#3b82f6"></div>
+      <div class="color-swatch" style="background:#a855f7" data-color="#a855f7"></div>
+
+      <button class="brush-btn" data-brush="3" title="Thin">
+        <span class="brush-dot" style="width:6px;height:6px;"></span>
+      </button>
+      <button class="brush-btn" data-brush="6" title="Medium">
+        <span class="brush-dot" style="width:10px;height:10px;"></span>
+      </button>
+      <button class="brush-btn" data-brush="12" title="Thick">
+        <span class="brush-dot" style="width:16px;height:16px;"></span>
+      </button>
+
+      <button class="tool-btn" id="eraser-btn" onclick="toggleEraser()">🩹 Eraser</button>
+      <button class="tool-btn" onclick="undoStroke()">↶ Undo</button>
+      <button class="tool-btn" onclick="clearCanvas()">🗑️ Clear</button>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="draw-canvas" width="800" height="600"></canvas>
+    </div>
+
+    <div class="setup-actions">
+      <button class="btn-primary" onclick="submitDrawing()" style="flex:1;">Done — Hide and Pass 🤐</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== GUESS SCREEN (describe a drawing) ============== -->
+<div id="screen-guess" class="screen">
+  <div class="card">
+    <span class="progress-pill" id="guess-progress">Turn 3 of 6</span>
+    <h2 style="margin-top:8px;">What do you think this is? 🤔</h2>
+    <div class="show-drawing" id="guess-show-drawing"></div>
+    <textarea id="guess-input" placeholder="Type your best guess..." maxlength="120"
+      style="width:100%; min-height:80px; padding:16px; border:2px solid #e5e7eb; border-radius:14px; font-size:1.1rem; font-family:inherit;"></textarea>
+    <div class="timer-hint">Don't overthink it — first instinct is usually the funniest.</div>
+    <div class="setup-actions">
+      <button class="btn-primary" onclick="submitGuess()" style="flex:1;">Done — Hide and Pass 🤐</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== REVEAL ============== -->
+<div id="screen-reveal" class="screen">
+  <div class="card">
+    <h2 style="text-align:center; margin-top:0;">🎉 The Big Reveal 🎉</h2>
+    <div class="reveal-dots" id="reveal-dots"></div>
+    <div class="reveal-stage">
+      <div class="reveal-author" id="reveal-author"></div>
+      <div class="reveal-step-num" id="reveal-step-num"></div>
+      <div class="reveal-content" id="reveal-content"></div>
+    </div>
+    <div class="reveal-controls">
+      <button class="btn-secondary" id="reveal-prev" onclick="revealPrev()">← Back</button>
+      <button class="btn-primary" id="reveal-next" onclick="revealNext()">Next →</button>
+    </div>
+    <div class="reveal-controls" style="margin-top:8px;">
+      <button class="btn-success" onclick="saveToGallery()">💾 Save to Gallery</button>
+      <button class="btn-secondary" onclick="newGame()">🔄 Play Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== GALLERY ============== -->
+<div id="screen-gallery" class="screen">
+  <div class="topnav">
+    <button class="btn-ghost" onclick="goSetup()">← Back</button>
+    <span></span>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0;">📚 Gallery</h2>
+    <p style="color:#6b7280; margin-top:0;">Saved chains live here. Tap one to replay the reveal.</p>
+    <div id="gallery-list"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  players: ['', '', ''],
+  roundsPerPlayer: 2,
+  // chain is array of steps: {kind: 'text'|'drawing', value: string|dataURL, authorIdx: number}
+  chain: [],
+  turnIdx: 0,       // which step in the chain we're collecting next
+  totalTurns: 0,
+  revealIdx: 0,
+};
+
+// ============================================================
+// SCREEN MANAGEMENT
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ============================================================
+// SETUP
+// ============================================================
+function renderPlayers() {
+  const list = document.getElementById('player-list');
+  list.innerHTML = '';
+  state.players.forEach((name, i) => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.innerHTML = `
+      <input type="text" placeholder="Player ${i+1} name" value="${escapeHtml(name)}"
+        oninput="updatePlayer(${i}, this.value)" maxlength="20" />
+      ${state.players.length > 3 ? `<button class="remove-btn" onclick="removePlayer(${i})" title="Remove">✕</button>` : ''}
+    `;
+    list.appendChild(row);
+  });
+}
+function updatePlayer(i, v) { state.players[i] = v; }
+function addPlayer() {
+  if (state.players.length >= 8) return;
+  state.players.push('');
+  renderPlayers();
+}
+function removePlayer(i) {
+  if (state.players.length <= 3) return;
+  state.players.splice(i, 1);
+  renderPlayers();
+}
+function changeRoundsMul(delta) {
+  state.roundsPerPlayer = Math.max(1, Math.min(4, state.roundsPerPlayer + delta));
+  document.getElementById('rounds-display').textContent = state.roundsPerPlayer;
+}
+
+function startGame() {
+  // Clean up names
+  const names = state.players.map(n => (n || '').trim()).filter(n => n);
+  if (names.length < 3) {
+    alert('You need at least 3 players! Add some names.');
+    return;
+  }
+  state.players = names;
+  state.chain = [];
+  state.turnIdx = 0;
+  state.totalTurns = names.length * state.roundsPerPlayer;
+  showHandoff();
+}
+
+// ============================================================
+// TURN FLOW
+// ============================================================
+// Turn 0 is always text (initial prompt).
+// Turn 1+: alternate drawing, text, drawing, text...
+function turnKind(i) {
+  if (i === 0) return 'text';
+  return i % 2 === 1 ? 'drawing' : 'text';
+}
+function turnAuthor(i) {
+  return state.players[i % state.players.length];
+}
+
+function showHandoff() {
+  if (state.turnIdx >= state.totalTurns) {
+    startReveal();
+    return;
+  }
+  const name = turnAuthor(state.turnIdx);
+  const kind = turnKind(state.turnIdx);
+  let task;
+  if (state.turnIdx === 0) {
+    task = "You're starting the chain — type a fun prompt!";
+  } else if (kind === 'drawing') {
+    task = "You'll see a phrase. Draw what it says!";
+  } else {
+    task = "You'll see a drawing. Type what you think it is!";
+  }
+  document.getElementById('handoff-progress').textContent = `Turn ${state.turnIdx + 1} of ${state.totalTurns}`;
+  document.getElementById('handoff-name').textContent = name;
+  document.getElementById('handoff-name-btn').textContent = name;
+  document.getElementById('handoff-task').textContent = task;
+  showScreen('screen-handoff');
+}
+
+function beginTurn() {
+  const kind = turnKind(state.turnIdx);
+  if (state.turnIdx === 0) {
+    // First prompt
+    document.getElementById('prompt-progress').textContent = `Turn 1 of ${state.totalTurns}`;
+    document.getElementById('prompt-heading').textContent = "Start the chain ✏️";
+    document.getElementById('prompt-helper').style.display = '';
+    document.getElementById('prompt-show-area').innerHTML = '';
+    document.getElementById('prompt-input').value = '';
+    showScreen('screen-prompt');
+    setTimeout(() => document.getElementById('prompt-input').focus(), 100);
+  } else if (kind === 'drawing') {
+    // Show the previous text, let them draw
+    const prev = state.chain[state.turnIdx - 1];
+    document.getElementById('draw-progress').textContent = `Turn ${state.turnIdx + 1} of ${state.totalTurns}`;
+    document.getElementById('draw-show-prompt').textContent = '"' + prev.value + '"';
+    showScreen('screen-draw');
+    setTimeout(setupCanvas, 50);
+  } else {
+    // text guess from a drawing
+    const prev = state.chain[state.turnIdx - 1];
+    document.getElementById('guess-progress').textContent = `Turn ${state.turnIdx + 1} of ${state.totalTurns}`;
+    const drawDiv = document.getElementById('guess-show-drawing');
+    drawDiv.innerHTML = `<img src="${prev.value}" alt="drawing to guess" />`;
+    document.getElementById('guess-input').value = '';
+    showScreen('screen-guess');
+    setTimeout(() => document.getElementById('guess-input').focus(), 100);
+  }
+}
+
+function submitPrompt() {
+  const v = document.getElementById('prompt-input').value.trim();
+  if (!v) { alert('Type something silly first!'); return; }
+  state.chain.push({ kind: 'text', value: v, authorIdx: state.turnIdx });
+  state.turnIdx++;
+  showHandoff();
+}
+
+function submitGuess() {
+  const v = document.getElementById('guess-input').value.trim();
+  if (!v) { alert('Take a guess — anything!'); return; }
+  state.chain.push({ kind: 'text', value: v, authorIdx: state.turnIdx });
+  state.turnIdx++;
+  showHandoff();
+}
+
+function submitDrawing() {
+  // Make sure there's at least one stroke
+  if (strokes.length === 0) {
+    if (!confirm("You haven't drawn anything yet. Submit a blank canvas?")) return;
+  }
+  const data = canvas.toDataURL('image/png');
+  state.chain.push({ kind: 'drawing', value: data, authorIdx: state.turnIdx });
+  state.turnIdx++;
+  showHandoff();
+}
+
+// ============================================================
+// CANVAS / DRAWING
+// ============================================================
+let canvas, ctx;
+let drawing = false;
+let currentColor = '#1f2937';
+let currentBrush = 6;
+let erasing = false;
+let strokes = []; // array of {color, brush, points: [[x,y],...], erase: bool}
+let currentStroke = null;
+
+function setupCanvas() {
+  canvas = document.getElementById('draw-canvas');
+  ctx = canvas.getContext('2d');
+  // Set canvas resolution based on display size
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = Math.min(rect.width * 0.75, 500) * dpr;
+  canvas.style.height = (canvas.height / dpr) + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  strokes = [];
+  currentStroke = null;
+  drawing = false;
+  currentColor = '#1f2937';
+  currentBrush = 6;
+  erasing = false;
+  redraw();
+  updateToolUI();
+
+  // Listeners
+  canvas.onmousedown = handlePointerStart;
+  canvas.onmousemove = handlePointerMove;
+  canvas.onmouseup = handlePointerEnd;
+  canvas.onmouseleave = handlePointerEnd;
+  canvas.ontouchstart = handleTouchStart;
+  canvas.ontouchmove = handleTouchMove;
+  canvas.ontouchend = handlePointerEnd;
+}
+
+function getPointerPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left),
+    y: (e.clientY - rect.top)
+  };
+}
+function handlePointerStart(e) {
+  e.preventDefault();
+  drawing = true;
+  const p = getPointerPos(e);
+  currentStroke = {
+    color: currentColor, brush: currentBrush,
+    erase: erasing, points: [[p.x, p.y]]
+  };
+}
+function handlePointerMove(e) {
+  if (!drawing) return;
+  e.preventDefault();
+  const p = getPointerPos(e);
+  currentStroke.points.push([p.x, p.y]);
+  redraw();
+}
+function handlePointerEnd(e) {
+  if (!drawing) return;
+  if (e) e.preventDefault();
+  drawing = false;
+  if (currentStroke && currentStroke.points.length > 0) {
+    strokes.push(currentStroke);
+  }
+  currentStroke = null;
+  redraw();
+}
+function handleTouchStart(e) {
+  e.preventDefault();
+  if (e.touches.length === 0) return;
+  const t = e.touches[0];
+  handlePointerStart({ clientX: t.clientX, clientY: t.clientY, preventDefault: () => {} });
+}
+function handleTouchMove(e) {
+  e.preventDefault();
+  if (e.touches.length === 0) return;
+  const t = e.touches[0];
+  handlePointerMove({ clientX: t.clientX, clientY: t.clientY, preventDefault: () => {} });
+}
+
+function redraw() {
+  const w = canvas.width / (window.devicePixelRatio || 1);
+  const h = canvas.height / (window.devicePixelRatio || 1);
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, w, h);
+  const all = currentStroke ? strokes.concat([currentStroke]) : strokes;
+  for (const s of all) {
+    drawStroke(s);
+  }
+}
+function drawStroke(s) {
+  if (s.points.length === 0) return;
+  ctx.beginPath();
+  ctx.lineWidth = s.erase ? s.brush * 3 : s.brush;
+  ctx.strokeStyle = s.erase ? 'white' : s.color;
+  ctx.moveTo(s.points[0][0], s.points[0][1]);
+  if (s.points.length === 1) {
+    // Dot
+    ctx.arc(s.points[0][0], s.points[0][1], (s.erase ? s.brush * 1.5 : s.brush / 2), 0, Math.PI * 2);
+    ctx.fillStyle = s.erase ? 'white' : s.color;
+    ctx.fill();
+    return;
+  }
+  for (let i = 1; i < s.points.length; i++) {
+    ctx.lineTo(s.points[i][0], s.points[i][1]);
+  }
+  ctx.stroke();
+}
+function undoStroke() {
+  strokes.pop();
+  redraw();
+}
+function clearCanvas() {
+  if (strokes.length && !confirm('Clear the whole drawing?')) return;
+  strokes = [];
+  redraw();
+}
+function toggleEraser() {
+  erasing = !erasing;
+  updateToolUI();
+}
+function updateToolUI() {
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.color === currentColor && !erasing);
+  });
+  document.querySelectorAll('.brush-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.brush) === currentBrush);
+  });
+  document.getElementById('eraser-btn').classList.toggle('active', erasing);
+}
+// Wire up tool buttons
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('color-swatch')) {
+    currentColor = e.target.dataset.color;
+    erasing = false;
+    updateToolUI();
+  } else if (e.target.closest('.brush-btn')) {
+    currentBrush = parseInt(e.target.closest('.brush-btn').dataset.brush);
+    updateToolUI();
+  }
+});
+
+// ============================================================
+// REVEAL
+// ============================================================
+function startReveal() {
+  state.revealIdx = 0;
+  renderRevealDots();
+  showReveal();
+  showScreen('screen-reveal');
+  fireConfetti();
+}
+function renderRevealDots() {
+  const dots = document.getElementById('reveal-dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < state.chain.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'reveal-dot' + (i === state.revealIdx ? ' active' : (i < state.revealIdx ? ' done' : ''));
+    dots.appendChild(d);
+  }
+}
+function showReveal() {
+  const step = state.chain[state.revealIdx];
+  const author = state.players[step.authorIdx % state.players.length];
+  const intro = state.revealIdx === 0 ? 'started with...' :
+                (step.kind === 'drawing' ? 'drew this...' : 'guessed...');
+  document.getElementById('reveal-author').textContent = `${author} ${intro}`;
+  document.getElementById('reveal-step-num').textContent = `Step ${state.revealIdx + 1} of ${state.chain.length}`;
+  const content = document.getElementById('reveal-content');
+  // re-trigger animation
+  content.style.animation = 'none';
+  void content.offsetWidth;
+  content.style.animation = '';
+  if (step.kind === 'text') {
+    content.innerHTML = '"' + escapeHtml(step.value) + '"';
+  } else {
+    content.innerHTML = `<img src="${step.value}" alt="drawing" />`;
+  }
+  document.getElementById('reveal-prev').disabled = state.revealIdx === 0;
+  document.getElementById('reveal-next').disabled = state.revealIdx >= state.chain.length - 1;
+  renderRevealDots();
+}
+function revealNext() {
+  if (state.revealIdx < state.chain.length - 1) {
+    state.revealIdx++;
+    showReveal();
+    if (state.revealIdx === state.chain.length - 1) fireConfetti();
+  }
+}
+function revealPrev() {
+  if (state.revealIdx > 0) {
+    state.revealIdx--;
+    showReveal();
+  }
+}
+
+// ============================================================
+// CONFETTI
+// ============================================================
+function fireConfetti() {
+  const colors = ['#f97316', '#ef4444', '#10b981', '#3b82f6', '#a855f7', '#fbbf24'];
+  const container = document.createElement('div');
+  container.className = 'confetti';
+  for (let i = 0; i < 40; i++) {
+    const piece = document.createElement('span');
+    piece.style.left = Math.random() * 100 + '%';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay = (Math.random() * 0.5) + 's';
+    piece.style.animationDuration = (1.8 + Math.random() * 1.5) + 's';
+    piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+    container.appendChild(piece);
+  }
+  document.body.appendChild(container);
+  setTimeout(() => container.remove(), 3500);
+}
+
+// ============================================================
+// GALLERY
+// ============================================================
+const GALLERY_KEY = 'drawing-telephone-gallery';
+function getGallery() {
+  try { return JSON.parse(localStorage.getItem(GALLERY_KEY) || '[]'); }
+  catch { return []; }
+}
+function setGallery(g) {
+  try { localStorage.setItem(GALLERY_KEY, JSON.stringify(g)); }
+  catch (e) { alert("Couldn't save — storage may be full. Try removing old chains."); }
+}
+function saveToGallery() {
+  const title = prompt('Name this chain (optional):', `Chain from ${new Date().toLocaleDateString()}`);
+  if (title === null) return;
+  const g = getGallery();
+  g.unshift({
+    id: Date.now(),
+    title: title || `Chain ${new Date().toLocaleDateString()}`,
+    date: new Date().toISOString(),
+    players: state.players.slice(),
+    chain: state.chain.slice(),
+  });
+  // Limit to 20 chains to keep storage manageable
+  if (g.length > 20) g.length = 20;
+  setGallery(g);
+  alert('Saved! Find it in the Gallery. 📚');
+}
+function showGallery() {
+  const g = getGallery();
+  const list = document.getElementById('gallery-list');
+  if (g.length === 0) {
+    list.innerHTML = '<div class="empty">No saved chains yet. Play a game and save the best ones! 🎨</div>';
+  } else {
+    list.innerHTML = '';
+    g.forEach(item => {
+      const date = new Date(item.date).toLocaleDateString();
+      const div = document.createElement('div');
+      div.className = 'gallery-item';
+      div.innerHTML = `
+        <h3>${escapeHtml(item.title)}</h3>
+        <div class="meta">${date} · ${item.players.length} players · ${item.chain.length} steps</div>
+        <div class="gallery-item-actions">
+          <button class="btn-primary" onclick="replayChain(${item.id})">▶ Replay</button>
+          <button class="btn-danger" onclick="deleteChain(${item.id})">Delete</button>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  }
+  showScreen('screen-gallery');
+}
+function replayChain(id) {
+  const g = getGallery();
+  const item = g.find(x => x.id === id);
+  if (!item) return;
+  state.players = item.players.slice();
+  state.chain = item.chain.slice();
+  state.revealIdx = 0;
+  renderRevealDots();
+  showReveal();
+  showScreen('screen-reveal');
+}
+function deleteChain(id) {
+  if (!confirm('Delete this chain forever?')) return;
+  setGallery(getGallery().filter(x => x.id !== id));
+  showGallery();
+}
+
+// ============================================================
+// MISC
+// ============================================================
+function newGame() { goSetup(); }
+function goSetup() {
+  state.chain = [];
+  state.turnIdx = 0;
+  showScreen('screen-setup');
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
+}
+
+// Resize canvas if user rotates / resizes
+window.addEventListener('resize', () => {
+  if (document.getElementById('screen-draw').classList.contains('active')) {
+    // Save existing strokes, re-init, re-draw
+    const saved = strokes.slice();
+    setupCanvas();
+    strokes = saved;
+    redraw();
+  }
+});
+
+// Boot
+renderPlayers();
+</script>
+</body>
+</html>

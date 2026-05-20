@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Periodic Table Pets 🐶</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { min-height: 100%; font-family: 'Comic Sans MS', 'Chalkboard SE', system-ui, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #FFE0F0 0%, #DCEFFF 50%, #E0FFE9 100%);
+    user-select: none;
+    min-height: 100vh;
+    color: #2a2a3a;
+  }
+  #app { width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px; }
+
+  h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); color: #D6336C; text-shadow: 3px 3px 0 #fff; text-align: center; margin: 6px 0; }
+  .subtitle { color: #5E60CE; font-size: clamp(0.95rem, 2.2vw, 1.15rem); margin-bottom: 10px; text-align: center; }
+
+  .top-bar {
+    width: 100%; max-width: 1200px;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  .pokedex-badge {
+    background: #fff; border: 3px solid #FFB347; border-radius: 18px;
+    padding: 6px 14px; font-weight: bold; color: #D6336C; font-size: 1rem;
+    box-shadow: 0 4px 0 #e69b30;
+  }
+  .pokedex-badge .count { color: #2E86AB; font-size: 1.2em; }
+
+  .big-btn {
+    font-family: inherit;
+    font-size: clamp(0.9rem, 2.2vw, 1.05rem);
+    padding: 8px 16px;
+    border: 3px solid #fff;
+    border-radius: 18px;
+    cursor: pointer;
+    background: #FF6B9D;
+    color: white;
+    box-shadow: 0 4px 0 #c4477b, 0 6px 12px rgba(0,0,0,0.15);
+    transition: transform 0.1s, box-shadow 0.1s;
+    font-weight: bold;
+  }
+  .big-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #c4477b, 0 2px 6px rgba(0,0,0,0.15); }
+  .big-btn.green { background: #4CAF50; box-shadow: 0 4px 0 #2e7031, 0 6px 12px rgba(0,0,0,0.15); }
+  .big-btn.green:active { box-shadow: 0 1px 0 #2e7031, 0 2px 6px rgba(0,0,0,0.15); }
+  .big-btn.blue { background: #2E86AB; box-shadow: 0 4px 0 #1c5670, 0 6px 12px rgba(0,0,0,0.15); }
+  .big-btn.blue:active { box-shadow: 0 1px 0 #1c5670, 0 2px 6px rgba(0,0,0,0.15); }
+  .big-btn.purple { background: #9B59B6; box-shadow: 0 4px 0 #5e3470, 0 6px 12px rgba(0,0,0,0.15); }
+  .big-btn.purple:active { box-shadow: 0 1px 0 #5e3470, 0 2px 6px rgba(0,0,0,0.15); }
+  .big-btn.gray { background: #888; box-shadow: 0 4px 0 #555, 0 6px 12px rgba(0,0,0,0.15); font-size: 0.85rem; padding: 6px 12px; }
+  .big-btn.gray:active { box-shadow: 0 1px 0 #555, 0 2px 6px rgba(0,0,0,0.15); }
+
+  .search-box {
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 8px 14px;
+    border: 3px solid #5E60CE;
+    border-radius: 18px;
+    outline: none;
+    width: 200px;
+    background: white;
+  }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0; }
+  .chip {
+    background: #fff;
+    border: 2px solid #ccc;
+    border-radius: 14px;
+    padding: 4px 10px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: #555;
+  }
+  .chip.active { background: #5E60CE; color: white; border-color: #3d3f9e; }
+
+  /* Periodic table */
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    padding: 8px 4px 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ptable {
+    display: grid;
+    grid-template-columns: repeat(18, minmax(44px, 1fr));
+    gap: 3px;
+    width: max-content;
+    min-width: 100%;
+    margin: 0 auto;
+    max-width: 1200px;
+  }
+  .pcell {
+    aspect-ratio: 1;
+    min-width: 44px;
+    border-radius: 6px;
+    border: 2px solid rgba(255,255,255,0.6);
+    cursor: pointer;
+    position: relative;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 2px;
+    transition: transform 0.1s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+  .pcell:active { transform: scale(0.92); }
+  .pcell.dimmed { opacity: 0.18; }
+  .pcell .num { font-size: 0.55rem; color: rgba(0,0,0,0.6); position: absolute; top: 1px; left: 3px; line-height: 1; }
+  .pcell .sym { font-size: clamp(0.95rem, 2vw, 1.2rem); font-weight: bold; color: #1a1a2a; line-height: 1; margin-top: 6px; }
+  .pcell .nm { font-size: 0.5rem; color: rgba(0,0,0,0.65); text-align: center; line-height: 1; margin-top: 2px; }
+  .pcell .star { position: absolute; top: 1px; right: 3px; font-size: 0.7rem; }
+  .pcell.placeholder { background: rgba(255,255,255,0.25); border-style: dashed; cursor: default; box-shadow: none; font-size: 0.6rem; color: #555; }
+  .pcell.placeholder:active { transform: none; }
+
+  /* Family colors */
+  .fam-alkali        { background: #FF8FA3; }
+  .fam-alkaline      { background: #FFB347; }
+  .fam-transition    { background: #FFE066; }
+  .fam-postTransition{ background: #C5E1A5; }
+  .fam-metalloid     { background: #80DEEA; }
+  .fam-nonmetal      { background: #B5EAD7; }
+  .fam-halogen       { background: #B388FF; }
+  .fam-noble         { background: #F8B4D9; }
+  .fam-lanthanide    { background: #FFCCBC; }
+  .fam-actinide      { background: #D7BDE2; }
+  .fam-unknown       { background: #E0E0E0; }
+
+  /* Legend */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0 8px;
+    font-size: 0.78rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; background: rgba(255,255,255,0.55); }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.15); }
+
+  /* Pet card modal */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: none; align-items: center; justify-content: center;
+    padding: 12px; z-index: 100; overflow-y: auto;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 520px;
+    padding: 20px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+    position: relative;
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+  .modal .close-x {
+    position: absolute; top: 10px; right: 14px;
+    background: #FF6B9D; color: white;
+    border: none; border-radius: 50%;
+    width: 36px; height: 36px;
+    font-size: 1.2rem; font-weight: bold; cursor: pointer;
+    box-shadow: 0 3px 0 #c4477b;
+  }
+  .pet-header {
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 3px dashed #eee; padding-bottom: 12px; margin-bottom: 12px;
+  }
+  .pet-portrait {
+    width: 120px; height: 120px; border-radius: 18px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    border: 4px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .pet-title { flex: 1; }
+  .pet-title .sym-big { font-size: 2.4rem; font-weight: bold; color: #D6336C; line-height: 1; }
+  .pet-title .name-big { font-size: 1.4rem; color: #5E60CE; font-weight: bold; }
+  .pet-title .num-mass { font-size: 0.9rem; color: #666; margin-top: 2px; }
+  .archetype { font-size: 1.05rem; color: #2E86AB; margin: 8px 0; font-style: italic; text-align: center; }
+  .prop-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0;
+    font-size: 0.9rem;
+  }
+  .prop {
+    background: #FFF8E7; border-radius: 10px; padding: 6px 10px;
+  }
+  .prop b { color: #D6336C; }
+  .fun-fact {
+    background: linear-gradient(135deg, #B5EAD7 0%, #C7CEEA 100%);
+    border: 3px dashed #5E60CE;
+    border-radius: 16px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 0.95rem;
+    color: #2a2a3a;
+  }
+  .fun-fact b { color: #5E60CE; }
+  .pet-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+
+  /* Compound Babies screen */
+  .babies-screen {
+    background: white; border-radius: 24px; padding: 16px;
+    width: 100%; max-width: 800px; margin: 12px auto;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  .babies-screen h2 { color: #D6336C; text-align: center; margin-bottom: 8px; }
+  .babies-help { text-align: center; font-size: 0.95rem; color: #555; margin-bottom: 12px; }
+  .picker-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 12px; }
+  .picker {
+    background: #FFF8E7; border: 3px dashed #FFB347; border-radius: 16px;
+    padding: 12px; min-width: 140px; text-align: center; flex: 1; max-width: 220px;
+  }
+  .picker .slot-label { font-size: 0.9rem; color: #666; }
+  .picker .slot-content {
+    min-height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    margin-top: 6px;
+  }
+  .picker .slot-content.empty { color: #aaa; font-size: 0.9rem; }
+  .picker .slot-sym { font-size: 2rem; font-weight: bold; color: #D6336C; }
+  .picker .slot-name { font-size: 0.95rem; color: #5E60CE; font-weight: bold; }
+  .picker .mini-portrait { width: 60px; height: 60px; }
+  .plus { font-size: 2rem; color: #FF6B9D; align-self: center; font-weight: bold; }
+  .baby-result {
+    margin: 12px 0; padding: 14px; border-radius: 16px;
+    border: 3px solid #5E60CE; background: #f5f7ff;
+    text-align: center;
+  }
+  .baby-result.no { border-color: #aaa; background: #f7f7f7; }
+  .baby-formula { font-size: 2rem; font-weight: bold; color: #D6336C; margin: 6px 0; }
+  .baby-name { font-size: 1.2rem; color: #5E60CE; font-weight: bold; margin-bottom: 6px; }
+  .baby-desc { font-size: 0.95rem; color: #444; margin: 6px 0; }
+  .baby-portrait { display: inline-block; }
+  .why-box {
+    background: #FFF8E7; border: 2px dashed #FFB347; border-radius: 12px;
+    padding: 10px; margin-top: 10px; font-size: 0.95rem; color: #333; text-align: left;
+    display: none;
+  }
+  .why-box.open { display: block; }
+
+  .mini-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+    gap: 6px; margin-top: 8px;
+  }
+  .mini-cell {
+    aspect-ratio: 1;
+    border-radius: 6px; border: 2px solid #fff; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: bold; color: #1a1a2a;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .mini-cell.selected { outline: 4px solid #5E60CE; transform: scale(1.05); }
+  .mini-cell .mini-num { font-size: 0.5rem; color: rgba(0,0,0,0.6); }
+
+  .common-bank { margin-top: 12px; }
+  .common-bank h3 { color: #5E60CE; text-align: center; font-size: 1.05rem; margin: 8px 0; }
+  .bank-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+  }
+  .bank-card {
+    background: #fff; border: 3px solid #B5EAD7; border-radius: 14px;
+    padding: 8px; text-align: center; cursor: pointer;
+    box-shadow: 0 3px 0 #7fc9a8;
+  }
+  .bank-card:active { transform: translateY(2px); }
+  .bank-card .bf { font-size: 1.2rem; font-weight: bold; color: #D6336C; }
+  .bank-card .bn { font-size: 0.8rem; color: #444; }
+
+  .footer-note { font-size: 0.8rem; color: #555; text-align: center; margin: 12px 0; max-width: 600px; padding: 0 12px; }
+
+  /* Small screens */
+  @media (max-width: 600px) {
+    .ptable { grid-template-columns: repeat(18, 40px); }
+    .pcell { min-width: 40px; }
+    .pcell .sym { font-size: 0.85rem; }
+    .pcell .nm { display: none; }
+    .modal { padding: 14px; }
+    .pet-portrait { width: 90px; height: 90px; }
+    .pet-title .sym-big { font-size: 1.8rem; }
+    .pet-title .name-big { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Pet card modal -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   FAMILIES — color + archetype (animal motif) + WHY
+   ============================================================ */
+const FAMILIES = {
+  alkali:        { name: 'Alkali Metal',       color: '#FF8FA3', archetype: 'Excited Puppy',     motif: 'dog',
+                   why: 'has 1 electron to give away, super eager to bond' },
+  alkaline:      { name: 'Alkaline Earth Metal',color: '#FFB347', archetype: 'Friendly Rabbit',  motif: 'rabbit',
+                   why: 'has 2 electrons to share, reactive but a little calmer' },
+  transition:    { name: 'Transition Metal',   color: '#FFE066', archetype: 'Sturdy Bear',       motif: 'bear',
+                   why: 'tough, strong, makes colorful compounds and great tools' },
+  postTransition:{ name: 'Post-Transition Metal',color:'#C5E1A5',archetype: 'Chill Sloth',       motif: 'sloth',
+                   why: 'softer metals, often used in everyday stuff like cans and pipes' },
+  metalloid:     { name: 'Metalloid',          color: '#80DEEA', archetype: 'Sneaky Chameleon',  motif: 'chameleon',
+                   why: 'in between metal and non-metal — used in computer chips' },
+  nonmetal:      { name: 'Reactive Non-metal', color: '#B5EAD7', archetype: 'Busy Bee',          motif: 'bee',
+                   why: 'lightweight, makes up most of living things' },
+  halogen:       { name: 'Halogen',            color: '#B388FF', archetype: 'Grumpy Lizard',     motif: 'lizard',
+                   why: 'wants ONE more electron — really really badly' },
+  noble:         { name: 'Noble Gas',          color: '#F8B4D9', archetype: 'Aloof Cat',         motif: 'cat',
+                   why: 'has a perfect electron set — too cool to bond with anyone' },
+  lanthanide:    { name: 'Lanthanide',         color: '#FFCCBC', archetype: 'Glittery Unicorn',  motif: 'unicorn',
+                   why: 'rare earth — used in magnets, screens, and lasers' },
+  actinide:      { name: 'Actinide',           color: '#D7BDE2', archetype: 'Glowing Dragon',    motif: 'dragon',
+                   why: 'mostly radioactive — powerful but dangerous' },
+  unknown:       { name: 'Unknown Properties', color: '#E0E0E0', archetype: 'Mystery Blob',      motif: 'blob',
+                   why: 'made in labs for tiny moments — barely studied' }
+};
+
+/* ============================================================
+   ELEMENT DATA — full periodic table
+   Each: Z, sym, name, mass, fam, period, group, state, [archetype?], [funFact?], [uses?]
+   First ~30 get hand-written archetype + fact + uses. The rest get family defaults.
+   ============================================================ */
+const ELEMENTS_RAW = [
+  // Period 1
+  [1,'H','Hydrogen',1.008,'nonmetal',1,1,'gas','Zippy Puppy-Bird','The most common element in the whole universe — stars are mostly hydrogen!','rocket fuel, water, stars'],
+  [2,'He','Helium',4.003,'noble',1,18,'gas','Floaty Balloon Cat','Helium makes your voice squeaky because sound moves through it really fast.','balloons, blimps, MRI machines'],
+  // Period 2
+  [3,'Li','Lithium',6.94,'alkali',2,1,'solid','Buzzing Battery Pup','Lithium is in nearly every rechargeable battery — your phone, laptop, and electric cars!','batteries, mood medicine'],
+  [4,'Be','Beryllium',9.012,'alkaline',2,2,'solid','Light-but-Tough Rabbit','Beryllium is lighter than aluminum but stiffer than steel — used in spacecraft.','aerospace parts, X-ray windows'],
+  [5,'B','Boron',10.81,'metalloid',2,13,'solid','Crafty Chameleon','Boron makes super-strong fibers — and also the borax in some slime recipes!','glass, slime, plant nutrition'],
+  [6,'C','Carbon',12.01,'nonmetal',2,14,'solid','Bee that Builds Everything','Every living thing is built from carbon — and diamonds are pure carbon too!','life, diamonds, pencils, fuels'],
+  [7,'N','Nitrogen',14.01,'nonmetal',2,15,'gas','Cool Breeze Bee','78% of the air you breathe is nitrogen — way more than oxygen!','air, plant food, refrigeration'],
+  [8,'O','Oxygen',16.00,'nonmetal',2,16,'gas','Sparkle Bee','Without oxygen, fire couldn\'t burn and you couldn\'t breathe — it\'s a busy bee.','breathing, fire, water'],
+  [9,'F','Fluorine',19.00,'halogen',2,17,'gas','Grumpiest Lizard','Fluorine is the most reactive element of ALL — it even reacts with glass!','toothpaste, non-stick pans'],
+  [10,'Ne','Neon',20.18,'noble',2,18,'gas','Glowing Cat','Neon signs glow orange-red when electricity zaps the gas inside the tube.','neon signs, lasers'],
+  // Period 3
+  [11,'Na','Sodium',22.99,'alkali',3,1,'solid','Super Excited Puppy','Pure sodium fizzes and pops when it touches water — that\'s how excited it is!','table salt, soap, streetlights'],
+  [12,'Mg','Magnesium',24.31,'alkaline',3,2,'solid','Bright-Burning Rabbit','Magnesium burns with a blinding white light — old camera flashes used it!','fireworks, sports gear, your bones'],
+  [13,'Al','Aluminum',26.98,'postTransition',3,13,'solid','Lightweight Sloth','Aluminum is in soda cans, foil, and airplanes — light but strong.','cans, foil, planes'],
+  [14,'Si','Silicon',28.09,'metalloid',3,14,'solid','Computer-Brain Chameleon','Almost every computer chip is built from silicon — that\'s why "Silicon Valley"!','computer chips, glass, sand'],
+  [15,'P','Phosphorus',30.97,'nonmetal',3,15,'solid','Glow-in-the-Dark Bee','Phosphorus is what makes match heads light up when you strike them.','matches, fertilizer, DNA'],
+  [16,'S','Sulfur',32.07,'nonmetal',3,16,'solid','Smelly Bee','Sulfur smells like rotten eggs — your body uses it to grow hair and nails.','gunpowder, rubber, smells'],
+  [17,'Cl','Chlorine',35.45,'halogen',3,17,'gas','Pool-Party Lizard','Chlorine keeps swimming pools clean by zapping germs.','pool cleaner, table salt, bleach'],
+  [18,'Ar','Argon',39.95,'noble',3,18,'gas','Lazy Lightbulb Cat','Lightbulbs are filled with argon so the filament doesn\'t burn up.','lightbulbs, welding'],
+  // Period 4
+  [19,'K','Potassium',39.10,'alkali',4,1,'solid','Banana Puppy','Bananas are full of potassium — it helps your muscles work!','bananas, fertilizer, your heartbeat'],
+  [20,'Ca','Calcium',40.08,'alkaline',4,2,'solid','Strong-Bones Rabbit','Your bones and teeth are mostly calcium — drink that milk!','bones, teeth, chalk'],
+  [21,'Sc','Scandium',44.96,'transition',4,3,'solid'],
+  [22,'Ti','Titanium',47.87,'transition',4,4,'solid','Super-Strong Bear','Titanium is as strong as steel but half the weight — used in jets and rockets!','jets, hip replacements, paint'],
+  [23,'V','Vanadium',50.94,'transition',4,5,'solid'],
+  [24,'Cr','Chromium',52.00,'transition',4,6,'solid','Shiny Bear','Chromium makes that mirror-like shiny coating on cars and motorcycles.','chrome plating, stainless steel'],
+  [25,'Mn','Manganese',54.94,'transition',4,7,'solid'],
+  [26,'Fe','Iron',55.85,'transition',4,8,'solid','Magnetic Bear','Iron is in your blood — that\'s why blood is red! And it\'s magnetic too.','steel, blood, magnets'],
+  [27,'Co','Cobalt',58.93,'transition',4,9,'solid','Blue-Painter Bear','Cobalt makes deep blue stained glass and pottery glazes.','batteries, blue dye, magnets'],
+  [28,'Ni','Nickel',58.69,'transition',4,10,'solid','Coin Bear','U.S. nickels are actually mostly copper — only 25% nickel!','coins, stainless steel, magnets'],
+  [29,'Cu','Copper',63.55,'transition',4,11,'solid','Wire Bear','Copper conducts electricity so well, it\'s in nearly every wire in your house.','wires, pipes, pennies'],
+  [30,'Zn','Zinc',65.38,'transition',4,12,'solid','Sunscreen Bear','Zinc oxide is the white stuff in sunscreen — it blocks the sun!','batteries, sunscreen, galvanizing'],
+  [31,'Ga','Gallium',69.72,'postTransition',4,13,'solid','Melty Sloth','Gallium melts in your hand! It\'s solid at room temp but melts at 86°F.','LEDs, thermometers'],
+  [32,'Ge','Germanium',72.63,'metalloid',4,14,'solid'],
+  [33,'As','Arsenic',74.92,'metalloid',4,15,'solid'],
+  [34,'Se','Selenium',78.97,'nonmetal',4,16,'solid'],
+  [35,'Br','Bromine',79.90,'halogen',4,17,'liquid','Stinky Red Lizard','Bromine is one of only TWO elements that\'s liquid at room temp (mercury is the other).','flame retardants, photography'],
+  [36,'Kr','Krypton',83.80,'noble',4,18,'gas','Superman Cat','Yes, named after Superman\'s planet! Used in some flashlight bulbs.','high-speed photo flashes'],
+  // Period 5
+  [37,'Rb','Rubidium',85.47,'alkali',5,1,'solid'],
+  [38,'Sr','Strontium',87.62,'alkaline',5,2,'solid'],
+  [39,'Y','Yttrium',88.91,'transition',5,3,'solid'],
+  [40,'Zr','Zirconium',91.22,'transition',5,4,'solid'],
+  [41,'Nb','Niobium',92.91,'transition',5,5,'solid'],
+  [42,'Mo','Molybdenum',95.95,'transition',5,6,'solid'],
+  [43,'Tc','Technetium',98,'transition',5,7,'solid'],
+  [44,'Ru','Ruthenium',101.07,'transition',5,8,'solid'],
+  [45,'Rh','Rhodium',102.91,'transition',5,9,'solid'],
+  [46,'Pd','Palladium',106.42,'transition',5,10,'solid'],
+  [47,'Ag','Silver',107.87,'transition',5,11,'solid','Shiniest Bear','Silver is the BEST conductor of electricity of any element — even better than copper!','jewelry, mirrors, photography'],
+  [48,'Cd','Cadmium',112.41,'transition',5,12,'solid'],
+  [49,'In','Indium',114.82,'postTransition',5,13,'solid'],
+  [50,'Sn','Tin',118.71,'postTransition',5,14,'solid','Can Sloth','Old tin cans were really tin-plated steel — pure tin is too soft and expensive.','cans, solder, bronze'],
+  [51,'Sb','Antimony',121.76,'metalloid',5,15,'solid'],
+  [52,'Te','Tellurium',127.60,'metalloid',5,16,'solid'],
+  [53,'I','Iodine',126.90,'halogen',5,17,'solid','Purple-Smoke Lizard','Iodine makes purple smoke when it warms up — and your body needs a tiny bit to be healthy!','antiseptic, table salt additive'],
+  [54,'Xe','Xenon',131.29,'noble',5,18,'gas','Headlight Cat','Xenon makes those super-bright bluish car headlights.','car headlights, ion engines'],
+  // Period 6
+  [55,'Cs','Cesium',132.91,'alkali',6,1,'solid'],
+  [56,'Ba','Barium',137.33,'alkaline',6,2,'solid'],
+  [57,'La','Lanthanum',138.91,'lanthanide',6,3,'solid'],
+  [58,'Ce','Cerium',140.12,'lanthanide',6,3,'solid'],
+  [59,'Pr','Praseodymium',140.91,'lanthanide',6,3,'solid'],
+  [60,'Nd','Neodymium',144.24,'lanthanide',6,3,'solid','Magnet Unicorn','Neodymium makes the STRONGEST magnets in the world — tiny ones can stick through your finger!','super magnets, headphones'],
+  [61,'Pm','Promethium',145,'lanthanide',6,3,'solid'],
+  [62,'Sm','Samarium',150.36,'lanthanide',6,3,'solid'],
+  [63,'Eu','Europium',151.96,'lanthanide',6,3,'solid'],
+  [64,'Gd','Gadolinium',157.25,'lanthanide',6,3,'solid'],
+  [65,'Tb','Terbium',158.93,'lanthanide',6,3,'solid'],
+  [66,'Dy','Dysprosium',162.50,'lanthanide',6,3,'solid'],
+  [67,'Ho','Holmium',164.93,'lanthanide',6,3,'solid'],
+  [68,'Er','Erbium',167.26,'lanthanide',6,3,'solid'],
+  [69,'Tm','Thulium',168.93,'lanthanide',6,3,'solid'],
+  [70,'Yb','Ytterbium',173.05,'lanthanide',6,3,'solid'],
+  [71,'Lu','Lutetium',174.97,'lanthanide',6,3,'solid'],
+  [72,'Hf','Hafnium',178.49,'transition',6,4,'solid'],
+  [73,'Ta','Tantalum',180.95,'transition',6,5,'solid'],
+  [74,'W','Tungsten',183.84,'transition',6,6,'solid','Hottest Bear','Tungsten has the HIGHEST melting point of any metal — that\'s why it\'s in lightbulb wires.','lightbulb filaments, drill bits'],
+  [75,'Re','Rhenium',186.21,'transition',6,7,'solid'],
+  [76,'Os','Osmium',190.23,'transition',6,8,'solid'],
+  [77,'Ir','Iridium',192.22,'transition',6,9,'solid'],
+  [78,'Pt','Platinum',195.08,'transition',6,10,'solid','Fancy Bear','Platinum rings cost MORE than gold — it\'s rarer.','jewelry, car catalytic converters'],
+  [79,'Au','Gold',196.97,'transition',6,11,'solid','Treasure Bear','Gold never rusts, never tarnishes — that\'s why pirates wanted it so much!','jewelry, electronics, money'],
+  [80,'Hg','Mercury',200.59,'transition',6,12,'liquid','Liquid Bear','Mercury is the ONLY metal that\'s liquid at room temperature — and it\'s super poisonous!','old thermometers (now banned for kids)'],
+  [81,'Tl','Thallium',204.38,'postTransition',6,13,'solid'],
+  [82,'Pb','Lead',207.2,'postTransition',6,14,'solid','Heavy Sloth','Lead is so heavy and dense, it can block X-rays — that\'s why dentists put a lead blanket on you.','batteries, X-ray shields, old paint'],
+  [83,'Bi','Bismuth',208.98,'postTransition',6,15,'solid','Rainbow Sloth','Bismuth forms beautiful rainbow-colored crystals shaped like stairs!','Pepto-Bismol, rainbow crystals'],
+  [84,'Po','Polonium',209,'postTransition',6,16,'solid'],
+  [85,'At','Astatine',210,'halogen',6,17,'solid'],
+  [86,'Rn','Radon',222,'noble',6,18,'gas'],
+  // Period 7
+  [87,'Fr','Francium',223,'alkali',7,1,'solid'],
+  [88,'Ra','Radium',226,'alkaline',7,2,'solid'],
+  [89,'Ac','Actinium',227,'actinide',7,3,'solid'],
+  [90,'Th','Thorium',232.04,'actinide',7,3,'solid'],
+  [91,'Pa','Protactinium',231.04,'actinide',7,3,'solid'],
+  [92,'U','Uranium',238.03,'actinide',7,3,'solid','Glowing Power Dragon','One uranium atom splitting releases a million times more energy than a TNT explosion of the same size!','nuclear power, nuclear weapons'],
+  [93,'Np','Neptunium',237,'actinide',7,3,'solid'],
+  [94,'Pu','Plutonium',244,'actinide',7,3,'solid'],
+  [95,'Am','Americium',243,'actinide',7,3,'solid'],
+  [96,'Cm','Curium',247,'actinide',7,3,'solid'],
+  [97,'Bk','Berkelium',247,'actinide',7,3,'solid'],
+  [98,'Cf','Californium',251,'actinide',7,3,'solid'],
+  [99,'Es','Einsteinium',252,'actinide',7,3,'solid'],
+  [100,'Fm','Fermium',257,'actinide',7,3,'solid'],
+  [101,'Md','Mendelevium',258,'actinide',7,3,'solid'],
+  [102,'No','Nobelium',259,'actinide',7,3,'solid'],
+  [103,'Lr','Lawrencium',266,'actinide',7,3,'solid'],
+  [104,'Rf','Rutherfordium',267,'transition',7,4,'solid'],
+  [105,'Db','Dubnium',270,'transition',7,5,'solid'],
+  [106,'Sg','Seaborgium',271,'transition',7,6,'solid'],
+  [107,'Bh','Bohrium',270,'transition',7,7,'solid'],
+  [108,'Hs','Hassium',277,'transition',7,8,'solid'],
+  [109,'Mt','Meitnerium',278,'unknown',7,9,'solid'],
+  [110,'Ds','Darmstadtium',281,'unknown',7,10,'solid'],
+  [111,'Rg','Roentgenium',282,'unknown',7,11,'solid'],
+  [112,'Cn','Copernicium',285,'transition',7,12,'solid'],
+  [113,'Nh','Nihonium',286,'unknown',7,13,'solid'],
+  [114,'Fl','Flerovium',289,'unknown',7,14,'solid'],
+  [115,'Mc','Moscovium',290,'unknown',7,15,'solid'],
+  [116,'Lv','Livermorium',293,'unknown',7,16,'solid'],
+  [117,'Ts','Tennessine',294,'unknown',7,17,'solid'],
+  [118,'Og','Oganesson',294,'unknown',7,18,'gas']
+];
+
+// Normalize into objects keyed by Z and by symbol
+const ELEMENTS = {};
+const ELEMENTS_BY_SYM = {};
+ELEMENTS_RAW.forEach(row => {
+  const e = {
+    z: row[0], sym: row[1], name: row[2], mass: row[3], fam: row[4],
+    period: row[5], group: row[6], state: row[7],
+    archetype: row[8] || null, funFact: row[9] || null, uses: row[10] || null
+  };
+  ELEMENTS[e.z] = e;
+  ELEMENTS_BY_SYM[e.sym] = e;
+});
+
+/* ============================================================
+   COMPOUND BANK — 30+ real compounds with kid-friendly names + WHY
+   Each: formula, parts (sym -> count), name, cuteName, desc, why
+   ============================================================ */
+const COMPOUNDS = [
+  { f:'H2O',     parts:{H:2,O:1},      name:'Water',                cute:'Splashy the Water',
+    desc:'The drink of life. Covers most of Earth.',
+    why:'Hydrogen has 1 electron to share, Oxygen wants 2 — so 2 hydrogens team up with 1 oxygen. A perfect bond!' },
+  { f:'NaCl',    parts:{Na:1,Cl:1},    name:'Sodium Chloride',      cute:'Salty the Sea Sprinkle',
+    desc:'Plain table salt! You eat it every day.',
+    why:'Sodium really wants to GIVE AWAY one electron, and Chlorine really wants ONE more. Perfect match!' },
+  { f:'CO2',     parts:{C:1,O:2},      name:'Carbon Dioxide',       cute:'Fizzy the Bubble',
+    desc:'What we breathe OUT — and what makes soda fizzy.',
+    why:'Carbon has 4 electrons to share, each Oxygen wants 2 — so 1 carbon teams with 2 oxygens.' },
+  { f:'O2',      parts:{O:2},          name:'Oxygen Gas',           cute:'Breezy the Breath',
+    desc:'The oxygen you breathe IN.',
+    why:'Two oxygen atoms each share 2 electrons with each other — a double bond!' },
+  { f:'N2',      parts:{N:2},          name:'Nitrogen Gas',         cute:'Cloudy the Air',
+    desc:'Makes up 78% of the air around you.',
+    why:'Two nitrogens lock together with a super-strong triple bond — that\'s why nitrogen is so calm.' },
+  { f:'H2',      parts:{H:2},          name:'Hydrogen Gas',         cute:'Zippy the Float',
+    desc:'The lightest gas — used to lift rockets.',
+    why:'Two hydrogens each share their 1 electron — friend bond!' },
+  { f:'NH3',     parts:{N:1,H:3},      name:'Ammonia',              cute:'Stinky the Cleaner',
+    desc:'Smelly stuff in cleaning sprays and your pee.',
+    why:'Nitrogen has room for 3 more electrons. 3 hydrogens line up to give them. Done!' },
+  { f:'CH4',     parts:{C:1,H:4},      name:'Methane',              cute:'Burpy the Marsh-Gas',
+    desc:'Natural gas — the stuff that lights stoves. And yes, cow burps.',
+    why:'Carbon has 4 spots, hydrogen has 1 — 4 hydrogens fill carbon\'s 4 spots perfectly.' },
+  { f:'CaCO3',   parts:{Ca:1,C:1,O:3}, name:'Calcium Carbonate',    cute:'Chalky the Cliff',
+    desc:'Chalk! Also seashells, eggshells, and limestone.',
+    why:'Calcium gives 2 electrons. The CO3 group takes them and shares the rest as a tight team.' },
+  { f:'Fe2O3',   parts:{Fe:2,O:3},     name:'Iron Oxide (Rust)',    cute:'Rusty the Flake',
+    desc:'Rust on old bikes and the red color of Mars.',
+    why:'Iron gives 3 electrons each, oxygen takes 2 each — 2 irons and 3 oxygens balance out.' },
+  { f:'NaOH',    parts:{Na:1,O:1,H:1}, name:'Sodium Hydroxide',     cute:'Soapy the Slip',
+    desc:'Lye — makes soap and unclogs drains. DON\'T touch!',
+    why:'Sodium gives 1 electron, the OH group grabs it. Strong base!' },
+  { f:'HCl',     parts:{H:1,Cl:1},     name:'Hydrochloric Acid',    cute:'Spicy the Stomach',
+    desc:'In your stomach to dissolve food.',
+    why:'Hydrogen gives its 1 electron, chlorine grabs it — makes a strong acid.' },
+  { f:'H2SO4',   parts:{H:2,S:1,O:4},  name:'Sulfuric Acid',        cute:'Burny the Battery',
+    desc:'Powers car batteries. Super dangerous!',
+    why:'A complicated dance of hydrogen, sulfur, and oxygen — makes one of the strongest acids around.' },
+  { f:'NaHCO3',  parts:{Na:1,H:1,C:1,O:3},name:'Sodium Bicarbonate',cute:'Bubbly the Baking Soda',
+    desc:'Baking soda! Makes cakes rise and erupts volcanoes (with vinegar).',
+    why:'A team of 4 elements working together — pour acid on it and it FIZZES out CO2.' },
+  { f:'CaO',     parts:{Ca:1,O:1},     name:'Calcium Oxide',        cute:'Limey the Glow',
+    desc:'Quicklime. Used to make cement and old stage spotlights!',
+    why:'Calcium gives 2 electrons, oxygen takes 2 — perfect 1-to-1 swap.' },
+  { f:'MgO',     parts:{Mg:1,O:1},     name:'Magnesium Oxide',      cute:'Burny the Flash',
+    desc:'White powder from burning magnesium — used in antacids.',
+    why:'Magnesium gives 2 electrons, oxygen takes 2. Match!' },
+  { f:'KCl',     parts:{K:1,Cl:1},     name:'Potassium Chloride',   cute:'Salty the Salt-Substitute',
+    desc:'Salt for people who can\'t have sodium.',
+    why:'Like NaCl but with potassium instead — same idea: 1 electron given, 1 taken.' },
+  { f:'KI',      parts:{K:1,I:1},      name:'Potassium Iodide',     cute:'Tiny the Thyroid-Helper',
+    desc:'Added to salt so your thyroid gets the iodine it needs.',
+    why:'Potassium gives 1 electron, iodine grabs it.' },
+  { f:'AgCl',    parts:{Ag:1,Cl:1},    name:'Silver Chloride',      cute:'Flashy the Photo',
+    desc:'Turns dark in sunlight — used in old film photography.',
+    why:'Silver gives 1 electron, chlorine grabs it. White at first, then darkens!' },
+  { f:'CuSO4',   parts:{Cu:1,S:1,O:4}, name:'Copper Sulfate',       cute:'Bluey the Crystal',
+    desc:'Bright blue crystals — used in chemistry sets and pools.',
+    why:'Copper gives 2 electrons to the SO4 group. Makes gorgeous blue crystals!' },
+  { f:'ZnO',     parts:{Zn:1,O:1},     name:'Zinc Oxide',           cute:'Sunny the Sun-Block',
+    desc:'White stuff in sunscreen — bounces UV rays!',
+    why:'Zinc gives 2 electrons, oxygen takes 2. Done.' },
+  { f:'Al2O3',   parts:{Al:2,O:3},     name:'Aluminum Oxide',       cute:'Sandy the Gem',
+    desc:'Rubies and sapphires are mostly this! Also sandpaper.',
+    why:'Aluminum gives 3 electrons each, oxygen takes 2 — 2 aluminums + 3 oxygens balance perfectly.' },
+  { f:'SiO2',    parts:{Si:1,O:2},     name:'Silicon Dioxide',      cute:'Glassy the Sand-Grain',
+    desc:'Sand, glass, and quartz crystals.',
+    why:'Silicon shares 4 electrons, 2 oxygens take 2 each. Makes very strong, see-through stuff.' },
+  { f:'TiO2',    parts:{Ti:1,O:2},     name:'Titanium Dioxide',     cute:'Pearly the Paint',
+    desc:'The brightest white pigment ever — in paint, sunscreen, toothpaste.',
+    why:'Titanium shares 4 electrons with 2 oxygens. Super-white!' },
+  { f:'PbO',     parts:{Pb:1,O:1},     name:'Lead Oxide',           cute:'Heavy the Glaze',
+    desc:'Once used in pottery glazes and crystal glass.',
+    why:'Lead gives 2 electrons, oxygen takes 2.' },
+  { f:'HF',      parts:{H:1,F:1},      name:'Hydrofluoric Acid',    cute:'Etchy the Glass-Eater',
+    desc:'The only acid that dissolves glass! Used to etch designs.',
+    why:'Hydrogen gives its electron, fluorine (the greediest!) snatches it.' },
+  { f:'HBr',     parts:{H:1,Br:1},     name:'Hydrobromic Acid',     cute:'Stingy the Sour',
+    desc:'A strong acid used in chemistry labs.',
+    why:'Hydrogen gives, bromine takes. Strong acid pattern.' },
+  { f:'HI',      parts:{H:1,I:1},      name:'Hydroiodic Acid',      cute:'Big the Heavy-Acid',
+    desc:'The strongest of the simple acids!',
+    why:'Hydrogen gives, iodine takes. Iodine is big, so the bond is loose — extra strong acid.' },
+  { f:'NaF',     parts:{Na:1,F:1},     name:'Sodium Fluoride',      cute:'Smiley the Tooth',
+    desc:'Added to toothpaste and tap water to protect teeth.',
+    why:'Sodium gives 1, fluorine takes 1. Strengthens tooth enamel!' },
+  { f:'CO',      parts:{C:1,O:1},      name:'Carbon Monoxide',      cute:'Sneaky the Silent',
+    desc:'A poison gas with no smell — that\'s why we have detectors!',
+    why:'Carbon and oxygen share with a triple bond — not enough oxygen to make CO2.' },
+  { f:'NO',      parts:{N:1,O:1},      name:'Nitric Oxide',         cute:'Tiny the Signal',
+    desc:'Your body uses this as a messenger between cells!',
+    why:'Nitrogen and oxygen share electrons. An oddball with one lonely electron.' },
+  { f:'SO2',     parts:{S:1,O:2},      name:'Sulfur Dioxide',       cute:'Smoggy the Smell',
+    desc:'The choking smell of burnt matches and volcanoes.',
+    why:'Sulfur shares with 2 oxygens — released when sulfur burns.' },
+  { f:'P2O5',    parts:{P:2,O:5},      name:'Phosphorus Pentoxide', cute:'Thirsty the Powder',
+    desc:'Eats up water like nothing else — used to dry out gases.',
+    why:'Phosphorus shares 5, 2 phosphorus pair with 5 oxygens.' },
+  { f:'KNO3',    parts:{K:1,N:1,O:3},  name:'Potassium Nitrate',    cute:'Boomy the Saltpeter',
+    desc:'Saltpeter! In gunpowder, fertilizer, and curing meat.',
+    why:'Potassium gives 1 electron to the NO3 group. Highly reactive.' },
+  { f:'CaF2',    parts:{Ca:1,F:2},     name:'Calcium Fluoride',     cute:'Glowy the Fluorite',
+    desc:'Beautiful fluorite crystals — and where we GET fluoride!',
+    why:'Calcium gives 2 electrons. Each fluorine takes 1. So 1 calcium + 2 fluorines.' }
+];
+
+// Build a lookup by sorted symbol-set for instant matching
+const COMPOUND_MAP = {};
+COMPOUNDS.forEach(c => {
+  const key = Object.keys(c.parts).sort().join('|');
+  if (!COMPOUND_MAP[key]) COMPOUND_MAP[key] = [];
+  COMPOUND_MAP[key].push(c);
+});
+
+/* ============================================================
+   SVG PORTRAITS — family-themed cartoon "pets"
+   Each takes a color (family color) and a label (element symbol)
+   ============================================================ */
+function svgPortrait(fam, label, sym) {
+  const col = FAMILIES[fam].color;
+  // shadow + label badge
+  const badge = `<g><circle cx="50" cy="92" rx="22" ry="3" fill="rgba(0,0,0,0.15)"/>
+    <rect x="68" y="68" width="28" height="22" rx="6" fill="white" stroke="${col}" stroke-width="2"/>
+    <text x="82" y="83" text-anchor="middle" font-family="Comic Sans MS, sans-serif" font-size="11" font-weight="bold" fill="#333">${label}</text></g>`;
+
+  let body = '';
+  switch(FAMILIES[fam].motif) {
+    case 'dog':
+      // excited puppy
+      body = `
+        <ellipse cx="50" cy="65" rx="28" ry="22" fill="${col}"/>
+        <ellipse cx="50" cy="42" rx="22" ry="20" fill="${col}"/>
+        <polygon points="30,28 22,12 38,26" fill="${col}"/>
+        <polygon points="70,28 78,12 62,26" fill="${col}"/>
+        <circle cx="42" cy="40" r="3" fill="#222"/>
+        <circle cx="58" cy="40" r="3" fill="#222"/>
+        <ellipse cx="50" cy="50" rx="4" ry="3" fill="#222"/>
+        <path d="M44,55 Q50,62 56,55" stroke="#222" stroke-width="2" fill="none"/>
+        <ellipse cx="46" cy="58" rx="3" ry="2" fill="#FF6B9D" opacity="0.5"/>
+        <ellipse cx="54" cy="58" rx="3" ry="2" fill="#FF6B9D" opacity="0.5"/>
+        <path d="M80,55 Q92,40 88,30" stroke="${col}" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+      break;
+    case 'rabbit':
+      body = `
+        <ellipse cx="50" cy="70" rx="22" ry="18" fill="${col}"/>
+        <ellipse cx="50" cy="45" rx="18" ry="17" fill="${col}"/>
+        <ellipse cx="40" cy="20" rx="5" ry="14" fill="${col}"/>
+        <ellipse cx="60" cy="20" rx="5" ry="14" fill="${col}"/>
+        <ellipse cx="40" cy="20" rx="2" ry="9" fill="#FFC2D6"/>
+        <ellipse cx="60" cy="20" rx="2" ry="9" fill="#FFC2D6"/>
+        <circle cx="44" cy="43" r="2.5" fill="#222"/>
+        <circle cx="56" cy="43" r="2.5" fill="#222"/>
+        <path d="M48,50 L52,50 L50,53 Z" fill="#FF6B9D"/>
+        <path d="M48,53 Q50,56 52,53" stroke="#222" stroke-width="1.5" fill="none"/>`;
+      break;
+    case 'bear':
+      body = `
+        <ellipse cx="50" cy="68" rx="26" ry="22" fill="${col}"/>
+        <circle cx="50" cy="42" r="22" fill="${col}"/>
+        <circle cx="30" cy="26" r="8" fill="${col}"/>
+        <circle cx="70" cy="26" r="8" fill="${col}"/>
+        <circle cx="30" cy="26" r="4" fill="#8B5A2B"/>
+        <circle cx="70" cy="26" r="4" fill="#8B5A2B"/>
+        <circle cx="42" cy="40" r="2.5" fill="#222"/>
+        <circle cx="58" cy="40" r="2.5" fill="#222"/>
+        <ellipse cx="50" cy="52" rx="9" ry="7" fill="#FFF5E0"/>
+        <ellipse cx="50" cy="49" rx="3" ry="2" fill="#222"/>
+        <path d="M46,55 Q50,58 54,55" stroke="#222" stroke-width="1.5" fill="none"/>`;
+      break;
+    case 'lizard':
+      body = `
+        <path d="M15,55 Q30,38 50,42 Q72,46 85,30 Q88,28 85,35 Q72,55 50,55 Q30,58 18,68 Q15,70 15,55 Z" fill="${col}"/>
+        <circle cx="28" cy="50" r="4" fill="${col}"/>
+        <circle cx="28" cy="49" r="2" fill="#FFE066"/>
+        <circle cx="28" cy="49" r="1" fill="#222"/>
+        <path d="M22,52 Q20,55 22,57" stroke="#222" stroke-width="1" fill="none"/>
+        <path d="M50,55 L48,68 L52,68 Z" fill="${col}"/>
+        <path d="M40,55 L38,68 L42,68 Z" fill="${col}"/>
+        <path d="M60,52 L58,65 L62,65 Z" fill="${col}"/>
+        <path d="M45,42 L48,38 L51,42 L54,38 L57,42" stroke="${col}" stroke-width="2" fill="none"/>`;
+      break;
+    case 'cat':
+      body = `
+        <ellipse cx="50" cy="68" rx="24" ry="20" fill="${col}"/>
+        <circle cx="50" cy="42" r="20" fill="${col}"/>
+        <polygon points="35,25 30,12 42,22" fill="${col}"/>
+        <polygon points="65,25 70,12 58,22" fill="${col}"/>
+        <polygon points="36,22 33,15 40,20" fill="#FFC2D6"/>
+        <polygon points="64,22 67,15 60,20" fill="#FFC2D6"/>
+        <ellipse cx="42" cy="42" rx="3" ry="4" fill="#222"/>
+        <ellipse cx="58" cy="42" rx="3" ry="4" fill="#222"/>
+        <ellipse cx="42" cy="41" rx="1" ry="2" fill="#FFE066"/>
+        <ellipse cx="58" cy="41" rx="1" ry="2" fill="#FFE066"/>
+        <polygon points="48,49 52,49 50,52" fill="#FF6B9D"/>
+        <path d="M50,52 L47,55 M50,52 L53,55" stroke="#222" stroke-width="1" fill="none"/>
+        <line x1="32" y1="48" x2="42" y2="50" stroke="#222" stroke-width="0.8"/>
+        <line x1="32" y1="52" x2="42" y2="52" stroke="#222" stroke-width="0.8"/>
+        <line x1="68" y1="48" x2="58" y2="50" stroke="#222" stroke-width="0.8"/>
+        <line x1="68" y1="52" x2="58" y2="52" stroke="#222" stroke-width="0.8"/>`;
+      break;
+    case 'bee':
+      body = `
+        <ellipse cx="50" cy="55" rx="24" ry="20" fill="${col}"/>
+        <rect x="30" y="45" width="40" height="6" fill="#222"/>
+        <rect x="30" y="58" width="40" height="6" fill="#222"/>
+        <ellipse cx="38" cy="40" rx="10" ry="8" fill="#fff" opacity="0.7"/>
+        <ellipse cx="62" cy="40" rx="10" ry="8" fill="#fff" opacity="0.7"/>
+        <circle cx="42" cy="45" r="2.5" fill="#222"/>
+        <circle cx="58" cy="45" r="2.5" fill="#222"/>
+        <path d="M46,52 Q50,55 54,52" stroke="#222" stroke-width="1.5" fill="none"/>
+        <path d="M38,30 Q34,22 36,18" stroke="#222" stroke-width="1.5" fill="none"/>
+        <circle cx="36" cy="18" r="1.5" fill="#222"/>
+        <path d="M62,30 Q66,22 64,18" stroke="#222" stroke-width="1.5" fill="none"/>
+        <circle cx="64" cy="18" r="1.5" fill="#222"/>`;
+      break;
+    case 'sloth':
+      body = `
+        <ellipse cx="50" cy="60" rx="24" ry="22" fill="${col}"/>
+        <circle cx="50" cy="40" r="20" fill="${col}"/>
+        <ellipse cx="40" cy="40" rx="6" ry="5" fill="#fff"/>
+        <ellipse cx="60" cy="40" rx="6" ry="5" fill="#fff"/>
+        <circle cx="40" cy="42" r="2" fill="#222"/>
+        <circle cx="60" cy="42" r="2" fill="#222"/>
+        <path d="M37,38 L43,38 M57,38 L63,38" stroke="#222" stroke-width="2" fill="none"/>
+        <ellipse cx="50" cy="50" rx="3" ry="2" fill="#222"/>
+        <path d="M44,55 Q50,52 56,55" stroke="#222" stroke-width="1.5" fill="none"/>`;
+      break;
+    case 'chameleon':
+      body = `
+        <path d="M20,50 Q40,40 60,42 Q80,44 80,55 Q60,60 40,60 Q25,62 20,50 Z" fill="${col}"/>
+        <circle cx="68" cy="40" r="10" fill="${col}"/>
+        <circle cx="70" cy="40" r="6" fill="${col}" stroke="#fff" stroke-width="2"/>
+        <circle cx="71" cy="40" r="2.5" fill="#222"/>
+        <path d="M85,42 Q92,38 90,32 Q85,30 82,35" stroke="${col}" stroke-width="3" fill="none"/>
+        <path d="M22,52 Q12,55 8,65 Q6,72 12,72 Q16,68 18,62" stroke="${col}" stroke-width="4" fill="none"/>
+        <path d="M55,40 L57,35 L59,40 L61,35 L63,40" stroke="${col}" stroke-width="1.5" fill="none"/>`;
+      break;
+    case 'unicorn':
+      body = `
+        <ellipse cx="50" cy="65" rx="24" ry="18" fill="${col}"/>
+        <circle cx="50" cy="42" r="18" fill="${col}"/>
+        <polygon points="50,12 53,28 47,28" fill="#FFD700"/>
+        <path d="M42,28 Q35,22 32,28 Q34,32 42,32 Z" fill="#FF6B9D"/>
+        <circle cx="44" cy="42" r="2.5" fill="#222"/>
+        <circle cx="56" cy="42" r="2.5" fill="#222"/>
+        <ellipse cx="50" cy="48" rx="2" ry="1.5" fill="#222"/>
+        <path d="M46,52 Q50,55 54,52" stroke="#222" stroke-width="1.5" fill="none"/>
+        <circle cx="30" cy="20" r="2" fill="#FFD700"/>
+        <circle cx="70" cy="20" r="2" fill="#FF6B9D"/>
+        <circle cx="20" cy="35" r="2" fill="#5E60CE"/>`;
+      break;
+    case 'dragon':
+      body = `
+        <ellipse cx="50" cy="65" rx="26" ry="20" fill="${col}"/>
+        <circle cx="50" cy="42" r="20" fill="${col}"/>
+        <polygon points="35,25 30,12 42,22" fill="${col}"/>
+        <polygon points="65,25 70,12 58,22" fill="${col}"/>
+        <circle cx="42" cy="42" r="3" fill="#FFE066"/>
+        <circle cx="42" cy="42" r="1.5" fill="#222"/>
+        <circle cx="58" cy="42" r="3" fill="#FFE066"/>
+        <circle cx="58" cy="42" r="1.5" fill="#222"/>
+        <path d="M45,52 Q50,56 55,52" stroke="#222" stroke-width="1.5" fill="none"/>
+        <path d="M55,50 Q60,48 65,50" stroke="#FF6B9D" stroke-width="2" fill="none"/>
+        <path d="M40,60 L42,55 L44,60 L46,55 L48,60 L50,55 L52,60 L54,55 L56,60 L58,55 L60,60" stroke="#FF6B9D" stroke-width="1.5" fill="none"/>`;
+      break;
+    case 'blob':
+    default:
+      body = `
+        <ellipse cx="50" cy="60" rx="28" ry="24" fill="${col}"/>
+        <circle cx="42" cy="50" r="3" fill="#222"/>
+        <circle cx="58" cy="50" r="3" fill="#222"/>
+        <path d="M44,60 Q50,65 56,60" stroke="#222" stroke-width="2" fill="none"/>
+        <circle cx="35" cy="35" r="3" fill="${col}" opacity="0.7"/>
+        <circle cx="65" cy="35" r="3" fill="${col}" opacity="0.7"/>`;
+  }
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${body}${badge}</svg>`;
+}
+
+/* ============================================================
+   POKEDEX (localStorage)
+   ============================================================ */
+const LS_KEY = 'periodic_table_pets_v1';
+let collected = new Set();
+try {
+  const raw = localStorage.getItem(LS_KEY);
+  if (raw) JSON.parse(raw).forEach(z => collected.add(z));
+} catch(e) {}
+function saveCollection() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify([...collected])); } catch(e) {}
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  view: 'table', // 'table' or 'babies'
+  filter: 'all', // 'all' | 'metals' | 'gases' | 'common' | 'collected'
+  search: '',
+  babyPick: [null, null] // two element symbols
+};
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const app = document.getElementById('app');
+
+function render() {
+  if (state.view === 'table') renderTable();
+  else renderBabies();
+}
+
+function renderTable() {
+  const total = ELEMENTS_RAW.length;
+  app.innerHTML = `
+    <h1>Periodic Table Pets 🐶</h1>
+    <p class="subtitle">Click any element to meet its pet! Catch 'em all.</p>
+    <div class="top-bar">
+      <div class="pokedex-badge">Pokédex: <span class="count">${collected.size}</span> / ${total}</div>
+      <input class="search-box" id="search" placeholder="Search by name or symbol..." value="${state.search}">
+      <button class="big-btn green" id="babiesBtn">🧪 Compound Babies</button>
+      <button class="big-btn gray" id="resetBtn">Reset Collection</button>
+    </div>
+    <div class="chip-row">
+      ${chip('all', 'All')}
+      ${chip('metals', 'Metals')}
+      ${chip('nonmetals', 'Non-metals')}
+      ${chip('gases', 'Gases at room temp')}
+      ${chip('common', 'Common (first 30)')}
+      ${chip('collected', 'Caught only')}
+    </div>
+    <div class="legend">
+      ${Object.entries(FAMILIES).map(([k,v]) =>
+        `<span class="legend-item"><span class="legend-swatch" style="background:${v.color}"></span>${v.name}</span>`
+      ).join('')}
+    </div>
+    <div class="table-wrap">
+      <div class="ptable" id="ptable"></div>
+    </div>
+    <p class="footer-note">Each pet's personality comes from its real chemistry. Click two elements in Compound Babies to see if they make a real thing!</p>
+  `;
+
+  const grid = document.getElementById('ptable');
+  // Build the 18x10 grid layout. Periods 1-7 (rows 1-7), plus lanthanide row (row 9), actinide row (row 10).
+  const cells = {};
+  for (let r = 1; r <= 10; r++) for (let c = 1; c <= 18; c++) cells[`${r},${c}`] = null;
+
+  ELEMENTS_RAW.forEach(row => {
+    const z = row[0], period = row[5], fam = row[4];
+    let p = period, g = row[6];
+    // Lanthanides 57-71 → row 9, columns 4..18
+    if (z >= 57 && z <= 71) { p = 9; g = z - 57 + 4; }
+    // Actinides 89-103 → row 10, columns 4..18
+    else if (z >= 89 && z <= 103) { p = 10; g = z - 89 + 4; }
+    cells[`${p},${g}`] = z;
+  });
+  // Placeholders for lanthanide/actinide marker (period 6 group 3, period 7 group 3)
+  cells['6,3'] = 'LA';
+  cells['7,3'] = 'AC';
+
+  // Empty row between main table and lanthanide block - row 8 stays empty (we skip rendering it)
+  let html = '';
+  const renderRow = (r) => {
+    for (let c = 1; c <= 18; c++) {
+      const v = cells[`${r},${c}`];
+      if (v === null) {
+        html += `<div class="pcell placeholder" style="visibility:hidden"></div>`;
+      } else if (v === 'LA') {
+        html += `<div class="pcell placeholder">57-71</div>`;
+      } else if (v === 'AC') {
+        html += `<div class="pcell placeholder">89-103</div>`;
+      } else {
+        const e = ELEMENTS[v];
+        const dim = !passesFilter(e);
+        const caught = collected.has(e.z);
+        html += `<div class="pcell fam-${e.fam}${dim?' dimmed':''}" data-z="${e.z}">
+          <span class="num">${e.z}</span>
+          ${caught ? '<span class="star">⭐</span>' : ''}
+          <span class="sym">${e.sym}</span>
+          <span class="nm">${e.name}</span>
+        </div>`;
+      }
+    }
+  };
+  for (let r = 1; r <= 7; r++) renderRow(r);
+  // small gap row
+  html += `<div style="grid-column: 1 / -1; height: 8px;"></div>`;
+  renderRow(9);
+  renderRow(10);
+  grid.innerHTML = html;
+
+  // wire cells
+  grid.querySelectorAll('.pcell[data-z]').forEach(el => {
+    el.addEventListener('click', () => openPetCard(+el.dataset.z));
+  });
+
+  // wire chips
+  document.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => { state.filter = c.dataset.filter; render(); });
+  });
+  document.getElementById('search').addEventListener('input', e => {
+    state.search = e.target.value;
+    // re-render only the table grid for snappy feel
+    refreshDimmedOnly();
+  });
+  document.getElementById('babiesBtn').addEventListener('click', () => { state.view = 'babies'; render(); });
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (confirm('Reset your whole Pokédex collection?')) {
+      collected.clear(); saveCollection(); render();
+    }
+  });
+}
+
+function chip(key, label) {
+  return `<button class="chip ${state.filter===key?'active':''}" data-filter="${key}">${label}</button>`;
+}
+
+function passesFilter(e) {
+  const q = state.search.trim().toLowerCase();
+  if (q && !(e.sym.toLowerCase().includes(q) || e.name.toLowerCase().includes(q) || (''+e.z) === q)) return false;
+  switch (state.filter) {
+    case 'metals':
+      return ['alkali','alkaline','transition','postTransition','lanthanide','actinide'].includes(e.fam);
+    case 'nonmetals':
+      return ['nonmetal','halogen','noble'].includes(e.fam);
+    case 'gases':
+      return e.state === 'gas';
+    case 'common':
+      return e.z <= 30;
+    case 'collected':
+      return collected.has(e.z);
+    default: return true;
+  }
+}
+
+function refreshDimmedOnly() {
+  document.querySelectorAll('.pcell[data-z]').forEach(el => {
+    const e = ELEMENTS[+el.dataset.z];
+    el.classList.toggle('dimmed', !passesFilter(e));
+  });
+}
+
+/* ============================================================
+   PET CARD MODAL
+   ============================================================ */
+function openPetCard(z) {
+  const e = ELEMENTS[z];
+  const fam = FAMILIES[e.fam];
+  const archetype = e.archetype || fam.archetype;
+  const fact = e.funFact || `${e.name} is part of the ${fam.name} family — typically a ${fam.archetype.toLowerCase()}.`;
+  const uses = e.uses || 'less common in everyday life';
+  const stateEmoji = e.state === 'gas' ? '💨' : e.state === 'liquid' ? '💧' : '🧊';
+  const newCatch = !collected.has(z);
+  if (newCatch) { collected.add(z); saveCollection(); }
+
+  const portrait = svgPortrait(e.fam, e.sym, e.sym);
+
+  const mc = document.getElementById('modal-content');
+  mc.innerHTML = `
+    <button class="close-x" id="closeX">×</button>
+    ${newCatch ? `<div style="text-align:center;color:#D6336C;font-weight:bold;margin-bottom:6px;">⭐ Caught a new pet! ⭐</div>` : ''}
+    <div class="pet-header">
+      <div class="pet-portrait" style="background:${fam.color}">${portrait}</div>
+      <div class="pet-title">
+        <div class="sym-big">${e.sym}</div>
+        <div class="name-big">${e.name}</div>
+        <div class="num-mass">#${e.z} · atomic mass ${e.mass}</div>
+      </div>
+    </div>
+    <div class="archetype">"${archetype}"</div>
+    <div class="prop-grid">
+      <div class="prop"><b>Family:</b> ${fam.name}</div>
+      <div class="prop"><b>State:</b> ${stateEmoji} ${e.state}</div>
+      <div class="prop"><b>Vibe:</b> ${fam.why}</div>
+      <div class="prop"><b>Uses:</b> ${uses}</div>
+    </div>
+    <div class="fun-fact"><b>Did you know?</b> ${fact}</div>
+    <div class="pet-actions">
+      <button class="big-btn green" id="closeBtn">Cool! Back to table</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('open');
+  document.getElementById('closeX').addEventListener('click', closeModal);
+  document.getElementById('closeBtn').addEventListener('click', closeModal);
+}
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+  // refresh count badge / star
+  if (state.view === 'table') render();
+}
+document.getElementById('modal-bg').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-bg') closeModal();
+});
+
+/* ============================================================
+   COMPOUND BABIES VIEW
+   ============================================================ */
+function renderBabies() {
+  app.innerHTML = `
+    <h1>🧪 Compound Babies</h1>
+    <p class="subtitle">Pick two pets — see if they make a baby compound!</p>
+    <div class="top-bar">
+      <button class="big-btn blue" id="backBtn">← Back to table</button>
+      <button class="big-btn gray" id="clearBtn">Clear pets</button>
+    </div>
+    <div class="babies-screen">
+      <p class="babies-help">Tap an element below to put it in slot 1, then tap another for slot 2.</p>
+      <div class="picker-row" id="pickerRow"></div>
+      <div id="resultBox"></div>
+      <div class="common-bank">
+        <h3>Or pick from the famous compound bank:</h3>
+        <div class="bank-grid" id="bankGrid"></div>
+      </div>
+      <h3 style="color:#5E60CE;text-align:center;font-size:1.05rem;margin:12px 0 6px;">Pet picker</h3>
+      <div class="mini-grid" id="miniGrid"></div>
+    </div>
+  `;
+
+  document.getElementById('backBtn').addEventListener('click', () => { state.view = 'table'; render(); });
+  document.getElementById('clearBtn').addEventListener('click', () => { state.babyPick = [null, null]; render(); });
+
+  renderPickerRow();
+  renderResult();
+  renderBankGrid();
+  renderMiniGrid();
+}
+
+function renderPickerRow() {
+  const row = document.getElementById('pickerRow');
+  const slot = (i) => {
+    const sym = state.babyPick[i];
+    if (!sym) {
+      return `<div class="picker"><div class="slot-label">Slot ${i+1}</div><div class="slot-content empty">tap a pet below</div></div>`;
+    }
+    const e = ELEMENTS_BY_SYM[sym];
+    const portrait = svgPortrait(e.fam, e.sym, e.sym);
+    return `<div class="picker" style="border-color:${FAMILIES[e.fam].color}">
+      <div class="slot-label">Slot ${i+1}</div>
+      <div class="slot-content">
+        <div class="pet-portrait mini-portrait" style="background:${FAMILIES[e.fam].color};width:60px;height:60px;border-radius:12px;border:3px solid #fff;display:flex;align-items:center;justify-content:center;">${portrait}</div>
+        <div class="slot-sym">${e.sym}</div>
+        <div class="slot-name">${e.name}</div>
+      </div>
+    </div>`;
+  };
+  row.innerHTML = slot(0) + `<span class="plus">+</span>` + slot(1);
+}
+
+function renderResult() {
+  const box = document.getElementById('resultBox');
+  const [a, b] = state.babyPick;
+  if (!a || !b) { box.innerHTML = ''; return; }
+  const ea = ELEMENTS_BY_SYM[a], eb = ELEMENTS_BY_SYM[b];
+
+  // try lookup
+  const key = [a, b].sort().join('|');
+  const matches = COMPOUND_MAP[key] || [];
+
+  if (matches.length === 0) {
+    // explain why
+    let reason = "These two pets don't form a common compound that we know of.";
+    if (ea.fam === 'noble' || eb.fam === 'noble') {
+      reason = "🐱 Noble gases don't make babies — they're way too independent.";
+    } else if (ea.fam === eb.fam && ['alkali','alkaline'].includes(ea.fam)) {
+      reason = "Two metals like these usually don't bond with each other — both want to GIVE electrons.";
+    } else if (ea.fam === 'halogen' && eb.fam === 'halogen') {
+      reason = "Two halogens both want to GRAB electrons — they argue more than they pair up.";
+    }
+    box.innerHTML = `<div class="baby-result no">
+      <div class="baby-formula" style="color:#888">No baby! 😿</div>
+      <div class="baby-desc">${reason}</div>
+    </div>`;
+    return;
+  }
+
+  let html = '';
+  matches.forEach((c, i) => {
+    const id = 'why-' + i;
+    html += `<div class="baby-result">
+      <div style="font-size:0.9rem;color:#666;">A baby formed!</div>
+      <div class="baby-formula">${formatFormula(c.f)}</div>
+      <div class="baby-name">${c.cute} (${c.name})</div>
+      <div class="baby-desc">${c.desc}</div>
+      <button class="big-btn purple" data-why="${id}">🤔 Why?</button>
+      <div class="why-box" id="${id}"><b>The chemistry:</b> ${c.why}</div>
+    </div>`;
+  });
+  box.innerHTML = html;
+  box.querySelectorAll('button[data-why]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById(btn.dataset.why).classList.toggle('open');
+    });
+  });
+}
+
+function formatFormula(f) {
+  return f.replace(/(\d+)/g, '<sub>$1</sub>');
+}
+
+function renderBankGrid() {
+  const g = document.getElementById('bankGrid');
+  g.innerHTML = COMPOUNDS.map((c, i) =>
+    `<div class="bank-card" data-bank="${i}">
+       <div class="bf">${formatFormula(c.f)}</div>
+       <div class="bn">${c.name}</div>
+     </div>`
+  ).join('');
+  g.querySelectorAll('.bank-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const c = COMPOUNDS[+card.dataset.bank];
+      const syms = Object.keys(c.parts);
+      if (syms.length >= 2) state.babyPick = [syms[0], syms[1]];
+      else if (syms.length === 1) state.babyPick = [syms[0], syms[0]];
+      render();
+    });
+  });
+}
+
+function renderMiniGrid() {
+  const g = document.getElementById('miniGrid');
+  // Show only first 36 elements for the picker — keeps it kid-friendly
+  let html = '';
+  ELEMENTS_RAW.slice(0, 36).forEach(row => {
+    const e = ELEMENTS[row[0]];
+    const sel = state.babyPick.includes(e.sym) ? ' selected' : '';
+    html += `<div class="mini-cell fam-${e.fam}${sel}" data-sym="${e.sym}">
+      <span class="mini-num">${e.z}</span>${e.sym}
+    </div>`;
+  });
+  g.innerHTML = html;
+  g.querySelectorAll('.mini-cell').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const sym = cell.dataset.sym;
+      if (state.babyPick[0] === sym || state.babyPick[1] === sym) {
+        // unselect
+        state.babyPick = state.babyPick.map(s => s === sym ? null : s);
+      } else if (state.babyPick[0] === null) {
+        state.babyPick[0] = sym;
+      } else if (state.babyPick[1] === null) {
+        state.babyPick[1] = sym;
+      } else {
+        // both full — replace slot 1
+        state.babyPick = [state.babyPick[1], sym];
+      }
+      render();
+    });
+  });
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+render();
+</script>
+</body>
+</html>

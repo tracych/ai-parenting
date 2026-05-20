@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Pattern Maker 🎹</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: 'Comic Sans MS', 'Chalkboard SE', system-ui, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #2b1055 0%, #7597de 100%);
+    color: #fff;
+    min-height: 100vh;
+    user-select: none;
+  }
+  #app { width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px; }
+  h1 { font-size: clamp(1.8rem, 5vw, 3rem); text-shadow: 3px 3px 0 #1a0a3a; text-align: center; margin: 6px 0; }
+  h2 { font-size: clamp(1.2rem, 4vw, 1.8rem); text-align: center; margin: 8px 0; color: #ffe66d; }
+  h3 { font-size: clamp(1rem, 3vw, 1.3rem); text-align: center; margin: 6px 0; color: #fff; }
+  p { line-height: 1.5; margin: 6px 0; }
+
+  .top-bar {
+    width: 100%; max-width: 1100px; display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px; background: rgba(255,255,255,0.12); border-radius: 16px; margin-bottom: 10px;
+    flex-wrap: wrap; gap: 8px;
+  }
+  .stars-display { font-size: 1.2rem; font-weight: bold; color: #ffe66d; }
+
+  .big-btn {
+    font-family: inherit; font-weight: bold;
+    font-size: clamp(1rem, 2.6vw, 1.3rem);
+    padding: 12px 22px; border: 3px solid #fff; border-radius: 22px;
+    cursor: pointer; color: white; background: #9B59B6;
+    box-shadow: 0 5px 0 #5e3470, 0 6px 14px rgba(0,0,0,0.25);
+    transition: transform 0.1s, box-shadow 0.1s; margin: 4px;
+  }
+  .big-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #5e3470, 0 3px 6px rgba(0,0,0,0.25); }
+  .big-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+  .big-btn.green { background: #4CAF50; box-shadow: 0 5px 0 #2e7031, 0 6px 14px rgba(0,0,0,0.25); }
+  .big-btn.blue  { background: #2E86AB; box-shadow: 0 5px 0 #1c5670, 0 6px 14px rgba(0,0,0,0.25); }
+  .big-btn.orange{ background: #FF6B35; box-shadow: 0 5px 0 #c44a1f, 0 6px 14px rgba(0,0,0,0.25); }
+  .big-btn.pink  { background: #ec407a; box-shadow: 0 5px 0 #97264f, 0 6px 14px rgba(0,0,0,0.25); }
+  .big-btn.gray  { background: #777; box-shadow: 0 5px 0 #444; font-size: 0.9rem; padding: 8px 14px; }
+  .big-btn.small { font-size: 0.9rem; padding: 8px 14px; border-radius: 16px; }
+
+  .card {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    border-radius: 22px; padding: 18px; margin: 10px 0;
+    width: 100%; max-width: 1100px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+
+  /* Home menu */
+  .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; width: 100%; max-width: 900px; }
+  .menu-card {
+    background: rgba(255,255,255,0.18); border-radius: 22px; padding: 22px;
+    text-align: center; cursor: pointer; border: 4px solid transparent;
+    transition: transform 0.15s, border-color 0.2s, background 0.2s;
+  }
+  .menu-card:hover, .menu-card:active { transform: scale(0.98); background: rgba(255,255,255,0.25); border-color: #ffe66d; }
+  .menu-emoji { font-size: clamp(2.5rem, 7vw, 4rem); display: block; margin-bottom: 6px; }
+  .menu-label { font-weight: bold; font-size: clamp(1.05rem, 3vw, 1.3rem); }
+  .menu-sub   { font-size: 0.9rem; color: #ffe; margin-top: 4px; }
+
+  /* Piano roll */
+  .roll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .roll {
+    display: grid;
+    /* 1 label col + 16 step cols */
+    grid-template-columns: 56px repeat(16, minmax(28px, 1fr));
+    gap: 2px;
+    background: rgba(0,0,0,0.3);
+    padding: 4px; border-radius: 12px;
+    min-width: 540px;
+  }
+  .row-label {
+    background: #1a0a3a; color: #ffe66d; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; border-radius: 4px;
+    cursor: pointer; min-height: 26px;
+  }
+  .row-label.sharp { background: #0a0420; color: #999; font-size: 0.7rem; }
+  .row-label.highlight { background: #ffe66d; color: #1a0a3a; animation: glow 1.2s infinite; }
+  .row-label.selectable { background: #4CAF50; color: white; }
+  .cell {
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px; cursor: pointer;
+    min-height: 26px;
+    transition: background 0.08s;
+  }
+  .cell.sharp-row { background: rgba(0,0,0,0.25); }
+  .cell.beat-mark { box-shadow: inset 2px 0 0 rgba(255,230,109,0.3); }
+  .cell.on { background: #ec407a; box-shadow: 0 0 6px #ec407a; }
+  .cell.on.correct { background: #4CAF50; box-shadow: 0 0 8px #4CAF50; }
+  .cell.on.wrong { background: #e74c3c; box-shadow: 0 0 8px #e74c3c; animation: shake 0.4s; }
+  .cell.on.expected { background: #ffe66d; box-shadow: 0 0 8px #ffe66d; }
+  .cell.playhead { outline: 3px solid #ffe66d; }
+  .cell:hover { background: rgba(255,255,255,0.2); }
+  .cell.on:hover { background: #ff5c8d; }
+
+  @keyframes glow { 0%,100% { box-shadow: 0 0 0 rgba(255,230,109,0); } 50% { box-shadow: 0 0 14px rgba(255,230,109,0.9); } }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+  @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    justify-content: center; margin: 10px 0;
+  }
+  .control-group { display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 14px; }
+  .control-group label { font-size: 0.9rem; }
+  .control-group select, .control-group input[type=range] {
+    font-family: inherit; padding: 4px 8px; border-radius: 8px; border: 2px solid #fff;
+    background: white; color: #1a0a3a; font-weight: bold;
+  }
+  .tempo-val { display: inline-block; min-width: 38px; text-align: right; font-weight: bold; color: #ffe66d; }
+
+  .step-counter {
+    display: flex; gap: 4px; justify-content: center; margin: 8px 0;
+  }
+  .step-dot {
+    width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.25);
+  }
+  .step-dot.active { background: #ffe66d; transform: scale(1.3); transition: transform 0.1s; }
+
+  .feedback {
+    text-align: center; padding: 12px; border-radius: 14px; margin: 10px 0;
+    font-size: 1.1rem; font-weight: bold;
+    animation: pop 0.3s;
+  }
+  .feedback.good { background: rgba(76,175,80,0.4); }
+  .feedback.bad  { background: rgba(231,76,60,0.4); }
+  .feedback.info { background: rgba(46,134,171,0.4); }
+
+  .lib-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 10px; }
+  .lib-card {
+    background: rgba(255,255,255,0.18); padding: 14px; border-radius: 16px;
+    cursor: pointer; text-align: center;
+    transition: transform 0.15s, background 0.2s;
+  }
+  .lib-card:hover, .lib-card:active { transform: scale(0.97); background: rgba(255,255,255,0.28); }
+  .lib-card .name { font-weight: bold; font-size: 1.05rem; }
+  .lib-card .hint { font-size: 0.85rem; color: #ffe; margin-top: 4px; }
+
+  .rhythm-tapper {
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .tap-pad {
+    width: clamp(160px, 60vw, 280px); height: clamp(160px, 60vw, 280px);
+    border-radius: 50%; background: radial-gradient(circle at 40% 30%, #ff6b35, #c44a1f);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 4rem; cursor: pointer; user-select: none;
+    box-shadow: 0 8px 0 #6f2810, 0 12px 24px rgba(0,0,0,0.3);
+    transition: transform 0.05s, box-shadow 0.05s;
+  }
+  .tap-pad:active { transform: translateY(6px); box-shadow: 0 2px 0 #6f2810, 0 4px 8px rgba(0,0,0,0.3); }
+  .beat-row { display: flex; gap: 12px; }
+  .beat-marker {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
+    font-weight: bold;
+  }
+  .beat-marker.played { background: #ffe66d; color: #1a0a3a; }
+  .beat-marker.tapped { box-shadow: 0 0 10px #4CAF50, inset 0 0 6px #4CAF50; }
+  .beat-marker.miss   { background: #e74c3c; }
+
+  .answer-options { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0; }
+  .answer-options .big-btn { font-size: 1.05rem; padding: 10px 18px; }
+
+  .lesson-list { display: flex; flex-direction: column; gap: 10px; max-width: 600px; margin: 0 auto; }
+  .lesson-row {
+    background: rgba(255,255,255,0.15); padding: 14px; border-radius: 16px;
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    transition: transform 0.15s, background 0.2s;
+  }
+  .lesson-row:hover, .lesson-row:active { transform: scale(0.98); background: rgba(255,255,255,0.25); }
+  .lesson-row .num { font-size: 1.6rem; min-width: 38px; text-align: center; }
+  .lesson-row .body { flex: 1; }
+  .lesson-row .title { font-weight: bold; font-size: 1.05rem; }
+  .lesson-row .desc { font-size: 0.88rem; color: #ffe; }
+  .lesson-row .star { font-size: 1.4rem; }
+
+  .share-box {
+    background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin: 8px 0;
+    word-break: break-all; font-family: monospace; font-size: 0.8rem;
+  }
+
+  @media (max-width: 600px) {
+    .roll { grid-template-columns: 44px repeat(16, minmax(20px, 1fr)); }
+    .row-label { font-size: 0.7rem; }
+    .cell, .row-label { min-height: 22px; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+'use strict';
+
+/* ================================
+   Music Pattern Maker
+   - Web Audio synth (no samples)
+   - Piano roll, lessons, sandbox
+================================= */
+
+const STATE = {
+  screen: 'home',           // home | sandbox | lessons | predict | scale | rhythm
+  grid: null,               // 12 rows x 16 cols
+  rows: 12,                 // C4..B4
+  cols: 16,
+  tempo: 100,
+  timbre: 'piano',
+  playing: false,
+  playhead: -1,
+  stars: 0,
+  progress: {               // mastery counts (need >=2 to be mastered)
+    predict: 0, scale: 0, rhythm: 0
+  },
+  lessonIdx: 0,
+  // lesson runtime
+  predict: null,
+  scale: null,
+  rhythm: null,
+};
+
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+// Row 0 = top of grid = highest note (B4), Row 11 = C4
+// We'll display in descending order, midi index for C4 = 60
+function rowToMidi(row) {
+  // row 0 -> B4 (71), row 11 -> C4 (60)
+  return 60 + (11 - row);
+}
+function midiToFreq(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+function rowLabel(row) {
+  const midi = rowToMidi(row);
+  const name = NOTE_NAMES[midi % 12];
+  return name + '4';
+}
+function isSharpRow(row) {
+  const midi = rowToMidi(row);
+  return NOTE_NAMES[midi % 12].includes('#');
+}
+
+/* ================================
+   Web Audio
+================================= */
+let AC = null;
+function audio() {
+  if (!AC) {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+
+function playNote(midi, when, dur, timbre) {
+  const ac = audio();
+  const t = when || ac.currentTime;
+  const d = dur || 0.4;
+  const freq = midiToFreq(midi);
+  const master = ac.createGain();
+  master.gain.value = 0;
+  master.connect(ac.destination);
+
+  if (timbre === 'piano') {
+    // 2 oscillators slightly detuned
+    const o1 = ac.createOscillator(); o1.type = 'triangle'; o1.frequency.value = freq;
+    const o2 = ac.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 2; // octave overtone
+    const g2 = ac.createGain(); g2.gain.value = 0.25;
+    o1.connect(master); o2.connect(g2); g2.connect(master);
+    o1.start(t); o2.start(t);
+    o1.stop(t + d + 0.1); o2.stop(t + d + 0.1);
+  } else if (timbre === 'marimba') {
+    const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+    const o2 = ac.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 4;
+    const g2 = ac.createGain(); g2.gain.value = 0.15;
+    o.connect(master); o2.connect(g2); g2.connect(master);
+    o.start(t); o2.start(t);
+    o.stop(t + d + 0.1); o2.stop(t + d + 0.1);
+  } else if (timbre === 'bell') {
+    const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+    const o2 = ac.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 3.01;
+    const o3 = ac.createOscillator(); o3.type = 'sine'; o3.frequency.value = freq * 5.13;
+    const g2 = ac.createGain(); g2.gain.value = 0.3;
+    const g3 = ac.createGain(); g3.gain.value = 0.15;
+    o.connect(master); o2.connect(g2); g2.connect(master); o3.connect(g3); g3.connect(master);
+    o.start(t); o2.start(t); o3.start(t);
+    o.stop(t + d + 0.5); o2.stop(t + d + 0.5); o3.stop(t + d + 0.5);
+  } else { // synth
+    const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq;
+    o.connect(master); o.start(t); o.stop(t + d + 0.1);
+  }
+
+  // Envelope (ADSR-ish)
+  const attack = 0.01;
+  const decay = (timbre === 'bell') ? 1.5 : (timbre === 'marimba' ? 0.4 : 0.3);
+  const peak = 0.3;
+  const sustain = (timbre === 'piano') ? 0.18 : 0.05;
+  master.gain.setValueAtTime(0, t);
+  master.gain.linearRampToValueAtTime(peak, t + attack);
+  master.gain.exponentialRampToValueAtTime(Math.max(sustain, 0.001), t + attack + decay);
+  master.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.4);
+}
+
+function playPercussion(when) {
+  const ac = audio();
+  const t = when || ac.currentTime;
+  // noise burst + low thump
+  const bufSize = 0.08 * ac.sampleRate;
+  const buffer = ac.createBuffer(1, bufSize, ac.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 2);
+  const noise = ac.createBufferSource(); noise.buffer = buffer;
+  const ng = ac.createGain(); ng.gain.value = 0.3;
+  const nf = ac.createBiquadFilter(); nf.type = 'highpass'; nf.frequency.value = 1000;
+  noise.connect(nf); nf.connect(ng); ng.connect(ac.destination);
+  noise.start(t);
+
+  const o = ac.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(160, t);
+  o.frequency.exponentialRampToValueAtTime(60, t + 0.12);
+  const og = ac.createGain();
+  og.gain.setValueAtTime(0.5, t);
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  o.connect(og); og.connect(ac.destination);
+  o.start(t); o.stop(t + 0.2);
+}
+
+function playWin() {
+  const ac = audio();
+  const t = ac.currentTime;
+  [60, 64, 67, 72].forEach((m, i) => playNote(m, t + i * 0.08, 0.25, 'bell'));
+}
+function playLose() {
+  const ac = audio();
+  const t = ac.currentTime;
+  playNote(55, t, 0.3, 'synth');
+  playNote(52, t + 0.15, 0.4, 'synth');
+}
+
+/* ================================
+   Storage
+================================= */
+function loadState() {
+  try {
+    const raw = localStorage.getItem('musicPatternMaker');
+    if (raw) {
+      const o = JSON.parse(raw);
+      STATE.stars = o.stars || 0;
+      STATE.progress = o.progress || STATE.progress;
+      STATE.tempo = o.tempo || 100;
+      STATE.timbre = o.timbre || 'piano';
+    }
+  } catch (e) {}
+}
+function saveState() {
+  try {
+    localStorage.setItem('musicPatternMaker', JSON.stringify({
+      stars: STATE.stars,
+      progress: STATE.progress,
+      tempo: STATE.tempo,
+      timbre: STATE.timbre,
+    }));
+  } catch (e) {}
+}
+
+/* ================================
+   Grid helpers
+================================= */
+function newGrid() {
+  const g = [];
+  for (let r = 0; r < STATE.rows; r++) {
+    g.push(new Array(STATE.cols).fill(false));
+  }
+  return g;
+}
+
+function encodeGrid(grid) {
+  // pack to bits
+  const bits = [];
+  for (let r = 0; r < STATE.rows; r++) for (let c = 0; c < STATE.cols; c++) bits.push(grid[r][c] ? 1 : 0);
+  const bytes = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    let b = 0;
+    for (let j = 0; j < 8 && i + j < bits.length; j++) b |= bits[i+j] << (7 - j);
+    bytes.push(b);
+  }
+  // also encode tempo + timbre at end
+  const meta = String.fromCharCode(STATE.tempo) + ({piano:'p',marimba:'m',bell:'b',synth:'s'}[STATE.timbre]||'p');
+  const bin = String.fromCharCode(...bytes) + meta;
+  return btoa(bin).replace(/=+$/, '').replace(/\+/g,'-').replace(/\//g,'_');
+}
+
+function decodeGrid(str) {
+  try {
+    let s = str.replace(/-/g,'+').replace(/_/g,'/');
+    while (s.length % 4) s += '=';
+    const bin = atob(s);
+    const totalCells = STATE.rows * STATE.cols;
+    const totalBytes = Math.ceil(totalCells / 8);
+    if (bin.length < totalBytes) return null;
+    const bytes = [];
+    for (let i = 0; i < totalBytes; i++) bytes.push(bin.charCodeAt(i));
+    const grid = newGrid();
+    for (let i = 0; i < totalCells; i++) {
+      const r = Math.floor(i / STATE.cols);
+      const c = i % STATE.cols;
+      const bit = (bytes[Math.floor(i/8)] >> (7 - (i % 8))) & 1;
+      grid[r][c] = !!bit;
+    }
+    if (bin.length >= totalBytes + 2) {
+      const tempo = bin.charCodeAt(totalBytes);
+      const t = bin.charAt(totalBytes + 1);
+      if (tempo >= 40 && tempo <= 160) STATE.tempo = tempo;
+      STATE.timbre = {p:'piano',m:'marimba',b:'bell',s:'synth'}[t] || 'piano';
+    }
+    return grid;
+  } catch (e) { return null; }
+}
+
+/* ================================
+   Playback
+================================= */
+let playTimer = null;
+function startPlayback(grid, opts) {
+  opts = opts || {};
+  stopPlayback();
+  STATE.playing = true;
+  const stepMs = 60000 / STATE.tempo / 2; // 8th notes
+  let step = 0;
+  const onStep = () => {
+    if (!STATE.playing) return;
+    STATE.playhead = step;
+    // play notes in this column
+    const ac = audio();
+    for (let r = 0; r < STATE.rows; r++) {
+      if (grid[r][step]) {
+        playNote(rowToMidi(r), ac.currentTime, stepMs / 1000 * 1.8, STATE.timbre);
+      }
+    }
+    if (opts.onStep) opts.onStep(step);
+    renderPlayhead();
+    step++;
+    if (step >= STATE.cols) {
+      if (opts.loop) { step = 0; }
+      else { stopPlayback(); return; }
+    }
+  };
+  onStep(); // play step 0 immediately
+  playTimer = setInterval(onStep, stepMs);
+}
+function stopPlayback() {
+  if (playTimer) clearInterval(playTimer);
+  playTimer = null;
+  STATE.playing = false;
+  STATE.playhead = -1;
+  renderPlayhead();
+}
+
+function renderPlayhead() {
+  const cells = document.querySelectorAll('.cell');
+  cells.forEach(c => c.classList.remove('playhead'));
+  if (STATE.playhead < 0) return;
+  for (let r = 0; r < STATE.rows; r++) {
+    const sel = document.querySelector(`.cell[data-r="${r}"][data-c="${STATE.playhead}"]`);
+    if (sel) sel.classList.add('playhead');
+  }
+}
+
+/* ================================
+   Library melodies (rough row/col layout)
+   row 11=C4, 10=C#4...0=B4
+   midi-to-row: row = 71 - midi (within C4..B4)
+================================= */
+function midiToRow(midi) {
+  // clip to 60..71
+  if (midi < 60) midi = 60;
+  if (midi > 71) midi = 71;
+  return 71 - midi;
+}
+function fromNotes(notes) {
+  // notes: array of [midi, startStep, lengthSteps]  -- length ignored (single-cell)
+  const g = newGrid();
+  notes.forEach(([m, s]) => {
+    if (s >= 0 && s < STATE.cols) g[midiToRow(m)][s] = true;
+  });
+  return g;
+}
+
+const LIBRARY = [
+  {
+    name: 'Twinkle Twinkle',
+    hint: 'Twin-kle twin-kle lit-tle star…',
+    notes: [
+      [60,0],[60,1],[67,2],[67,3],[69,4],[69,5],[67,6],
+      [65,8],[65,9],[64,10],[64,11],[62,12],[62,13],[60,14],
+    ]
+  },
+  {
+    name: 'Mary Had a Little Lamb',
+    hint: 'Ma-ry had a lit-tle lamb…',
+    notes: [
+      [64,0],[62,1],[60,2],[62,3],[64,4],[64,5],[64,6],
+      [62,8],[62,9],[62,10],[64,11],[67,12],[67,13],
+    ]
+  },
+  {
+    name: 'Happy Birthday',
+    hint: 'Hap-py birth-day to you…',
+    notes: [
+      [60,0],[60,1],[62,2],[60,4],[65,5],[64,6],
+      [60,8],[60,9],[62,10],[60,12],[67,13],[65,14],
+    ]
+  },
+  {
+    name: 'Ode to Joy',
+    hint: 'Joy! Joy! Joy! Joy!',
+    notes: [
+      [64,0],[64,1],[65,2],[67,3],[67,4],[65,5],[64,6],[62,7],
+      [60,8],[60,9],[62,10],[64,11],[64,12],[64,12],[62,13],[62,14],
+    ]
+  },
+  {
+    name: 'Sky Skipper (original)',
+    hint: 'A little tune just for here.',
+    notes: [
+      [60,0],[64,2],[67,4],[72,6],[71,8],[67,10],[64,12],[60,14],
+    ]
+  },
+];
+
+/* ================================
+   Lessons - definitions
+================================= */
+// Predict-the-next-note lessons: app plays 4 notes of scale, kid picks the 5th
+// Scales: arrays of midi values starting from C4 (60)
+const SCALES = {
+  cMajor:      [60, 62, 64, 65, 67, 69, 71, 72],
+  cMinor:      [60, 62, 63, 65, 67, 68, 70, 72],
+  cPenta:      [60, 62, 64, 67, 69, 72],
+  gMajor:      [55, 57, 59, 60, 62, 64, 66, 67].map(m => m + 12).filter(m => m >= 60 && m <= 71),
+};
+
+const PREDICT_LESSONS = [
+  { scale: 'cMajor', start: 0, label: 'C Major — easy steps' },
+  { scale: 'cMajor', start: 2, label: 'C Major from the middle' },
+  { scale: 'cMinor', start: 0, label: 'C Minor — moodier feel' },
+  { scale: 'cMinor', start: 1, label: 'C Minor again' },
+  { scale: 'cPenta', start: 0, label: 'C Pentatonic — the bright 5-note scale' },
+  { scale: 'cPenta', start: 1, label: 'Pentatonic again' },
+  { scale: 'cMajor', start: 3, label: 'C Major — high notes' },
+  { scale: 'cMinor', start: 2, label: 'C Minor — middle stretch' },
+  { scale: 'cPenta', start: 2, label: 'Pentatonic — find the leap' },
+  { scale: 'cMajor', start: 1, label: 'C Major — one more!' },
+];
+
+const SCALE_BUILDER_LESSONS = [
+  { name: 'C Major',     notes: SCALES.cMajor.filter(m=>m<=71) },
+  { name: 'C Minor',     notes: SCALES.cMinor.filter(m=>m<=71) },
+  { name: 'C Pentatonic',notes: SCALES.cPenta.filter(m=>m<=71) },
+];
+
+const RHYTHM_LESSONS = [
+  { name: 'Steady 4', beats: [0, 1, 2, 3] },           // 4/4 quarter notes
+  { name: 'Skip a Beat', beats: [0, 1, 3] },
+  { name: 'Tricky Off', beats: [0, 1.5, 2, 3] },
+  { name: 'Two-and-Two', beats: [0, 0.5, 2, 2.5] },
+];
+
+/* ================================
+   RENDERING
+================================= */
+const $app = document.getElementById('app');
+
+function render() {
+  $app.innerHTML = '';
+  // top bar
+  const top = el('div', 'top-bar');
+  top.appendChild(textEl('div', `🎹 Music Pattern Maker`, 'title'));
+  const right = el('div');
+  const stars = textEl('span', `⭐ ${STATE.stars}`, 'stars-display');
+  right.appendChild(stars);
+  if (STATE.screen !== 'home') {
+    const home = button('🏠 Home', () => { stopPlayback(); STATE.screen = 'home'; render(); }, 'gray small');
+    right.appendChild(home);
+  }
+  top.appendChild(right);
+  $app.appendChild(top);
+
+  if (STATE.screen === 'home') renderHome();
+  else if (STATE.screen === 'sandbox') renderSandbox();
+  else if (STATE.screen === 'lessons') renderLessonMenu();
+  else if (STATE.screen === 'predict') renderPredict();
+  else if (STATE.screen === 'scale') renderScaleBuilder();
+  else if (STATE.screen === 'rhythm') renderRhythm();
+  else if (STATE.screen === 'library') renderLibrary();
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function textEl(tag, text, cls) { return el(tag, cls, text); }
+function button(label, onClick, cls) {
+  const b = el('button', 'big-btn ' + (cls||''), label);
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+/* ---------- Home ---------- */
+function renderHome() {
+  const wrap = el('div', 'card');
+  wrap.appendChild(textEl('h1', 'Make Some Music! 🎶'));
+  wrap.appendChild(textEl('p', 'Tap colorful cells to build melodies, or play lessons to learn scales and rhythm by ear.'));
+
+  const grid = el('div', 'menu-grid');
+  grid.appendChild(menuCard('🎨', 'Sandbox', 'Free play — build any melody', () => { STATE.screen = 'sandbox'; if (!STATE.grid) STATE.grid = newGrid(); render(); }));
+  grid.appendChild(menuCard('🎓', 'Lessons', 'Predict notes, build scales, clap rhythms', () => { STATE.screen = 'lessons'; render(); }));
+  grid.appendChild(menuCard('📚', 'Library', '5 starter tunes to play and learn', () => { STATE.screen = 'library'; render(); }));
+
+  wrap.appendChild(grid);
+
+  // mastery
+  const m = el('div');
+  m.style.marginTop = '14px';
+  m.style.textAlign = 'center';
+  const mt = (label, count) => {
+    const stars = '⭐'.repeat(Math.min(3, count));
+    return `${label}: ${stars || '— not yet —'}`;
+  };
+  m.innerHTML =
+    `<div style="font-size:0.95rem;opacity:0.9">
+      <div>🔮 Predict-the-Note: ${mt('', STATE.progress.predict)}</div>
+      <div>🎼 Scale Builder: ${mt('', STATE.progress.scale)}</div>
+      <div>🥁 Rhythm Clap-Back: ${mt('', STATE.progress.rhythm)}</div>
+    </div>`;
+  wrap.appendChild(m);
+
+  $app.appendChild(wrap);
+}
+
+function menuCard(emoji, label, sub, onClick) {
+  const c = el('div', 'menu-card');
+  c.innerHTML = `<span class="menu-emoji">${emoji}</span><div class="menu-label">${label}</div><div class="menu-sub">${sub}</div>`;
+  c.addEventListener('click', () => { audio(); onClick(); });
+  return c;
+}
+
+/* ---------- Piano roll widget ---------- */
+function renderRoll(grid, opts) {
+  opts = opts || {};
+  const wrap = el('div', 'roll-wrap');
+  const roll = el('div', 'roll');
+  // header? Skip - use beat marks
+  for (let r = 0; r < STATE.rows; r++) {
+    const lbl = el('div', 'row-label' + (isSharpRow(r) ? ' sharp' : ''));
+    lbl.textContent = rowLabel(r);
+    lbl.dataset.r = r;
+    if (opts.highlightRow !== undefined && opts.highlightRow === r) lbl.classList.add('highlight');
+    if (opts.selectableRows && opts.selectableRows.includes(r)) {
+      lbl.classList.add('selectable');
+      lbl.style.cursor = 'pointer';
+      lbl.addEventListener('click', () => opts.onRowPick && opts.onRowPick(r));
+    } else {
+      lbl.addEventListener('click', () => playNote(rowToMidi(r), 0, 0.4, STATE.timbre));
+    }
+    roll.appendChild(lbl);
+    for (let c = 0; c < STATE.cols; c++) {
+      const cell = el('div', 'cell' + (isSharpRow(r) ? ' sharp-row' : '') + (c % 4 === 0 ? ' beat-mark' : ''));
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      if (grid[r][c]) cell.classList.add('on');
+      if (opts.cellClass) {
+        const extra = opts.cellClass(r, c);
+        if (extra) cell.classList.add(extra);
+      }
+      if (!opts.readOnly) {
+        cell.addEventListener('click', () => {
+          grid[r][c] = !grid[r][c];
+          cell.classList.toggle('on', grid[r][c]);
+          if (grid[r][c]) playNote(rowToMidi(r), 0, 0.4, STATE.timbre);
+          if (opts.onToggle) opts.onToggle(r, c);
+        });
+      } else if (opts.onCellClick) {
+        cell.addEventListener('click', () => opts.onCellClick(r, c));
+      }
+      roll.appendChild(cell);
+    }
+  }
+  wrap.appendChild(roll);
+  return wrap;
+}
+
+/* ---------- Sandbox ---------- */
+function renderSandbox() {
+  // controls
+  const card = el('div', 'card');
+  card.appendChild(textEl('h2', '🎨 Sandbox'));
+  card.appendChild(textEl('p', 'Click cells to toggle notes. Hit Play.'));
+
+  const controls = el('div', 'controls');
+
+  const playBtn = button(STATE.playing ? '⏹ Stop' : '▶ Play', () => {
+    if (STATE.playing) stopPlayback(); else startPlayback(STATE.grid, { loop: false });
+    setTimeout(render, 50);
+  }, 'green');
+  controls.appendChild(playBtn);
+
+  const loopBtn = button('🔁 Loop', () => {
+    stopPlayback();
+    startPlayback(STATE.grid, { loop: true });
+    setTimeout(render, 50);
+  }, 'blue');
+  controls.appendChild(loopBtn);
+
+  controls.appendChild(button('🧹 Clear', () => { STATE.grid = newGrid(); render(); }, 'gray'));
+
+  // tempo
+  const tg = el('div', 'control-group');
+  tg.innerHTML = `<label>Tempo:</label>`;
+  const ts = el('input');
+  ts.type = 'range'; ts.min = 40; ts.max = 160; ts.value = STATE.tempo;
+  const tv = el('span', 'tempo-val', STATE.tempo + '');
+  ts.addEventListener('input', () => { STATE.tempo = parseInt(ts.value); tv.textContent = STATE.tempo; saveState(); });
+  tg.appendChild(ts); tg.appendChild(tv);
+  controls.appendChild(tg);
+
+  // timbre
+  const tig = el('div', 'control-group');
+  tig.innerHTML = `<label>Sound:</label>`;
+  const sel = el('select');
+  ['piano','marimba','bell','synth'].forEach(name => {
+    const o = el('option', null, name[0].toUpperCase()+name.slice(1));
+    o.value = name; if (name === STATE.timbre) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', () => { STATE.timbre = sel.value; saveState(); });
+  tig.appendChild(sel);
+  controls.appendChild(tig);
+
+  card.appendChild(controls);
+
+  card.appendChild(renderRoll(STATE.grid));
+
+  // share
+  const share = el('div', 'controls');
+  share.appendChild(button('🔗 Share', () => {
+    const enc = encodeGrid(STATE.grid);
+    const url = location.origin + location.pathname + '#m=' + enc;
+    location.hash = 'm=' + enc;
+    showShare(card, url);
+  }, 'pink'));
+  share.appendChild(button('📚 Load from Library', () => { STATE.screen = 'library'; render(); }, 'orange'));
+  card.appendChild(share);
+
+  $app.appendChild(card);
+}
+
+function showShare(parent, url) {
+  let box = parent.querySelector('.share-box');
+  if (box) box.remove();
+  box = el('div', 'share-box');
+  box.textContent = url;
+  parent.appendChild(box);
+  // try copy
+  try { navigator.clipboard && navigator.clipboard.writeText(url); } catch(e){}
+  const fb = el('div', 'feedback good', '✨ Link copied! (or select & copy above)');
+  parent.appendChild(fb);
+  setTimeout(() => { fb.remove(); }, 3000);
+}
+
+/* ---------- Library ---------- */
+function renderLibrary() {
+  const card = el('div', 'card');
+  card.appendChild(textEl('h2', '📚 Starter Library'));
+  card.appendChild(textEl('p', 'Pick a tune to load. Play it, then try to write it from memory!'));
+  const grid = el('div', 'lib-grid');
+  LIBRARY.forEach((song, i) => {
+    const c = el('div', 'lib-card');
+    c.innerHTML = `<div class="name">${song.name}</div><div class="hint">${song.hint}</div>`;
+    c.addEventListener('click', () => {
+      STATE.grid = fromNotes(song.notes);
+      STATE.screen = 'sandbox';
+      render();
+    });
+    grid.appendChild(c);
+  });
+  card.appendChild(grid);
+  $app.appendChild(card);
+}
+
+/* ---------- Lessons menu ---------- */
+function renderLessonMenu() {
+  const card = el('div', 'card');
+  card.appendChild(textEl('h2', '🎓 Lessons'));
+  card.appendChild(textEl('p', 'Each lesson: hear it, then YOU predict. Learn music by ear.'));
+
+  const list = el('div', 'lesson-list');
+
+  const types = [
+    { key: 'predict', emoji: '🔮', title: 'Predict-the-Next-Note', desc: `${PREDICT_LESSONS.length} lessons — pick the 5th note in a scale`, screen: 'predict' },
+    { key: 'scale',   emoji: '🎼', title: 'Scale Builder',          desc: `${SCALE_BUILDER_LESSONS.length} lessons — build the named scale on the grid`, screen: 'scale' },
+    { key: 'rhythm',  emoji: '🥁', title: 'Rhythm Clap-Back',       desc: `${RHYTHM_LESSONS.length} lessons — tap a rhythm back from memory`, screen: 'rhythm' },
+  ];
+
+  types.forEach(t => {
+    const row = el('div', 'lesson-row');
+    const star = STATE.progress[t.key] >= 2 ? '🌟' : (STATE.progress[t.key] >= 1 ? '⭐' : '☆');
+    row.innerHTML = `<div class="num">${t.emoji}</div>
+      <div class="body"><div class="title">${t.title}</div><div class="desc">${t.desc}</div></div>
+      <div class="star">${star}</div>`;
+    row.addEventListener('click', () => {
+      STATE.lessonIdx = 0;
+      STATE.predict = null; STATE.scale = null; STATE.rhythm = null;
+      STATE.screen = t.screen;
+      if (t.screen === 'predict') initPredict();
+      else if (t.screen === 'scale') initScaleBuilder();
+      else if (t.screen === 'rhythm') initRhythm();
+      render();
+    });
+    list.appendChild(row);
+  });
+
+  card.appendChild(list);
+  $app.appendChild(card);
+}
+
+/* ---------- Predict the Next Note ---------- */
+function initPredict() {
+  const lesson = PREDICT_LESSONS[STATE.lessonIdx];
+  const scaleNotes = SCALES[lesson.scale];
+  // sequence: 4 notes from scaleNotes[start..start+3], answer = scaleNotes[start+4]
+  const start = lesson.start;
+  const seq = scaleNotes.slice(start, start + 4);
+  const answer = scaleNotes[start + 4] !== undefined ? scaleNotes[start + 4] : scaleNotes[start + 3] + 2;
+  // ensure within C4..B4 range for grid display; if not, pick valid alt
+  // build answer choices: correct + 3 distractors (other rows)
+  const choiceMidis = new Set([answer]);
+  // distractors: nearby notes not in scale, plus scale notes 1 step away
+  const distractors = [answer - 1, answer + 1, answer + 2, answer - 2, answer - 3, answer + 3]
+    .filter(m => m >= 60 && m <= 71 && m !== answer);
+  // pick 3
+  for (let i = 0; i < distractors.length && choiceMidis.size < 4; i++) {
+    choiceMidis.add(distractors[i]);
+  }
+  // if still too few, add scale notes
+  for (let i = 0; i < scaleNotes.length && choiceMidis.size < 4; i++) {
+    if (scaleNotes[i] >= 60 && scaleNotes[i] <= 71) choiceMidis.add(scaleNotes[i]);
+  }
+  const choices = Array.from(choiceMidis);
+  // shuffle
+  for (let i = choices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
+  }
+  const prevCorrect = (STATE.predict && typeof STATE.predict.correctThisRun === 'number') ? STATE.predict.correctThisRun : 0;
+  STATE.predict = {
+    lesson, seq, answer,
+    choices, picked: null, revealed: false, correctThisRun: prevCorrect,
+  };
+}
+
+function renderPredict() {
+  const p = STATE.predict;
+  if (!p) { initPredict(); return renderPredict(); }
+  const card = el('div', 'card');
+  card.appendChild(textEl('h2', `🔮 Lesson ${STATE.lessonIdx+1}/${PREDICT_LESSONS.length}: ${p.lesson.label}`));
+  card.appendChild(textEl('p', 'Listen carefully. I\'ll play 4 notes. You guess what the 5th one is — pick the row label.'));
+
+  const playBtn = button('▶ Play the 4 Notes', () => {
+    const ac = audio();
+    const t = ac.currentTime;
+    p.seq.forEach((m, i) => playNote(m, t + i * 0.45, 0.4, STATE.timbre));
+  }, 'green');
+  const ctrl = el('div', 'controls');
+  ctrl.appendChild(playBtn);
+  card.appendChild(ctrl);
+
+  // Show grid with the 4 played notes lit, answer row hidden, all rows clickable (or just choice rows)
+  // For simplicity: highlight choice row labels as selectable
+  const grid = newGrid();
+  p.seq.forEach((m, i) => { if (m >= 60 && m <= 71) grid[midiToRow(m)][i] = true; });
+  if (p.revealed && p.answer >= 60 && p.answer <= 71) {
+    grid[midiToRow(p.answer)][4] = true;
+  }
+
+  const selectableRows = p.choices.filter(m => m >= 60 && m <= 71).map(m => midiToRow(m));
+
+  const onRowPick = (r) => {
+    if (p.revealed) return;
+    const midi = rowToMidi(r);
+    if (!p.choices.includes(midi)) return;
+    p.picked = midi;
+    p.revealed = true;
+    // play picked
+    playNote(midi, 0, 0.5, STATE.timbre);
+    // after a beat, play correct
+    setTimeout(() => {
+      const ac = audio();
+      // play whole sequence + answer
+      p.seq.forEach((m, i) => playNote(m, ac.currentTime + i * 0.35, 0.3, STATE.timbre));
+      playNote(p.answer, ac.currentTime + p.seq.length * 0.35 + 0.1, 0.6, STATE.timbre);
+    }, 600);
+
+    if (midi === p.answer) {
+      STATE.stars++;
+      p.correctThisRun++;
+      playWin();
+    } else {
+      playLose();
+    }
+    saveState();
+    render();
+  };
+
+  card.appendChild(renderRoll(grid, {
+    readOnly: true,
+    selectableRows: p.revealed ? [] : selectableRows,
+    onRowPick: onRowPick,
+    cellClass: (r, c) => {
+      if (p.revealed && r === midiToRow(p.answer) && c === 4) return 'expected';
+      return null;
+    }
+  }));
+
+  if (!p.revealed) {
+    // also show buttons for choices as a fallback
+    const opts = el('div', 'answer-options');
+    p.choices.forEach(m => {
+      const name = NOTE_NAMES[m % 12] + Math.floor(m/12 - 1);
+      const b = button(name, () => onRowPick(midiToRow(m)), 'blue');
+      opts.appendChild(b);
+    });
+    card.appendChild(opts);
+  } else {
+    const correct = p.picked === p.answer;
+    const fb = el('div', 'feedback ' + (correct ? 'good' : 'bad'));
+    const ansName = NOTE_NAMES[p.answer % 12] + '4';
+    fb.textContent = correct
+      ? `🎉 Yes! The 5th note is ${ansName}. Your ear is learning the scale!`
+      : `🎵 Close! The 5th note is ${ansName}. Hear how the scale wants to land there?`;
+    card.appendChild(fb);
+
+    const next = el('div', 'controls');
+    next.appendChild(button('Next Lesson →', () => {
+      // mark mastery: if got correct, count it toward mastery
+      if (p.picked === p.answer && STATE.lessonIdx === PREDICT_LESSONS.length - 1) {
+        STATE.progress.predict = Math.min(3, STATE.progress.predict + 1);
+        saveState();
+      }
+      STATE.lessonIdx++;
+      if (STATE.lessonIdx >= PREDICT_LESSONS.length) {
+        // round completed
+        if (p.correctThisRun >= Math.ceil(PREDICT_LESSONS.length * 0.6)) {
+          STATE.progress.predict = Math.min(3, STATE.progress.predict + 1);
+          saveState();
+        }
+        STATE.screen = 'lessons';
+        STATE.predict = null;
+        render();
+      } else {
+        initPredict();
+        render();
+      }
+    }, 'green'));
+    next.appendChild(button('Try Again', () => {
+      initPredict();
+      render();
+    }, 'gray'));
+    card.appendChild(next);
+  }
+
+  $app.appendChild(card);
+}
+
+/* ---------- Scale Builder ---------- */
+function initScaleBuilder() {
+  const idx = STATE.lessonIdx % SCALE_BUILDER_LESSONS.length;
+  const lesson = SCALE_BUILDER_LESSONS[idx];
+  // start grid with root note placed
+  const grid = newGrid();
+  // root = first note of scale
+  const root = lesson.notes[0];
+  grid[midiToRow(root)][0] = true;
+  STATE.scale = { lesson, grid, submitted: false, result: null };
+}
+
+function renderScaleBuilder() {
+  const s = STATE.scale;
+  if (!s) { initScaleBuilder(); return renderScaleBuilder(); }
+  const card = el('div', 'card');
+  card.appendChild(textEl('h2', `🎼 Scale Builder: ${s.lesson.name}`));
+  card.appendChild(textEl('p', `I put the root note on beat 1. Click cells to add the rest of the ${s.lesson.name} scale, one note per beat going up.`));
+
+  const ctrl = el('div', 'controls');
+  ctrl.appendChild(button('🔊 Hear the Scale', () => {
+    const ac = audio();
+    s.lesson.notes.forEach((m, i) => playNote(m, ac.currentTime + i * 0.3, 0.28, STATE.timbre));
+  }, 'green'));
+  ctrl.appendChild(button('🧹 Reset', () => { initScaleBuilder(); render(); }, 'gray'));
+  card.appendChild(ctrl);
+
+  // Visual: highlight root row label
+  const rootRow = midiToRow(s.lesson.notes[0]);
+
+  card.appendChild(renderRoll(s.grid, {
+    highlightRow: rootRow,
+    cellClass: (r, c) => {
+      if (!s.submitted) return null;
+      const expectedMidi = s.lesson.notes[c];
+      if (expectedMidi !== undefined && r === midiToRow(expectedMidi)) {
+        return s.grid[r][c] ? 'correct' : 'expected';
+      }
+      if (s.grid[r][c]) return 'wrong';
+      return null;
+    }
+  }));
+
+  if (!s.submitted) {
+    const sub = el('div', 'controls');
+    sub.appendChild(button('✅ Check My Scale', () => {
+      // check: each expected col has the right row, and no extra ons
+      let allRight = true;
+      let placedExpected = 0;
+      for (let c = 0; c < STATE.cols; c++) {
+        const expectedMidi = s.lesson.notes[c];
+        for (let r = 0; r < STATE.rows; r++) {
+          if (s.grid[r][c]) {
+            if (expectedMidi !== undefined && r === midiToRow(expectedMidi)) placedExpected++;
+            else allRight = false;
+          }
+        }
+      }
+      const result = (allRight && placedExpected === s.lesson.notes.length) ? 'perfect' :
+                     (placedExpected >= s.lesson.notes.length - 1 ? 'close' : 'tryagain');
+      s.submitted = true;
+      s.result = result;
+      if (result === 'perfect') {
+        STATE.stars += 2;
+        STATE.progress.scale = Math.min(3, STATE.progress.scale + 1);
+        playWin();
+      } else if (result === 'close') {
+        STATE.stars += 1;
+        playWin();
+      } else {
+        playLose();
+      }
+      saveState();
+      render();
+    }, 'green'));
+    card.appendChild(sub);
+  } else {
+    const fb = el('div', 'feedback ' + (s.result === 'perfect' ? 'good' : s.result === 'close' ? 'info' : 'bad'));
+    fb.textContent = s.result === 'perfect' ? `🌟 Perfect ${s.lesson.name}! Hear it played back…` :
+                     s.result === 'close' ? `🎶 So close! Green cells = right. Yellow = where the scale wanted to go.` :
+                     `🎵 Listen again — yellow shows the right notes.`;
+    card.appendChild(fb);
+    // play correct + user
+    setTimeout(() => {
+      const ac = audio();
+      s.lesson.notes.forEach((m, i) => playNote(m, ac.currentTime + i * 0.28, 0.26, STATE.timbre));
+    }, 200);
+    const next = el('div', 'controls');
+    next.appendChild(button('Next →', () => {
+      STATE.lessonIdx++;
+      if (STATE.lessonIdx >= SCALE_BUILDER_LESSONS.length) {
+        STATE.lessonIdx = 0;
+        STATE.screen = 'lessons';
+        STATE.scale = null;
+        render();
+      } else {
+        initScaleBuilder();
+        render();
+      }
+    }, 'green'));
+    next.appendChild(button('Try Again', () => { initScaleBuilder(); render(); }, 'gray'));
+    card.appendChild(next);
+  }
+
+  $app.appendChild(card);
+}
+
+/* ---------- Rhythm Clap-Back ---------- */
+function initRhythm() {
+  const idx = STATE.lessonIdx % RHYTHM_LESSONS.length;
+  const lesson = RHYTHM_LESSONS[idx];
+  STATE.rhythm = {
+    lesson,
+    playedAt: [],          // when the app played each beat (audio time)
+    tappedAt: [],          // when the kid tapped (audio time)
+    phase: 'idle',         // idle | playing | tapping | done
+    score: null,
+    bpm: 90,
+  };
+}
+
+function renderRhythm() {
+  const r = STATE.rhythm;
+  if (!r) { initRhythm(); return renderRhythm(); }
+  const card = el('div', 'card');
+  card.appendChild(textEl('h2', `🥁 Rhythm: ${r.lesson.name}`));
+  card.appendChild(textEl('p', 'I\'ll play a rhythm. Then YOU tap the drum to match it. Try to hit the timing!'));
+
+  const ctrl = el('div', 'controls');
+  ctrl.appendChild(button('▶ Hear It', () => {
+    const ac = audio();
+    const t = ac.currentTime + 0.2;
+    const beatSec = 60 / r.bpm;
+    r.playedAt = [];
+    r.tappedAt = [];
+    r.phase = 'playing';
+    r.lesson.beats.forEach(b => {
+      const when = t + b * beatSec;
+      playPercussion(when);
+      r.playedAt.push(when);
+    });
+    // after last beat, become tap phase
+    const total = (r.lesson.beats[r.lesson.beats.length-1] + 1) * beatSec;
+    setTimeout(() => {
+      r.phase = 'tapping';
+      r.tapStart = audio().currentTime;
+      render();
+    }, total * 1000 + 200);
+  }, 'green'));
+  card.appendChild(ctrl);
+
+  // Beat row visual
+  const bRow = el('div', 'beat-row');
+  bRow.style.justifyContent = 'center';
+  bRow.style.margin = '12px auto';
+  r.lesson.beats.forEach((b, i) => {
+    const m = el('div', 'beat-marker', String(i+1));
+    if (r.phase === 'tapping' || r.phase === 'done') m.classList.add('played');
+    if (r.phase === 'done' && r.tappedAt[i] !== undefined) {
+      // check if this tap matched within tolerance
+      const beatSec = 60 / r.bpm;
+      const expectedRel = r.lesson.beats[i] * beatSec;
+      const actualRel = r.tappedAt[i] - r.tapStart;
+      const diffMs = Math.abs(actualRel - expectedRel) * 1000;
+      m.classList.add(diffMs < 250 ? 'tapped' : 'miss');
+    }
+    bRow.appendChild(m);
+  });
+  card.appendChild(bRow);
+
+  // Tap pad
+  const wrap = el('div', 'rhythm-tapper');
+  const pad = el('div', 'tap-pad', '🥁');
+  pad.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (r.phase !== 'tapping') return;
+    const ac = audio();
+    playPercussion(ac.currentTime);
+    r.tappedAt.push(ac.currentTime);
+    if (r.tappedAt.length >= r.lesson.beats.length) {
+      // score
+      const beatSec = 60 / r.bpm;
+      let totalDiff = 0;
+      for (let i = 0; i < r.lesson.beats.length; i++) {
+        const expectedRel = r.lesson.beats[i] * beatSec;
+        const actualRel = r.tappedAt[i] - r.tapStart;
+        totalDiff += Math.abs(actualRel - expectedRel);
+      }
+      const avgMs = (totalDiff / r.lesson.beats.length) * 1000;
+      r.score = avgMs;
+      r.phase = 'done';
+      if (avgMs < 180) {
+        STATE.stars += 2;
+        STATE.progress.rhythm = Math.min(3, STATE.progress.rhythm + 1);
+        playWin();
+      } else if (avgMs < 320) {
+        STATE.stars += 1;
+        playWin();
+      } else {
+        playLose();
+      }
+      saveState();
+      setTimeout(render, 50);
+    } else {
+      render();
+    }
+  });
+  wrap.appendChild(pad);
+  const status = el('div');
+  if (r.phase === 'idle') status.textContent = 'Press "Hear It" first.';
+  else if (r.phase === 'playing') status.textContent = '👂 Listen…';
+  else if (r.phase === 'tapping') status.textContent = `Your turn — tap ${r.lesson.beats.length} times!`;
+  else status.textContent = `Score: avg off by ${Math.round(r.score)}ms ${r.score < 180 ? '🌟 amazing!' : r.score < 320 ? '⭐ nice!' : 'keep practicing!'}`;
+  status.style.textAlign = 'center';
+  status.style.fontSize = '1.1rem';
+  wrap.appendChild(status);
+  card.appendChild(wrap);
+
+  if (r.phase === 'done') {
+    const next = el('div', 'controls');
+    next.appendChild(button('Next →', () => {
+      STATE.lessonIdx++;
+      if (STATE.lessonIdx >= RHYTHM_LESSONS.length) {
+        STATE.lessonIdx = 0;
+        STATE.screen = 'lessons';
+        STATE.rhythm = null;
+        render();
+      } else {
+        initRhythm();
+        render();
+      }
+    }, 'green'));
+    next.appendChild(button('Try Again', () => { initRhythm(); render(); }, 'gray'));
+    card.appendChild(next);
+  }
+
+  $app.appendChild(card);
+}
+
+/* ================================
+   Boot
+================================= */
+function checkHash() {
+  if (location.hash && location.hash.startsWith('#m=')) {
+    const enc = location.hash.slice(3);
+    const g = decodeGrid(enc);
+    if (g) {
+      STATE.grid = g;
+      STATE.screen = 'sandbox';
+      return true;
+    }
+  }
+  return false;
+}
+
+window.addEventListener('load', () => {
+  loadState();
+  const fromHash = checkHash();
+  if (!fromHash) STATE.grid = newGrid();
+  render();
+});
+
+// Re-render on hash change
+window.addEventListener('hashchange', () => {
+  if (checkHash()) render();
+});
+</script>
+</body>
+</html>

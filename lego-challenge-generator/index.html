@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lego Challenge Generator 🧱</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: 'Comic Sans MS', 'Chalkboard SE', system-ui, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #FFD93D 0%, #FF6B6B 50%, #6BCB77 100%);
+    min-height: 100vh;
+    user-select: none;
+    color: #222;
+  }
+  #app { width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 14px; }
+  header {
+    width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; flex-wrap: wrap; gap: 8px;
+  }
+  h1 {
+    font-size: clamp(1.6rem, 5vw, 2.6rem); color: #fff;
+    text-shadow: 3px 3px 0 #222, 6px 6px 0 rgba(0,0,0,0.15);
+    letter-spacing: 1px;
+  }
+  .nav { display: flex; gap: 6px; flex-wrap: wrap; }
+  .nav-btn {
+    font-family: inherit; font-weight: bold;
+    background: #fff; color: #444; border: 3px solid #222;
+    border-radius: 16px; padding: 8px 14px; cursor: pointer;
+    box-shadow: 0 4px 0 #222; font-size: 0.95rem;
+  }
+  .nav-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #222; }
+  .nav-btn.active { background: #FFD93D; }
+
+  .screen {
+    width: 100%; max-width: 900px;
+    background: rgba(255,255,255,0.92);
+    border: 4px solid #222; border-radius: 28px;
+    padding: 22px;
+    box-shadow: 0 8px 0 #222, 0 12px 24px rgba(0,0,0,0.2);
+    margin-bottom: 16px;
+  }
+  .hidden { display: none !important; }
+
+  /* WHEEL */
+  .wheel-wrap {
+    position: relative; width: min(360px, 80vw); height: min(360px, 80vw);
+    margin: 18px auto; display: flex; align-items: center; justify-content: center;
+  }
+  .wheel {
+    width: 100%; height: 100%; border-radius: 50%;
+    border: 6px solid #222;
+    box-shadow: 0 8px 0 #222, inset 0 0 0 6px #fff;
+    transition: transform 4s cubic-bezier(0.17, 0.67, 0.2, 1);
+    transform: rotate(0deg);
+  }
+  .wheel-pointer {
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0; border-left: 22px solid transparent; border-right: 22px solid transparent;
+    border-top: 36px solid #222; z-index: 5;
+  }
+  .wheel-pointer::after {
+    content: ''; position: absolute; top: -36px; left: -16px;
+    width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent;
+    border-top: 26px solid #FFD93D;
+  }
+  .wheel-hub {
+    position: absolute; width: 70px; height: 70px; border-radius: 50%;
+    background: #fff; border: 5px solid #222; display: flex;
+    align-items: center; justify-content: center; font-size: 2rem;
+    box-shadow: 0 4px 0 #222;
+  }
+
+  .spin-btn {
+    font-family: inherit; font-weight: bold;
+    font-size: clamp(1.4rem, 4.5vw, 2rem);
+    background: #FF6B6B; color: #fff;
+    border: 4px solid #222; border-radius: 24px;
+    padding: 20px 44px; cursor: pointer;
+    box-shadow: 0 7px 0 #222, 0 10px 18px rgba(0,0,0,0.25);
+    display: block; margin: 14px auto;
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+  .spin-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 3px 0 #222; }
+  .spin-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  /* CONTROLS */
+  .controls {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px; margin: 10px 0;
+  }
+  .control {
+    background: #FFF8E7; border: 3px solid #222; border-radius: 14px; padding: 10px;
+  }
+  .control label { font-weight: bold; font-size: 0.9rem; color: #444; display: block; margin-bottom: 6px; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .pill {
+    font-family: inherit; font-size: 0.85rem; font-weight: bold;
+    background: #fff; border: 2px solid #222; border-radius: 99px;
+    padding: 5px 10px; cursor: pointer; color: #444;
+  }
+  .pill.active { background: #6BCB77; color: #fff; }
+
+  /* CHALLENGE CARD */
+  .challenge-card {
+    background: #fff; border: 5px solid #222; border-radius: 24px;
+    padding: 24px; margin: 16px 0; text-align: center;
+    box-shadow: 0 8px 0 #222;
+    animation: pop 0.5s cubic-bezier(0.25, 1.5, 0.5, 1);
+  }
+  @keyframes pop { 0% { transform: scale(0.3) rotate(-15deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+  .cat-badge {
+    display: inline-block; background: #FFD93D; border: 3px solid #222;
+    border-radius: 99px; padding: 5px 14px; font-weight: bold;
+    font-size: 0.9rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .challenge-text {
+    font-size: clamp(1.3rem, 4.5vw, 2rem);
+    line-height: 1.3; color: #222; margin: 14px 0; font-weight: bold;
+  }
+  .challenge-meta {
+    display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+    font-size: 0.85rem; color: #666; margin: 10px 0;
+  }
+  .meta-tag {
+    background: #f0f0f0; border: 2px solid #aaa; border-radius: 8px;
+    padding: 3px 8px;
+  }
+  .card-actions {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px;
+  }
+  .card-actions button { font-family: inherit; font-weight: bold;
+    border: 3px solid #222; border-radius: 14px; padding: 10px 16px;
+    cursor: pointer; box-shadow: 0 4px 0 #222; font-size: 0.95rem;
+  }
+  .card-actions button:active { transform: translateY(3px); box-shadow: 0 1px 0 #222; }
+  .btn-skip { background: #fff; color: #444; }
+  .btn-fav { background: #FFD93D; color: #222; }
+  .btn-fav.on { background: #FF6B6B; color: #fff; }
+  .btn-timer { background: #4D96FF; color: #fff; }
+  .btn-photo { background: #6BCB77; color: #fff; }
+  .btn-battle { background: #9B59B6; color: #fff; }
+
+  /* TIMER */
+  .timer-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .timer-ring-wrap { position: relative; width: min(280px, 70vw); height: min(280px, 70vw); }
+  .timer-ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .timer-ring-bg { fill: none; stroke: #444; stroke-width: 14; }
+  .timer-ring-fg { fill: none; stroke: #FFD93D; stroke-width: 14; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .timer-text {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(2.4rem, 8vw, 4rem); color: #fff; font-weight: bold;
+  }
+  .timer-prompt { color: #fff; font-size: clamp(1rem, 3vw, 1.4rem); text-align: center; margin: 16px 0; max-width: 600px; }
+  .timer-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .timer-actions button {
+    font-family: inherit; font-weight: bold; padding: 12px 22px;
+    border: 3px solid #fff; border-radius: 16px; cursor: pointer;
+    background: #FF6B6B; color: #fff; font-size: 1rem;
+  }
+
+  /* MODAL */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px;
+  }
+  .modal {
+    background: #fff; border: 5px solid #222; border-radius: 24px;
+    padding: 22px; max-width: 500px; width: 100%;
+    box-shadow: 0 8px 0 #222; max-height: 90vh; overflow-y: auto;
+  }
+  .modal h2 { margin-bottom: 12px; color: #FF6B6B; }
+  .modal input[type="text"], .modal input[type="number"] {
+    font-family: inherit; width: 100%; padding: 10px; font-size: 1rem;
+    border: 3px solid #222; border-radius: 12px; margin: 5px 0;
+  }
+  .player-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+  .player-row input { flex: 1; }
+  .player-row button { background: #FF6B6B; color: #fff; border: 2px solid #222;
+    border-radius: 50%; width: 32px; height: 32px; font-weight: bold; cursor: pointer; }
+
+  /* GALLERY / FAVORITES */
+  .gallery-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;
+  }
+  .gallery-item {
+    background: #fff; border: 3px solid #222; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 4px 0 #222; display: flex; flex-direction: column;
+  }
+  .gallery-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .gallery-caption { padding: 8px; font-size: 0.85rem; flex: 1; }
+  .gallery-actions { display: flex; border-top: 2px solid #222; }
+  .gallery-actions button {
+    flex: 1; padding: 8px; font-family: inherit; font-weight: bold; border: none;
+    cursor: pointer; background: #fff; border-right: 2px solid #222; font-size: 0.85rem;
+  }
+  .gallery-actions button:last-child { border-right: none; }
+  .gallery-actions .del { background: #FF6B6B; color: #fff; }
+
+  .fav-list { display: flex; flex-direction: column; gap: 8px; }
+  .fav-item {
+    background: #fff; border: 3px solid #222; border-radius: 14px;
+    padding: 12px; display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 3px 0 #222; gap: 10px;
+  }
+  .fav-item-text { flex: 1; font-size: 0.95rem; }
+  .fav-item-badge { font-size: 0.75rem; color: #888; display: block; margin-top: 2px; }
+  .fav-item button {
+    background: #FF6B6B; color: #fff; border: 2px solid #222; border-radius: 10px;
+    padding: 6px 10px; font-weight: bold; cursor: pointer; font-family: inherit;
+  }
+
+  /* BATTLE */
+  .battle-builder { display: flex; flex-direction: column; gap: 10px; }
+  .battle-vote-screen { text-align: center; }
+  .vote-card {
+    background: #FFF8E7; border: 4px solid #222; border-radius: 18px;
+    padding: 16px; margin: 10px 0;
+  }
+  .vote-card h3 { font-size: 1.4rem; margin-bottom: 8px; }
+  .vote-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+  .vote-btn {
+    font-family: inherit; font-weight: bold; font-size: 1rem; padding: 10px 16px;
+    border: 3px solid #222; border-radius: 12px; cursor: pointer;
+    background: #fff; box-shadow: 0 3px 0 #222;
+  }
+  .vote-btn.voted { background: #6BCB77; color: #fff; }
+  .winner-banner {
+    background: linear-gradient(45deg, #FFD93D, #FF6B6B);
+    border: 4px solid #222; border-radius: 18px; padding: 20px;
+    text-align: center; font-size: 1.6rem; font-weight: bold;
+    margin: 14px 0; box-shadow: 0 6px 0 #222;
+    animation: pop 0.6s cubic-bezier(0.25, 1.5, 0.5, 1);
+  }
+
+  .empty-state { text-align: center; padding: 30px; color: #888; }
+  .empty-state .emoji { font-size: 3rem; display: block; margin-bottom: 10px; }
+
+  .spinning-msg {
+    text-align: center; font-size: 1.4rem; font-weight: bold;
+    color: #FF6B6B; margin: 10px 0; min-height: 1.6em;
+  }
+
+  @media (max-width: 500px) {
+    .screen { padding: 14px; border-radius: 20px; }
+    h1 { font-size: 1.4rem; }
+    .nav-btn { padding: 6px 10px; font-size: 0.85rem; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🧱 Lego Challenge!</h1>
+    <nav class="nav">
+      <button class="nav-btn active" data-screen="spin">🎡 Spin</button>
+      <button class="nav-btn" data-screen="favorites">⭐ Faves</button>
+      <button class="nav-btn" data-screen="gallery">📸 Builds</button>
+      <button class="nav-btn" data-screen="about">ℹ️</button>
+    </nav>
+  </header>
+
+  <!-- SPIN SCREEN -->
+  <section class="screen" id="screen-spin">
+    <div class="controls">
+      <div class="control">
+        <label>Builder age</label>
+        <div class="pill-row" id="age-pills">
+          <button class="pill active" data-age="all">All</button>
+          <button class="pill" data-age="young">Young (4–6)</button>
+          <button class="pill" data-age="older">Older (7+)</button>
+        </div>
+      </div>
+      <div class="control">
+        <label>Piece limit</label>
+        <div class="pill-row" id="piece-pills">
+          <button class="pill active" data-pieces="0">Any</button>
+          <button class="pill" data-pieces="5">5</button>
+          <button class="pill" data-pieces="10">10</button>
+          <button class="pill" data-pieces="25">25</button>
+          <button class="pill" data-pieces="50">50</button>
+        </div>
+      </div>
+      <div class="control">
+        <label>Category</label>
+        <div class="pill-row" id="cat-pills">
+          <button class="pill active" data-cat="all">All</button>
+          <button class="pill" data-cat="structural">Structural</button>
+          <button class="pill" data-cat="creative">Creative</button>
+          <button class="pill" data-cat="constrained">Constrained</button>
+          <button class="pill" data-cat="thematic">Thematic</button>
+          <button class="pill" data-cat="narrative">Narrative</button>
+          <button class="pill" data-cat="speed">Speed</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="wheel-wrap">
+      <div class="wheel-pointer"></div>
+      <svg class="wheel" id="wheel" viewBox="0 0 200 200"></svg>
+      <div class="wheel-hub">🧱</div>
+    </div>
+
+    <div class="spinning-msg" id="spinningMsg"></div>
+    <button class="spin-btn" id="spinBtn">SPIN!</button>
+
+    <div id="challengeArea"></div>
+  </section>
+
+  <!-- FAVORITES -->
+  <section class="screen hidden" id="screen-favorites">
+    <h2 style="color:#FF6B6B; margin-bottom:12px;">⭐ Favorite Challenges</h2>
+    <div id="favList" class="fav-list"></div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="screen hidden" id="screen-gallery">
+    <h2 style="color:#FF6B6B; margin-bottom:12px;">📸 Build Gallery</h2>
+    <div id="galleryGrid" class="gallery-grid"></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="screen hidden" id="screen-about">
+    <h2 style="color:#FF6B6B; margin-bottom:12px;">About</h2>
+    <p style="line-height:1.6; margin-bottom:10px;">
+      🧱 Endless open-ended building challenges for Lego, blocks, Magna-Tiles, or whatever you've got.
+    </p>
+    <p style="line-height:1.6; margin-bottom:10px;">
+      Spin the wheel, build the thing, snap a photo. No wrong answers, only awesome creations.
+    </p>
+    <p style="line-height:1.6; margin-bottom:10px;">
+      <strong>Family Battle mode:</strong> Same prompt, 2–4 builders, vote at the end. Winner = whoever made you smile most.
+    </p>
+    <p style="line-height:1.6; color:#888; font-size:0.9rem;">
+      All your faves & photos live in this browser only. Nothing leaves your device.
+    </p>
+  </section>
+</div>
+
+<!-- TIMER OVERLAY -->
+<div class="timer-overlay hidden" id="timerOverlay">
+  <div class="timer-prompt" id="timerPrompt"></div>
+  <div class="timer-ring-wrap">
+    <svg viewBox="0 0 200 200">
+      <circle class="timer-ring-bg" cx="100" cy="100" r="90"></circle>
+      <circle class="timer-ring-fg" id="timerRingFg" cx="100" cy="100" r="90"
+              stroke-dasharray="565.48" stroke-dashoffset="0"></circle>
+    </svg>
+    <div class="timer-text" id="timerText">5:00</div>
+  </div>
+  <div class="timer-actions">
+    <button id="timerStopBtn">Stop</button>
+  </div>
+</div>
+
+<!-- BATTLE SETUP MODAL -->
+<div class="modal-bg hidden" id="battleModal">
+  <div class="modal">
+    <h2>⚔️ Family Battle</h2>
+    <p style="margin-bottom:10px;">Same challenge. Same timer. Then vote!</p>
+    <div id="playerList"></div>
+    <button id="addPlayerBtn" style="font-family:inherit; font-weight:bold; padding:8px 14px; border:3px solid #222; border-radius:12px; background:#6BCB77; color:#fff; cursor:pointer; margin-top:8px;">+ Add Builder</button>
+    <div style="margin-top:14px;">
+      <label style="font-weight:bold; display:block; margin-bottom:6px;">Timer (minutes)</label>
+      <div class="pill-row" id="battleTimerPills">
+        <button class="pill" data-mins="3">3</button>
+        <button class="pill active" data-mins="5">5</button>
+        <button class="pill" data-mins="10">10</button>
+        <button class="pill" data-mins="15">15</button>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:16px; justify-content:flex-end;">
+      <button id="battleCancelBtn" style="font-family:inherit; padding:10px 16px; border:3px solid #222; border-radius:12px; background:#fff; font-weight:bold; cursor:pointer;">Cancel</button>
+      <button id="battleStartBtn" style="font-family:inherit; padding:10px 16px; border:3px solid #222; border-radius:12px; background:#FF6B6B; color:#fff; font-weight:bold; cursor:pointer;">Start!</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATTLE VOTE MODAL -->
+<div class="modal-bg hidden" id="voteModal">
+  <div class="modal battle-vote-screen">
+    <h2>🗳️ Time to Vote!</h2>
+    <p style="margin-bottom:10px;">Everyone tap 👍 for builds you love (not your own!).</p>
+    <div id="voteList"></div>
+    <button id="voteDoneBtn" style="font-family:inherit; padding:12px 20px; border:3px solid #222; border-radius:14px; background:#FF6B6B; color:#fff; font-weight:bold; cursor:pointer; margin-top:10px;">Crown the winner! 👑</button>
+  </div>
+</div>
+
+<!-- TIMER MODAL -->
+<div class="modal-bg hidden" id="timerSetupModal">
+  <div class="modal">
+    <h2>⏱️ Build Timer</h2>
+    <p style="margin-bottom:10px;">Pick your timer length:</p>
+    <div class="pill-row" id="timerPills" style="margin-bottom:14px;">
+      <button class="pill" data-mins="1">1 min ⚡</button>
+      <button class="pill" data-mins="3">3 min</button>
+      <button class="pill active" data-mins="5">5 min</button>
+      <button class="pill" data-mins="10">10 min</button>
+      <button class="pill" data-mins="15">15 min</button>
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button id="timerSetupCancel" style="font-family:inherit; padding:10px 16px; border:3px solid #222; border-radius:12px; background:#fff; font-weight:bold; cursor:pointer;">Cancel</button>
+      <button id="timerSetupStart" style="font-family:inherit; padding:10px 16px; border:3px solid #222; border-radius:12px; background:#FF6B6B; color:#fff; font-weight:bold; cursor:pointer;">Start!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============== CHALLENGE BANK ============== */
+// Each: { text, cat, age: 'young'|'older'|'all', minPieces (suggested minimum) }
+const CHALLENGES = [
+  // STRUCTURAL (32)
+  { text: "Build the TALLEST tower you can — it has to stand on its own for 10 seconds!", cat:"structural", age:"all", minPieces:10 },
+  { text: "Build the longest bridge between two chairs. Bonus: drive a toy car across.", cat:"structural", age:"older", minPieces:25 },
+  { text: "Make the widest base possible — like a giant pancake.", cat:"structural", age:"young", minPieces:10 },
+  { text: "Build an archway big enough for your hand to walk through like a tiny person.", cat:"structural", age:"all", minPieces:10 },
+  { text: "Build a dome (a roof with no corners). Can you do it without it collapsing?", cat:"structural", age:"older", minPieces:25 },
+  { text: "Build a cantilever — something that sticks WAY out without falling.", cat:"structural", age:"older", minPieces:25 },
+  { text: "Tower challenge: as tall as you, but only one piece wide on top!", cat:"structural", age:"older", minPieces:50 },
+  { text: "Build a pyramid with at least four steps.", cat:"structural", age:"all", minPieces:25 },
+  { text: "Build a tunnel a toy car can drive all the way through.", cat:"structural", age:"young", minPieces:10 },
+  { text: "Build a wall that's longer than your arm.", cat:"structural", age:"young", minPieces:25 },
+  { text: "Build a staircase with at least 5 steps.", cat:"structural", age:"all", minPieces:10 },
+  { text: "Build a tower with three different floors — each one a different shape.", cat:"structural", age:"older", minPieces:25 },
+  { text: "Build a fortress with at least four walls and one door.", cat:"structural", age:"all", minPieces:25 },
+  { text: "Build the strongest tower — drop a small toy on top, does it survive?", cat:"structural", age:"older", minPieces:25 },
+  { text: "Build a tower that spins! (Put it on a smooth bowl or plate.)", cat:"structural", age:"all", minPieces:10 },
+  { text: "Build a leaning tower like Pisa — but it has to STAY up.", cat:"structural", age:"older", minPieces:25 },
+  { text: "Build a maze a marble can roll through (or just a finger!).", cat:"structural", age:"all", minPieces:25 },
+  { text: "Build a ramp. Roll something down it. How far does it go?", cat:"structural", age:"young", minPieces:10 },
+  { text: "Build a tower with a wide bottom and a skinny top.", cat:"structural", age:"young", minPieces:10 },
+  { text: "Build a circle (or as close as you can get!) with a hollow center.", cat:"structural", age:"all", minPieces:10 },
+  { text: "Build two towers connected by a bridge in the middle.", cat:"structural", age:"all", minPieces:25 },
+  { text: "Build a roof that hangs off your tower on all four sides.", cat:"structural", age:"older", minPieces:10 },
+  { text: "Build a tower where every layer rotates a tiny bit — like a spiral!", cat:"structural", age:"older", minPieces:25 },
+  { text: "Build a wall with a door AND a window.", cat:"structural", age:"young", minPieces:10 },
+  { text: "Build a pillar tall enough to balance a book on top.", cat:"structural", age:"all", minPieces:25 },
+  { text: "Build a triangle shape that won't tip over.", cat:"structural", age:"young", minPieces:5 },
+  { text: "Build a tower that gets WIDER as it goes up, not narrower.", cat:"structural", age:"older", minPieces:25 },
+  { text: "Build a roof shaped like a triangle (pointy on top).", cat:"structural", age:"all", minPieces:10 },
+  { text: "Build a hidden room inside a bigger structure.", cat:"structural", age:"older", minPieces:25 },
+  { text: "Build a pyramid that's hollow in the middle.", cat:"structural", age:"older", minPieces:25 },
+  { text: "Build something tall using only flat pieces on the bottom.", cat:"structural", age:"all", minPieces:10 },
+  { text: "Build a stairway to nowhere — that goes up and stops in midair!", cat:"structural", age:"all", minPieces:10 },
+
+  // CREATIVE (32)
+  { text: "Build a vehicle from a planet that has no roads.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a house for a mouse king. Don't forget the throne!", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a machine that does NOTHING useful — but looks important.", cat:"creative", age:"older", minPieces:25 },
+  { text: "Build a pet alien. What does it eat? Where does it sleep?", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a brand new kind of dinosaur no one has ever seen.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a robot whose ONLY job is to brush your teeth.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a treehouse for a squirrel who is also a wizard.", cat:"creative", age:"older", minPieces:25 },
+  { text: "Build a sandwich. A really, really weird sandwich.", cat:"creative", age:"young", minPieces:10 },
+  { text: "Build a hat for a giant. The bigger the better.", cat:"creative", age:"young", minPieces:10 },
+  { text: "Build a robot best friend. Give it three special features.", cat:"creative", age:"all", minPieces:25 },
+  { text: "Build a vehicle that travels underwater AND in space.", cat:"creative", age:"older", minPieces:25 },
+  { text: "Build a tiny kitchen for a tiny chef.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build something that looks delicious but isn't food.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a magical doorway to somewhere else.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a flying contraption with wings, propellers, AND balloons.", cat:"creative", age:"older", minPieces:25 },
+  { text: "Build the world's silliest hat.", cat:"creative", age:"young", minPieces:5 },
+  { text: "Build a bug nobody has ever discovered before.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a chair fit for a king who is also a frog.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build the secret base of a superhero whose power is sneezing.", cat:"creative", age:"older", minPieces:25 },
+  { text: "Build a thing that looks like it could fly... but can't.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a music instrument from an imaginary band.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a tiny robot pet that lives in your pocket.", cat:"creative", age:"young", minPieces:5 },
+  { text: "Build a machine that turns broccoli into ice cream.", cat:"creative", age:"all", minPieces:25 },
+  { text: "Build a vehicle for a tortoise who is in a HUGE hurry.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a portal to a candy dimension.", cat:"creative", age:"young", minPieces:10 },
+  { text: "Build a creature with too many legs.", cat:"creative", age:"young", minPieces:10 },
+  { text: "Build something that looks scary at first but is actually friendly.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a vending machine that only sells dreams.", cat:"creative", age:"older", minPieces:25 },
+  { text: "Build a treasure chest. What's inside? Decide!", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a giant bug that's actually really nice.", cat:"creative", age:"young", minPieces:10 },
+  { text: "Build the throne of a tiny king who rules a tiny kingdom.", cat:"creative", age:"all", minPieces:10 },
+  { text: "Build a contraption that delivers cookies to your bedroom.", cat:"creative", age:"older", minPieces:25 },
+
+  // CONSTRAINED (32)
+  { text: "Build ANYTHING — but using only 5 colors. Pick them first!", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build something amazing with exactly 10 pieces. Count them!", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build something with NO rectangle shapes anywhere.", cat:"constrained", age:"older", minPieces:25 },
+  { text: "Build something that stands up on a single peg or point.", cat:"constrained", age:"older", minPieces:10 },
+  { text: "Build only using pieces SMALLER than your pinky.", cat:"constrained", age:"older", minPieces:25 },
+  { text: "Build only with pieces of ONE color. Show off the texture!", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build with your eyes closed for 1 whole minute first.", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build using only the LARGEST pieces in your set.", cat:"constrained", age:"young", minPieces:5 },
+  { text: "Build a tower using just ONE hand.", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build something that's perfectly symmetrical — same on both sides.", cat:"constrained", age:"older", minPieces:10 },
+  { text: "Build using exactly 25 pieces. No more, no less.", cat:"constrained", age:"older", minPieces:25 },
+  { text: "Build something with only 5 pieces. Make it count!", cat:"constrained", age:"all", minPieces:5 },
+  { text: "Build a thing that's MORE empty space than pieces.", cat:"constrained", age:"older", minPieces:25 },
+  { text: "Build something rainbow-colored — at least one piece of each color.", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build using ONLY 2 colors. Make them tell a story together.", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build something that fits inside a cereal bowl.", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build something taller than the box of pieces, with only 15 pieces.", cat:"constrained", age:"older", minPieces:25 },
+  { text: "Build with no pieces touching the floor — it has to hover or hang!", cat:"constrained", age:"older", minPieces:25 },
+  { text: "Build something using only your non-dominant hand.", cat:"constrained", age:"older", minPieces:10 },
+  { text: "Build with each piece a different color than the one below it.", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build using only round-ish pieces. No square edges allowed.", cat:"constrained", age:"older", minPieces:10 },
+  { text: "Build with NO red pieces at all.", cat:"constrained", age:"young", minPieces:10 },
+  { text: "Build something that's flat — no taller than your thumb.", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build with only pieces you find in 60 seconds. GO!", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build using one type of piece, repeated over and over.", cat:"constrained", age:"all", minPieces:25 },
+  { text: "Build with a hole big enough to peek through.", cat:"constrained", age:"young", minPieces:10 },
+  { text: "Build using only pieces with bumps on top, none of the flat ones.", cat:"constrained", age:"older", minPieces:25 },
+  { text: "Build something that balances on a single Lego brick.", cat:"constrained", age:"older", minPieces:10 },
+  { text: "Build using only pieces with at least 4 bumps each.", cat:"constrained", age:"older", minPieces:25 },
+  { text: "Build with each level using fewer pieces than the one below.", cat:"constrained", age:"all", minPieces:10 },
+  { text: "Build using only 'special' shaped pieces — no plain bricks.", cat:"constrained", age:"older", minPieces:25 },
+  { text: "Build without using a SINGLE flat plate piece.", cat:"constrained", age:"older", minPieces:10 },
+
+  // THEMATIC (32)
+  { text: "Build an elephant. Trunk required!", cat:"thematic", age:"all", minPieces:25 },
+  { text: "Build a giraffe with the longest neck you can manage.", cat:"thematic", age:"all", minPieces:25 },
+  { text: "Build a snake. The longer, the better.", cat:"thematic", age:"young", minPieces:10 },
+  { text: "Build a turtle with a shell.", cat:"thematic", age:"young", minPieces:10 },
+  { text: "Build the Eiffel Tower (your version!).", cat:"thematic", age:"older", minPieces:25 },
+  { text: "Build a castle from a fairy tale. Sleeping Beauty? Cinderella? You choose.", cat:"thematic", age:"all", minPieces:25 },
+  { text: "Build a pyramid like the ones in Egypt.", cat:"thematic", age:"all", minPieces:25 },
+  { text: "Build a lighthouse on a tiny island.", cat:"thematic", age:"all", minPieces:25 },
+  { text: "Build a windmill with spinny blades on top.", cat:"thematic", age:"older", minPieces:25 },
+  { text: "Build the three bears' house from Goldilocks — three of every chair!", cat:"thematic", age:"young", minPieces:25 },
+  { text: "Build a Big Ben clock tower.", cat:"thematic", age:"older", minPieces:25 },
+  { text: "Build a dragon. Wings, scales, and a big tail!", cat:"thematic", age:"all", minPieces:25 },
+  { text: "Build Rapunzel's tower — extra tall, with one little window at the top.", cat:"thematic", age:"all", minPieces:25 },
+  { text: "Build a butterfly with colorful wings.", cat:"thematic", age:"young", minPieces:10 },
+  { text: "Build a penguin family — at least 2!", cat:"thematic", age:"young", minPieces:10 },
+  { text: "Build the Three Little Pigs' brick house (the strong one).", cat:"thematic", age:"young", minPieces:10 },
+  { text: "Build the Statue of Liberty holding her torch up high.", cat:"thematic", age:"older", minPieces:25 },
+  { text: "Build a fish with fins and a tail.", cat:"thematic", age:"young", minPieces:10 },
+  { text: "Build a unicorn. Horn is the most important part!", cat:"thematic", age:"all", minPieces:10 },
+  { text: "Build the witch's gingerbread house from Hansel & Gretel.", cat:"thematic", age:"all", minPieces:25 },
+  { text: "Build a cat that fits in your palm.", cat:"thematic", age:"young", minPieces:5 },
+  { text: "Build a dog. What kind? You decide!", cat:"thematic", age:"young", minPieces:10 },
+  { text: "Build the Golden Gate Bridge (or any famous bridge).", cat:"thematic", age:"older", minPieces:25 },
+  { text: "Build the Three Billy Goats Gruff's bridge — with a troll under it!", cat:"thematic", age:"all", minPieces:25 },
+  { text: "Build a crocodile with a snappy mouth.", cat:"thematic", age:"all", minPieces:10 },
+  { text: "Build the Hogwarts Great Hall (or any magical school).", cat:"thematic", age:"older", minPieces:25 },
+  { text: "Build a flower with petals and a stem.", cat:"thematic", age:"young", minPieces:10 },
+  { text: "Build a spaceship like the ones in space movies.", cat:"thematic", age:"all", minPieces:25 },
+  { text: "Build the Wolf from Little Red Riding Hood — make him look sneaky!", cat:"thematic", age:"young", minPieces:10 },
+  { text: "Build an octopus with all 8 arms.", cat:"thematic", age:"all", minPieces:10 },
+  { text: "Build a tree house from the Magic Tree House books.", cat:"thematic", age:"older", minPieces:25 },
+  { text: "Build Jack's beanstalk reaching up to the clouds.", cat:"thematic", age:"all", minPieces:25 },
+
+  // NARRATIVE (32)
+  { text: "Build the secret base where the heroes plan their mission.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build what the villain stole. It must look VERY important.", cat:"narrative", age:"all", minPieces:10 },
+  { text: "Build the trap our heroes have to escape from.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the magic object that saves the day.", cat:"narrative", age:"all", minPieces:10 },
+  { text: "Build the secret hideout of a tiny detective.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the bridge the heroes have to cross to win.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the throne room of the kingdom no one is allowed to visit.", cat:"narrative", age:"older", minPieces:25 },
+  { text: "Build the spaceship that crash-landed in the backyard.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the ancient temple with treasure hidden inside.", cat:"narrative", age:"older", minPieces:25 },
+  { text: "Build the lab where the mad scientist works.", cat:"narrative", age:"older", minPieces:25 },
+  { text: "Build the boss monster at the end of the level. Make it scary!", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the door that no one has opened in 1000 years.", cat:"narrative", age:"all", minPieces:10 },
+  { text: "Build the hero's vehicle — fast, cool, and one of a kind.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the cage where the dragon was kept.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the village the dragon burned down (now rebuilt!).", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the wizard's spellbook stand.", cat:"narrative", age:"all", minPieces:10 },
+  { text: "Build the time machine. What year is it set to?", cat:"narrative", age:"older", minPieces:25 },
+  { text: "Build the captain's pirate ship.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the rocket that takes the puppy hero to the moon.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the witch's cauldron and the table she works on.", cat:"narrative", age:"young", minPieces:10 },
+  { text: "Build the kingdom under the sea.", cat:"narrative", age:"older", minPieces:25 },
+  { text: "Build the prison the villain finally ends up in.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the camp where the heroes sleep before the big battle.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the secret message left for the next adventurer.", cat:"narrative", age:"older", minPieces:10 },
+  { text: "Build the cave where the bear is hibernating.", cat:"narrative", age:"young", minPieces:10 },
+  { text: "Build the lonely robot's home on a faraway planet.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the queen's crown — the kind no one is allowed to touch.", cat:"narrative", age:"young", minPieces:10 },
+  { text: "Build the racetrack for the great toy car championship.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the bakery where the gingerbread man came from.", cat:"narrative", age:"young", minPieces:10 },
+  { text: "Build the watchtower where the friendly giant keeps lookout.", cat:"narrative", age:"all", minPieces:25 },
+  { text: "Build the magic carpet (lying flat is allowed!) with patterns.", cat:"narrative", age:"all", minPieces:10 },
+  { text: "Build the underwater submarine that found the lost city.", cat:"narrative", age:"older", minPieces:25 },
+
+  // SPEED (20)
+  { text: "⚡ 1-MINUTE BUILD: A house. Any house. GO!", cat:"speed", age:"all", minPieces:5 },
+  { text: "⚡ 1-MINUTE BUILD: Tallest tower you can stack. Ready, set...", cat:"speed", age:"all", minPieces:10 },
+  { text: "⚡ 1-MINUTE BUILD: An animal. Any animal. Quick!", cat:"speed", age:"young", minPieces:5 },
+  { text: "⚡ 1-MINUTE BUILD: Something that rolls.", cat:"speed", age:"all", minPieces:5 },
+  { text: "⚡ 1-MINUTE BUILD: Something with a face.", cat:"speed", age:"young", minPieces:5 },
+  { text: "🕒 3-MINUTE BUILD: A vehicle of any kind.", cat:"speed", age:"all", minPieces:10 },
+  { text: "🕒 3-MINUTE BUILD: A bridge. Make it strong!", cat:"speed", age:"all", minPieces:10 },
+  { text: "🕒 3-MINUTE BUILD: A robot with arms AND legs.", cat:"speed", age:"all", minPieces:10 },
+  { text: "🕒 3-MINUTE BUILD: A castle wall with a gate.", cat:"speed", age:"all", minPieces:10 },
+  { text: "🕒 3-MINUTE BUILD: A bug or insect.", cat:"speed", age:"young", minPieces:5 },
+  { text: "🕒 3-MINUTE BUILD: Your favorite snack, as a Lego sculpture.", cat:"speed", age:"all", minPieces:10 },
+  { text: "⏱️ 5-MINUTE BUILD: Your dream bedroom (mini version!).", cat:"speed", age:"all", minPieces:25 },
+  { text: "⏱️ 5-MINUTE BUILD: A garden with flowers and a fence.", cat:"speed", age:"all", minPieces:25 },
+  { text: "⏱️ 5-MINUTE BUILD: A pet for an alien.", cat:"speed", age:"all", minPieces:10 },
+  { text: "⏱️ 5-MINUTE BUILD: A treehouse.", cat:"speed", age:"all", minPieces:25 },
+  { text: "⏱️ 5-MINUTE BUILD: A scene from a book you love.", cat:"speed", age:"older", minPieces:25 },
+  { text: "⏱️ 5-MINUTE BUILD: A boat that could (maybe?) float.", cat:"speed", age:"all", minPieces:10 },
+  { text: "⏱️ 5-MINUTE BUILD: A monument honoring the family pet.", cat:"speed", age:"all", minPieces:10 },
+  { text: "⏱️ 5-MINUTE BUILD: A playground for tiny figures.", cat:"speed", age:"all", minPieces:25 },
+  { text: "⏱️ 5-MINUTE BUILD: A vehicle with at least 6 wheels.", cat:"speed", age:"all", minPieces:25 }
+];
+
+const CAT_INFO = {
+  structural:  { color: "#4D96FF", emoji: "🏛️", label: "Structural" },
+  creative:    { color: "#FF6B6B", emoji: "✨",  label: "Creative" },
+  constrained: { color: "#FFD93D", emoji: "🎯", label: "Constrained" },
+  thematic:    { color: "#6BCB77", emoji: "🦒", label: "Thematic" },
+  narrative:   { color: "#9B59B6", emoji: "📖", label: "Narrative" },
+  speed:       { color: "#FF9F43", emoji: "⚡", label: "Speed" }
+};
+const CATS = Object.keys(CAT_INFO);
+
+/* ============== STATE ============== */
+const STATE = {
+  age: 'all',
+  pieces: 0,
+  cat: 'all',
+  current: null,
+  favorites: JSON.parse(localStorage.getItem('lcg_favs') || '[]'),
+  gallery: JSON.parse(localStorage.getItem('lcg_gallery') || '[]'),
+  battle: null
+};
+
+function saveFavs() { localStorage.setItem('lcg_favs', JSON.stringify(STATE.favorites)); }
+function saveGallery() { localStorage.setItem('lcg_gallery', JSON.stringify(STATE.gallery)); }
+
+/* ============== WHEEL DRAWING ============== */
+function drawWheel() {
+  const svg = document.getElementById('wheel');
+  const cx = 100, cy = 100, r = 95;
+  const n = CATS.length;
+  const slice = (Math.PI * 2) / n;
+  let html = '';
+  CATS.forEach((cat, i) => {
+    const a1 = i * slice - Math.PI / 2;
+    const a2 = a1 + slice;
+    const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+    const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
+    const path = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`;
+    html += `<path d="${path}" fill="${CAT_INFO[cat].color}" stroke="#222" stroke-width="2"/>`;
+    // Label
+    const tA = a1 + slice / 2;
+    const tx = cx + (r * 0.62) * Math.cos(tA);
+    const ty = cy + (r * 0.62) * Math.sin(tA);
+    const deg = (tA * 180 / Math.PI) + 90;
+    html += `<g transform="translate(${tx} ${ty}) rotate(${deg})">
+      <text text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="bold" fill="#222">${CAT_INFO[cat].emoji}</text>
+      <text text-anchor="middle" dominant-baseline="middle" font-size="7" font-weight="bold" fill="#222" y="14">${CAT_INFO[cat].label.toUpperCase()}</text>
+    </g>`;
+  });
+  svg.innerHTML = html;
+}
+
+/* ============== AUDIO ============== */
+let audioCtx;
+function chime(freq = 880, dur = 0.18, type = 'sine') {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq;
+    o.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0.18, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  } catch (e) {}
+}
+function chimeDone() {
+  chime(660, 0.18); setTimeout(() => chime(880, 0.18), 180); setTimeout(() => chime(1100, 0.32), 360);
+}
+
+/* ============== FILTER ============== */
+function filterPool() {
+  return CHALLENGES.filter(c => {
+    if (STATE.cat !== 'all' && c.cat !== STATE.cat) return false;
+    if (STATE.age !== 'all' && c.age !== 'all' && c.age !== STATE.age) return false;
+    if (STATE.pieces > 0 && c.minPieces > STATE.pieces) return false;
+    return true;
+  });
+}
+
+/* ============== SPIN ============== */
+let spinning = false;
+let wheelRotation = 0;
+let recentIds = [];
+
+function pickChallenge(cat) {
+  let pool = filterPool();
+  if (cat) pool = pool.filter(c => c.cat === cat);
+  if (!pool.length) return null;
+  // Avoid recent repeats
+  const fresh = pool.filter(c => !recentIds.includes(c.text));
+  const final = fresh.length ? fresh : pool;
+  const pick = final[Math.floor(Math.random() * final.length)];
+  recentIds.push(pick.text);
+  if (recentIds.length > 30) recentIds.shift();
+  return pick;
+}
+
+function spinWheel(forceCat) {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('spinningMsg').textContent = "🎡 Spinning...";
+  document.getElementById('challengeArea').innerHTML = '';
+
+  // Pick category (respect filter if set)
+  let targetCat;
+  if (forceCat) {
+    targetCat = forceCat;
+  } else if (STATE.cat !== 'all') {
+    targetCat = STATE.cat;
+  } else {
+    // pick a cat that has at least one valid challenge after age+pieces filter
+    const validCats = CATS.filter(c => CHALLENGES.some(ch => ch.cat === c && (STATE.age === 'all' || ch.age === 'all' || ch.age === STATE.age) && (STATE.pieces === 0 || ch.minPieces <= STATE.pieces)));
+    if (!validCats.length) { spinning = false; document.getElementById('spinBtn').disabled = false; document.getElementById('spinningMsg').textContent = 'Try changing filters!'; return; }
+    targetCat = validCats[Math.floor(Math.random() * validCats.length)];
+  }
+
+  const catIdx = CATS.indexOf(targetCat);
+  const sliceDeg = 360 / CATS.length;
+  // Slice center, pointer is at top (-90° in path coords, which means slice 0 is at top)
+  const sliceCenter = catIdx * sliceDeg + sliceDeg / 2;
+  // Rotate so target slice ends up at top (0°). We want -sliceCenter mod 360.
+  const targetAngle = (360 - sliceCenter) % 360;
+  // Spin at least 5 full rotations then land on target
+  const turns = 5 + Math.floor(Math.random() * 3);
+  const finalRotation = wheelRotation + turns * 360 + (targetAngle - (wheelRotation % 360));
+  wheelRotation = finalRotation;
+
+  const wheel = document.getElementById('wheel');
+  wheel.style.transform = `rotate(${wheelRotation}deg)`;
+
+  // Audio: ticks
+  let tickInterval = setInterval(() => chime(400, 0.04, 'square'), 90);
+  setTimeout(() => clearInterval(tickInterval), 3500);
+
+  setTimeout(() => {
+    spinning = false;
+    document.getElementById('spinBtn').disabled = false;
+    document.getElementById('spinningMsg').textContent = '';
+    const challenge = pickChallenge(targetCat);
+    if (challenge) {
+      STATE.current = challenge;
+      renderChallenge(challenge);
+      chime(880, 0.25);
+    } else {
+      document.getElementById('challengeArea').innerHTML = '<div class="empty-state">No matches! Try widening filters.</div>';
+    }
+  }, 4100);
+}
+
+/* ============== RENDER CHALLENGE ============== */
+function renderChallenge(ch) {
+  const info = CAT_INFO[ch.cat];
+  const isFav = STATE.favorites.some(f => f.text === ch.text);
+  const area = document.getElementById('challengeArea');
+  area.innerHTML = `
+    <div class="challenge-card" style="border-color:${info.color}; box-shadow: 0 8px 0 ${info.color};">
+      <span class="cat-badge" style="background:${info.color}; color:#fff;">${info.emoji} ${info.label}</span>
+      <div class="challenge-text">${ch.text}</div>
+      <div class="challenge-meta">
+        <span class="meta-tag">${ch.age === 'all' ? '👶 Any age' : ch.age === 'young' ? '🧒 Young (4–6)' : '🧑 Older (7+)'}</span>
+        <span class="meta-tag">🧱 ~${ch.minPieces}+ pieces</span>
+      </div>
+      <div class="card-actions">
+        <button class="btn-skip" id="actSkip">🔄 Reroll</button>
+        <button class="btn-fav ${isFav ? 'on' : ''}" id="actFav">${isFav ? '★ Saved' : '☆ Save'}</button>
+        <button class="btn-timer" id="actTimer">⏱️ Timer</button>
+        <button class="btn-battle" id="actBattle">⚔️ Family Battle</button>
+        <button class="btn-photo" id="actPhoto">📸 Snap Build</button>
+        <input type="file" accept="image/*" capture="environment" id="photoInput" style="display:none;">
+      </div>
+    </div>
+  `;
+  document.getElementById('actSkip').onclick = () => spinWheel();
+  document.getElementById('actFav').onclick = () => toggleFav(ch);
+  document.getElementById('actTimer').onclick = () => openTimerSetup();
+  document.getElementById('actBattle').onclick = () => openBattleSetup();
+  document.getElementById('actPhoto').onclick = () => document.getElementById('photoInput').click();
+  document.getElementById('photoInput').onchange = (e) => handlePhoto(e, ch);
+}
+
+/* ============== FAVES ============== */
+function toggleFav(ch) {
+  const idx = STATE.favorites.findIndex(f => f.text === ch.text);
+  if (idx >= 0) STATE.favorites.splice(idx, 1);
+  else STATE.favorites.unshift({ text: ch.text, cat: ch.cat, age: ch.age, minPieces: ch.minPieces, ts: Date.now() });
+  saveFavs();
+  renderChallenge(ch);
+  renderFavs();
+  chime(idx >= 0 ? 440 : 880, 0.12);
+}
+
+function renderFavs() {
+  const list = document.getElementById('favList');
+  if (!STATE.favorites.length) {
+    list.innerHTML = '<div class="empty-state"><span class="emoji">⭐</span>No favorites yet! Star the prompts you love.</div>';
+    return;
+  }
+  list.innerHTML = STATE.favorites.map((f, i) => {
+    const info = CAT_INFO[f.cat];
+    return `<div class="fav-item">
+      <div class="fav-item-text">
+        ${f.text}
+        <span class="fav-item-badge">${info.emoji} ${info.label}</span>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button data-act="play" data-i="${i}" style="background:#6BCB77;">▶</button>
+        <button data-act="del" data-i="${i}">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      const i = +b.dataset.i;
+      if (b.dataset.act === 'del') {
+        STATE.favorites.splice(i, 1);
+        saveFavs(); renderFavs();
+      } else {
+        STATE.current = { ...STATE.favorites[i] };
+        showScreen('spin');
+        renderChallenge(STATE.current);
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }
+    };
+  });
+}
+
+/* ============== PHOTO ============== */
+function handlePhoto(ev, ch) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    // Compress: load into image, resize, output dataURL
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 600;
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = cv.toDataURL('image/jpeg', 0.7);
+      STATE.gallery.unshift({
+        img: dataUrl, text: ch.text, cat: ch.cat, ts: Date.now()
+      });
+      // Keep gallery from blowing up localStorage
+      if (STATE.gallery.length > 40) STATE.gallery = STATE.gallery.slice(0, 40);
+      try { saveGallery(); chime(1000, 0.18); alert('📸 Saved to your build gallery!'); }
+      catch (err) { alert("Couldn't save — gallery may be full. Delete some old builds!"); }
+      renderGallery();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderGallery() {
+  const grid = document.getElementById('galleryGrid');
+  if (!STATE.gallery.length) {
+    grid.innerHTML = '<div class="empty-state"><span class="emoji">📸</span>No builds yet! Snap photos when you finish a challenge.</div>';
+    return;
+  }
+  grid.innerHTML = STATE.gallery.map((g, i) => {
+    const info = CAT_INFO[g.cat] || { color:'#888', emoji:'🧱', label:'Build' };
+    const date = new Date(g.ts).toLocaleDateString();
+    return `<div class="gallery-item">
+      <img src="${g.img}" alt="build">
+      <div class="gallery-caption">
+        <strong>${info.emoji}</strong> ${g.text}
+        <div style="font-size:0.7rem; color:#999; margin-top:4px;">${date}</div>
+      </div>
+      <div class="gallery-actions">
+        <button data-i="${i}" data-act="del" class="del">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      const i = +b.dataset.i;
+      if (confirm('Delete this build photo?')) {
+        STATE.gallery.splice(i, 1); saveGallery(); renderGallery();
+      }
+    };
+  });
+}
+
+/* ============== TIMER ============== */
+let timerInterval = null;
+function openTimerSetup() {
+  document.getElementById('timerSetupModal').classList.remove('hidden');
+}
+function closeTimerSetup() {
+  document.getElementById('timerSetupModal').classList.add('hidden');
+}
+function startTimer(minutes, onDone) {
+  const totalSec = minutes * 60;
+  let elapsed = 0;
+  const ring = document.getElementById('timerRingFg');
+  const txt = document.getElementById('timerText');
+  const overlay = document.getElementById('timerOverlay');
+  document.getElementById('timerPrompt').textContent = STATE.current ? STATE.current.text : 'Build!';
+  overlay.classList.remove('hidden');
+  const circumference = 565.48;
+  const tick = () => {
+    const remain = totalSec - elapsed;
+    const m = Math.floor(remain / 60), s = remain % 60;
+    txt.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    ring.style.strokeDashoffset = circumference * (elapsed / totalSec);
+    if (remain <= 5 && remain > 0) chime(1200 + (5 - remain) * 80, 0.08);
+    if (elapsed >= totalSec) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      chimeDone();
+      txt.textContent = 'TIME!';
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        if (onDone) onDone();
+      }, 1500);
+    }
+    elapsed++;
+  };
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  document.getElementById('timerOverlay').classList.add('hidden');
+}
+
+/* ============== BATTLE ============== */
+function openBattleSetup() {
+  if (!STATE.current) { alert('Spin first to get a challenge!'); return; }
+  STATE.battle = { players: ['Player 1', 'Player 2'], mins: 5, votes: {} };
+  renderPlayerList();
+  document.getElementById('battleModal').classList.remove('hidden');
+}
+function renderPlayerList() {
+  const list = document.getElementById('playerList');
+  list.innerHTML = STATE.battle.players.map((p, i) =>
+    `<div class="player-row">
+      <input type="text" value="${p}" data-i="${i}" placeholder="Name">
+      ${STATE.battle.players.length > 2 ? `<button data-i="${i}">✕</button>` : ''}
+    </div>`
+  ).join('');
+  list.querySelectorAll('input').forEach(inp => {
+    inp.oninput = () => STATE.battle.players[+inp.dataset.i] = inp.value || `Player ${+inp.dataset.i + 1}`;
+  });
+  list.querySelectorAll('button').forEach(b => {
+    b.onclick = () => { STATE.battle.players.splice(+b.dataset.i, 1); renderPlayerList(); };
+  });
+}
+function startBattle() {
+  STATE.battle.votes = {};
+  STATE.battle.players.forEach(p => STATE.battle.votes[p] = 0);
+  document.getElementById('battleModal').classList.add('hidden');
+  startTimer(STATE.battle.mins, openVoteScreen);
+}
+function openVoteScreen() {
+  const vm = document.getElementById('voteModal');
+  const list = document.getElementById('voteList');
+  list.innerHTML = STATE.battle.players.map((p, i) =>
+    `<div class="vote-card">
+      <h3>🧱 ${p}</h3>
+      <div class="vote-btns">
+        ${STATE.battle.players.map((voter, vi) => vi !== i ?
+          `<button class="vote-btn" data-voter="${vi}" data-for="${i}">${voter} 👍</button>` : ''
+        ).join('')}
+      </div>
+    </div>`
+  ).join('');
+  list.querySelectorAll('.vote-btn').forEach(b => {
+    b.onclick = () => {
+      if (b.classList.contains('voted')) return;
+      b.classList.add('voted');
+      const builder = STATE.battle.players[+b.dataset.for];
+      STATE.battle.votes[builder] = (STATE.battle.votes[builder] || 0) + 1;
+      chime(700, 0.1);
+    };
+  });
+  vm.classList.remove('hidden');
+}
+function crownWinner() {
+  const list = document.getElementById('voteList');
+  let max = -1, winner = '';
+  Object.entries(STATE.battle.votes).forEach(([p, v]) => {
+    if (v > max) { max = v; winner = p; }
+  });
+  const tied = Object.values(STATE.battle.votes).filter(v => v === max).length > 1;
+  list.innerHTML = '';
+  const banner = document.createElement('div');
+  banner.className = 'winner-banner';
+  if (tied) {
+    banner.innerHTML = `🤝 IT'S A TIE!<br><span style="font-size:1rem;">Everyone built something amazing.</span>`;
+  } else {
+    banner.innerHTML = `👑 ${winner} WINS!<br><span style="font-size:1rem;">(${max} vote${max===1?'':'s'})<br>But every build rocked.</span>`;
+  }
+  list.appendChild(banner);
+  // Show all scores
+  const scores = document.createElement('div');
+  scores.style.cssText = 'margin-top:14px; font-size:0.95rem; color:#444;';
+  scores.innerHTML = Object.entries(STATE.battle.votes).map(([p, v]) =>
+    `<div>${p}: ${'⭐'.repeat(v) || '👏'}</div>`
+  ).join('');
+  list.appendChild(scores);
+  chimeDone();
+  document.getElementById('voteDoneBtn').textContent = 'Done!';
+  document.getElementById('voteDoneBtn').onclick = () => {
+    document.getElementById('voteModal').classList.add('hidden');
+    document.getElementById('voteDoneBtn').textContent = 'Crown the winner! 👑';
+    document.getElementById('voteDoneBtn').onclick = crownWinner;
+  };
+}
+
+/* ============== SCREENS ============== */
+function showScreen(name) {
+  ['spin', 'favorites', 'gallery', 'about'].forEach(s => {
+    document.getElementById('screen-' + s).classList.toggle('hidden', s !== name);
+  });
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.screen === name);
+  });
+  if (name === 'favorites') renderFavs();
+  if (name === 'gallery') renderGallery();
+}
+
+/* ============== INIT ============== */
+function init() {
+  drawWheel();
+  document.getElementById('spinBtn').onclick = () => spinWheel();
+
+  // Filter pills
+  document.getElementById('age-pills').addEventListener('click', e => {
+    if (!e.target.matches('.pill')) return;
+    STATE.age = e.target.dataset.age;
+    document.querySelectorAll('#age-pills .pill').forEach(p => p.classList.toggle('active', p === e.target));
+  });
+  document.getElementById('piece-pills').addEventListener('click', e => {
+    if (!e.target.matches('.pill')) return;
+    STATE.pieces = +e.target.dataset.pieces;
+    document.querySelectorAll('#piece-pills .pill').forEach(p => p.classList.toggle('active', p === e.target));
+  });
+  document.getElementById('cat-pills').addEventListener('click', e => {
+    if (!e.target.matches('.pill')) return;
+    STATE.cat = e.target.dataset.cat;
+    document.querySelectorAll('#cat-pills .pill').forEach(p => p.classList.toggle('active', p === e.target));
+  });
+
+  // Nav
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.onclick = () => showScreen(b.dataset.screen);
+  });
+
+  // Timer setup modal
+  document.getElementById('timerSetupCancel').onclick = closeTimerSetup;
+  document.getElementById('timerSetupStart').onclick = () => {
+    const active = document.querySelector('#timerPills .pill.active');
+    const mins = active ? +active.dataset.mins : 5;
+    closeTimerSetup();
+    startTimer(mins);
+  };
+  document.getElementById('timerPills').addEventListener('click', e => {
+    if (!e.target.matches('.pill')) return;
+    document.querySelectorAll('#timerPills .pill').forEach(p => p.classList.toggle('active', p === e.target));
+  });
+  document.getElementById('timerStopBtn').onclick = stopTimer;
+
+  // Battle modal
+  document.getElementById('battleCancelBtn').onclick = () => document.getElementById('battleModal').classList.add('hidden');
+  document.getElementById('addPlayerBtn').onclick = () => {
+    if (STATE.battle.players.length >= 4) { alert('Max 4 builders!'); return; }
+    STATE.battle.players.push(`Player ${STATE.battle.players.length + 1}`);
+    renderPlayerList();
+  };
+  document.getElementById('battleTimerPills').addEventListener('click', e => {
+    if (!e.target.matches('.pill')) return;
+    STATE.battle.mins = +e.target.dataset.mins;
+    document.querySelectorAll('#battleTimerPills .pill').forEach(p => p.classList.toggle('active', p === e.target));
+  });
+  document.getElementById('battleStartBtn').onclick = startBattle;
+  document.getElementById('voteDoneBtn').onclick = crownWinner;
+}
+
+init();
+</script>
+</body>
+</html>

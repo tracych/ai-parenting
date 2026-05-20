@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Joke Lab 😂 — invent jokes together</title>
+<style>
+  :root {
+    --cream: #fff8e7;
+    --cream-2: #ffeec2;
+    --paper: #fffdf6;
+    --grape: #6b4ea3;
+    --grape-soft: #e3d6f5;
+    --lemon: #ffd84a;
+    --lemon-soft: #fff2a8;
+    --coral: #ff6b6b;
+    --coral-soft: #ffd0d0;
+    --mint: #4cc9a0;
+    --mint-soft: #cdf2e4;
+    --ink: #2b2330;
+    --ink-soft: #6a6275;
+    --line: #e4dcc7;
+    --shadow: 0 4px 14px rgba(43, 35, 48, 0.10);
+    --shadow-lift: 0 10px 28px rgba(43, 35, 48, 0.18);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  header {
+    padding: 24px 16px 8px;
+    text-align: center;
+    background: linear-gradient(180deg, var(--cream-2) 0%, var(--cream) 100%);
+    border-bottom: 2px dashed var(--line);
+  }
+  header h1 {
+    margin: 0;
+    font-size: clamp(1.7rem, 5vw, 2.2rem);
+    letter-spacing: -0.5px;
+  }
+  header h1 .emoji { display: inline-block; transform: rotate(-8deg); }
+  header p {
+    margin: 6px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.98rem;
+  }
+  nav.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 14px auto 0;
+    flex-wrap: wrap;
+    padding: 0 12px;
+    max-width: 760px;
+  }
+  nav.tabs button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--ink-soft);
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.95rem;
+    transition: all 0.15s ease;
+  }
+  nav.tabs button:hover { background: var(--cream-2); }
+  nav.tabs button.active {
+    background: var(--grape);
+    color: white;
+    border-color: var(--grape);
+    box-shadow: var(--shadow);
+  }
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 18px 16px 80px;
+  }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ===== Buttons ===== */
+  button.primary, button.secondary, button.ghost {
+    border-radius: 12px;
+    padding: 12px 22px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
+  }
+  button.primary {
+    background: var(--coral);
+    border: none;
+    color: white;
+    box-shadow: var(--shadow);
+  }
+  button.primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+  button.secondary {
+    background: var(--paper);
+    border: 1.5px solid var(--grape);
+    color: var(--grape);
+  }
+  button.secondary:hover { background: var(--grape-soft); }
+  button.ghost {
+    background: transparent;
+    border: 1.5px dashed var(--ink-soft);
+    color: var(--ink-soft);
+  }
+  button.ghost:hover { background: var(--cream-2); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ===== Joke of the Day ===== */
+  .jotd {
+    background: var(--paper);
+    border: 2px solid var(--lemon);
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin: 0 auto 22px;
+    max-width: 600px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    position: relative;
+  }
+  .jotd .ribbon {
+    position: absolute;
+    top: -12px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--lemon);
+    color: var(--ink);
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .jotd .setup { font-size: 1.1rem; margin: 8px 0 4px; }
+  .jotd .punch { font-size: 1.15rem; color: var(--grape); font-weight: 600; margin: 4px 0; }
+  .jotd .actions { margin-top: 12px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+
+  /* ===== Start / Pickers ===== */
+  .section-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--ink-soft);
+    margin: 22px 0 10px;
+    font-weight: 700;
+  }
+  .pill-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pill {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    padding: 9px 16px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.95rem;
+    transition: all 0.12s ease;
+    user-select: none;
+  }
+  .pill:hover { border-color: var(--grape); }
+  .pill.active {
+    background: var(--grape);
+    color: white;
+    border-color: var(--grape);
+    box-shadow: var(--shadow);
+  }
+  .pill .ico { margin-right: 6px; }
+
+  .deal-row {
+    margin-top: 22px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* ===== Seed cards ===== */
+  .seeds {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-top: 20px;
+  }
+  .seed-card {
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .seed-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--coral);
+    box-shadow: var(--shadow-lift);
+  }
+  .seed-card .label {
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .seed-card .setup-line { font-size: 1rem; }
+  .seed-card .punch-line { color: var(--grape); font-weight: 600; }
+  .seed-card .use-btn {
+    margin-top: 8px;
+    background: var(--lemon);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ===== Editor ===== */
+  .editor {
+    background: var(--paper);
+    border-radius: 18px;
+    padding: 20px;
+    margin-top: 22px;
+    box-shadow: var(--shadow);
+    border: 2px solid var(--grape-soft);
+  }
+  .editor h3 { margin: 0 0 6px; color: var(--grape); }
+  .editor .hint { color: var(--ink-soft); font-size: 0.92rem; margin: 0 0 14px; }
+  .editor label {
+    display: block;
+    font-weight: 600;
+    margin: 10px 0 4px;
+    color: var(--ink);
+  }
+  .editor textarea, .editor input[type=text], .editor select {
+    width: 100%;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 1rem;
+    background: var(--cream);
+    resize: vertical;
+  }
+  .editor textarea:focus, .editor input:focus, .editor select:focus {
+    outline: none;
+    border-color: var(--grape);
+  }
+  .editor .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .editor .row > * { flex: 1; min-width: 120px; }
+
+  .editor-actions {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  /* ===== Rating ===== */
+  .rating-card {
+    margin-top: 18px;
+    background: var(--lemon-soft);
+    border: 2px solid var(--lemon);
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+    animation: pop 0.4s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.9); opacity: 0; }
+    60% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .rating-card .stars { font-size: 2.2rem; letter-spacing: 4px; }
+  .rating-card .breakdown {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 10px 0 6px;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+  }
+  .rating-card .feedback {
+    font-size: 1.05rem;
+    margin-top: 6px;
+    color: var(--ink);
+  }
+
+  /* ===== Joke Book ===== */
+  .book-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .book-meta { color: var(--ink-soft); font-size: 0.9rem; }
+  .joke-page {
+    background: var(--paper);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+    border-left: 6px solid var(--grape);
+    position: relative;
+  }
+  .joke-page .tag-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .joke-page .tag {
+    background: var(--cream-2);
+    padding: 2px 9px;
+    border-radius: 999px;
+  }
+  .joke-page .setup-line { font-size: 1.05rem; }
+  .joke-page .punch-line { color: var(--grape); font-weight: 700; font-size: 1.1rem; margin-top: 4px; }
+  .joke-page .joke-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .joke-page .joke-actions button {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .joke-page .joke-actions button:hover { background: var(--cream-2); color: var(--ink); }
+  .stars-mini { color: #d49500; letter-spacing: 1px; }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .pagination button {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font: inherit;
+  }
+  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ink-soft);
+  }
+  .empty-state .big-emoji { font-size: 3rem; }
+
+  /* ===== Present mode ===== */
+  #presentOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--grape);
+    color: white;
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    text-align: center;
+  }
+  #presentOverlay.on { display: flex; }
+  #presentOverlay .setup-big {
+    font-size: clamp(1.6rem, 6vw, 3rem);
+    max-width: 900px;
+    line-height: 1.3;
+    margin-bottom: 28px;
+  }
+  #presentOverlay .punch-big {
+    font-size: clamp(1.8rem, 7vw, 3.4rem);
+    max-width: 900px;
+    line-height: 1.25;
+    color: var(--lemon);
+    font-weight: 700;
+    display: none;
+    animation: pop 0.4s ease;
+  }
+  #presentOverlay.revealed .punch-big { display: block; }
+  #presentOverlay.revealed .reveal-btn { display: none; }
+  #presentOverlay .reveal-btn {
+    background: var(--lemon);
+    border: none;
+    color: var(--ink);
+    padding: 16px 30px;
+    border-radius: 14px;
+    font: inherit;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  }
+  #presentOverlay .close-btn {
+    position: absolute;
+    top: 18px; right: 18px;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.3rem;
+  }
+  #presentOverlay .meta-line {
+    margin-top: 30px;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.9rem;
+  }
+
+  /* ===== About / footer ===== */
+  footer {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    padding: 20px 16px 30px;
+  }
+
+  /* ===== Toast ===== */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--ink);
+    color: white;
+    padding: 10px 18px;
+    border-radius: 999px;
+    box-shadow: var(--shadow-lift);
+    transition: transform 0.3s ease;
+    z-index: 200;
+    font-size: 0.95rem;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ===== Print ===== */
+  @media print {
+    header, nav.tabs, .book-toolbar, .pagination, footer, .jotd .actions { display: none !important; }
+    body { background: white; }
+    .joke-page {
+      box-shadow: none;
+      border: 1px solid #ccc;
+      page-break-inside: avoid;
+      margin-bottom: 10px;
+    }
+    .page { display: block !important; }
+  }
+
+  /* ===== Mobile ===== */
+  @media (max-width: 520px) {
+    .pill { padding: 8px 12px; font-size: 0.9rem; }
+    button.primary, button.secondary { padding: 11px 16px; }
+    .editor { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="emoji">😂</span> Joke <span style="color:var(--coral)">Lab</span></h1>
+  <p>Invent jokes together. Rate them. Grow a family joke book.</p>
+  <nav class="tabs" id="tabs">
+    <button data-tab="start" class="active">Lab</button>
+    <button data-tab="book">Joke Book</button>
+    <button data-tab="about">About</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ===== START / LAB PAGE ===== -->
+  <section class="page active" id="page-start">
+
+    <div class="jotd" id="jotd"></div>
+
+    <div class="section-title">1. Pick a joke type</div>
+    <div class="pill-grid" id="catGrid"></div>
+
+    <div class="section-title">2. Pick a topic</div>
+    <div class="pill-grid" id="topicGrid"></div>
+
+    <div class="deal-row">
+      <button class="primary" id="dealBtn">Deal me 4 jokes</button>
+    </div>
+
+    <div class="seeds" id="seeds"></div>
+
+    <div id="editorWrap"></div>
+
+  </section>
+
+  <!-- ===== JOKE BOOK PAGE ===== -->
+  <section class="page" id="page-book">
+    <div class="book-toolbar">
+      <div>
+        <h2 style="margin:0">📖 Family Joke Book</h2>
+        <div class="book-meta" id="bookMeta">0 jokes</div>
+      </div>
+      <div>
+        <select id="bookFilter" style="padding:7px 10px;border-radius:8px;border:1.5px solid var(--line);font:inherit">
+          <option value="all">All categories</option>
+        </select>
+        <button class="ghost" onclick="window.print()" style="margin-left:6px">🖨️ Print</button>
+      </div>
+    </div>
+    <div id="bookList"></div>
+    <div class="pagination" id="bookPagination"></div>
+  </section>
+
+  <!-- ===== ABOUT PAGE ===== -->
+  <section class="page" id="page-about">
+    <h2>About Joke Lab</h2>
+    <p>A workshop for kids and grown-ups to invent jokes together. Pick a shape, pick a topic, edit a seed, and let the deterministic <em>AI rater</em> hand out 1–5 stars with a tiny piece of feedback.</p>
+    <h3>How the rater works</h3>
+    <p>No model, no internet. The rater scores three things:</p>
+    <ul>
+      <li><strong>Surprise</strong> — how many words appear in the punchline that didn't appear in the setup? A bigger twist scores higher.</li>
+      <li><strong>Punch</strong> — short punchlines score higher. (Brevity is the soul of funny.)</li>
+      <li><strong>Length-fit</strong> — the setup should be roughly 1.5–4× the length of the punchline. Too-balanced or too-lopsided shapes lose a point.</li>
+    </ul>
+    <p>Same joke text → same score, every time. Edit the joke and watch the stars climb.</p>
+    <h3>Privacy</h3>
+    <p>Everything lives in this browser's <code>localStorage</code>. Nothing is sent anywhere. Ever.</p>
+    <h3>Tips for grown-ups</h3>
+    <ul>
+      <li>Read the seed out loud first. Kids hear rhythm better than they see it.</li>
+      <li>Don't fix the joke for them. Suggest <em>moves</em>: "what if it ended on a food word?"</li>
+      <li>Groan-worthy is great. The worse the pun, the bigger the laugh later.</li>
+      <li>Use <strong>Present mode</strong> at dinner. Real audiences make kids edit better than any rater.</li>
+    </ul>
+    <p style="margin-top:24px">
+      <button class="ghost" id="resetBtn">Erase the joke book (cannot undo)</button>
+    </p>
+  </section>
+
+</main>
+
+<!-- ===== PRESENT MODE OVERLAY ===== -->
+<div id="presentOverlay">
+  <button class="close-btn" id="closePresent" aria-label="Close">✕</button>
+  <div class="setup-big" id="presentSetup"></div>
+  <button class="reveal-btn" id="revealBtn">Tap to reveal punchline</button>
+  <div class="punch-big" id="presentPunch"></div>
+  <div class="meta-line" id="presentMeta"></div>
+</div>
+
+<div id="toast"></div>
+
+<footer>
+  Made with too many puns • All data stays in your browser
+</footer>
+
+<script>
+'use strict';
+
+/* =====================================================================
+ * DATA: categories, topics, joke seed bank, classic joke-of-the-day bank
+ * ===================================================================== */
+
+const CATEGORIES = [
+  { id: 'knock',    label: 'Knock-knock',     ico: '🚪', desc: 'who\'s there?' },
+  { id: 'whatdo',   label: 'What-do-you-call', ico: '🐘', desc: 'animal pun' },
+  { id: 'riddle',   label: 'Riddle',          ico: '❓', desc: 'guess the answer' },
+  { id: 'pun',      label: 'Pun',             ico: '🍌', desc: 'word-play' },
+  { id: 'whydid',   label: 'Why-did',         ico: '🤔', desc: 'silly cause-effect' },
+];
+
+const TOPICS = [
+  { id: 'animals', label: 'Animals',  ico: '🐧' },
+  { id: 'food',    label: 'Food',     ico: '🍕' },
+  { id: 'school',  label: 'School',   ico: '🎒' },
+  { id: 'sports',  label: 'Sports',   ico: '⚽' },
+  { id: 'weather', label: 'Weather',  ico: '☀️' },
+  { id: 'family',  label: 'Family',   ico: '👨‍👩‍👧' },
+];
+
+/* Joke seed bank — 200+ entries, organized by category x topic.
+ * Each is {s: setup, p: punchline}. Curated to be kid-safe groaners. */
+const SEEDS = {
+  knock: {
+    animals: [
+      { s: "Knock knock. Who's there? Cows go. Cows go who?", p: "No, cows go MOO." },
+      { s: "Knock knock. Who's there? Owls say. Owls say who?", p: "Yes. Yes they do." },
+      { s: "Knock knock. Who's there? Interrupting cow. Interr—", p: "MOO!" },
+      { s: "Knock knock. Who's there? Alpaca. Alpaca who?", p: "Alpaca the suitcase, you load the car." },
+      { s: "Knock knock. Who's there? Goat. Goat who?", p: "Goat to the door and find out!" },
+      { s: "Knock knock. Who's there? Cash. Cash who?", p: "No thanks, I prefer almonds." },
+      { s: "Knock knock. Who's there? A little old lady. A little old lady who?", p: "I didn't know you could yodel!" },
+      { s: "Knock knock. Who's there? Spell. Spell who?", p: "W. H. O." },
+      { s: "Knock knock. Who's there? Honeybee. Honeybee who?", p: "Honeybee a dear and open the door." },
+      { s: "Knock knock. Who's there? Frog. Frog who?", p: "Frog-et about it!" },
+    ],
+    food: [
+      { s: "Knock knock. Who's there? Lettuce. Lettuce who?", p: "Lettuce in, it's cold out here!" },
+      { s: "Knock knock. Who's there? Banana. Banana who? Knock knock. Who's there? Banana. Banana who? Knock knock. Who's there? Orange.", p: "Orange you glad I didn't say banana?" },
+      { s: "Knock knock. Who's there? Olive. Olive who?", p: "Olive you and I miss you!" },
+      { s: "Knock knock. Who's there? Pizza. Pizza who?", p: "Pizza on Earth, goodwill to all!" },
+      { s: "Knock knock. Who's there? Butter. Butter who?", p: "Butter not tell you, it's a secret." },
+      { s: "Knock knock. Who's there? Dishes. Dishes who?", p: "Dishes the police, open up!" },
+      { s: "Knock knock. Who's there? Soup. Soup who?", p: "Soup-er glad you opened up!" },
+      { s: "Knock knock. Who's there? Donut. Donut who?", p: "Donut ask, it's a sprinkle of a surprise." },
+      { s: "Knock knock. Who's there? Waffle. Waffle who?", p: "Waffle-y nice to meet you!" },
+    ],
+    school: [
+      { s: "Knock knock. Who's there? Iva. Iva who?", p: "Iva sore hand from knocking!" },
+      { s: "Knock knock. Who's there? Hatch. Hatch who?", p: "Bless you!" },
+      { s: "Knock knock. Who's there? Doris. Doris who?", p: "Doris locked, that's why I'm knocking!" },
+      { s: "Knock knock. Who's there? Tank. Tank who?", p: "You're welcome!" },
+      { s: "Knock knock. Who's there? Justin. Justin who?", p: "Justin time for class!" },
+      { s: "Knock knock. Who's there? Cargo. Cargo who?", p: "Car go beep beep, time for school!" },
+      { s: "Knock knock. Who's there? Pencil. Pencil who?", p: "Pencil fall down if you don't tie your shoe." },
+    ],
+    sports: [
+      { s: "Knock knock. Who's there? Goalie. Goalie who?", p: "Goalie cow, this is a long joke." },
+      { s: "Knock knock. Who's there? Kick. Kick who?", p: "Kick the door open, my hands are full!" },
+      { s: "Knock knock. Who's there? Ben. Ben who?", p: "Ben practicing all week for this!" },
+      { s: "Knock knock. Who's there? Annie. Annie who?", p: "Annie body home for the big game?" },
+      { s: "Knock knock. Who's there? Pitch. Pitch who?", p: "Pitch me the ball already!" },
+      { s: "Knock knock. Who's there? Sox. Sox who?", p: "Sox to be locked out — let me in!" },
+    ],
+    weather: [
+      { s: "Knock knock. Who's there? Snow. Snow who?", p: "Snow use, I forgot my name." },
+      { s: "Knock knock. Who's there? Rain. Rain who?", p: "Rain, rain, go away — I want sunshine today!" },
+      { s: "Knock knock. Who's there? Wind. Wind who?", p: "Wind you going to open this door?" },
+      { s: "Knock knock. Who's there? Thaw. Thaw who?", p: "I thaw you through the window!" },
+      { s: "Knock knock. Who's there? Hail. Hail who?", p: "Hail no, I'm staying outside in this storm!" },
+      { s: "Knock knock. Who's there? Breeze. Breeze who?", p: "Breeze let me in already!" },
+    ],
+    family: [
+      { s: "Knock knock. Who's there? Mom. Mom who?", p: "Mom-ents, just give me a sec!" },
+      { s: "Knock knock. Who's there? Aunt. Aunt who?", p: "Aunt you going to let me in?" },
+      { s: "Knock knock. Who's there? Granny. Granny who? Knock knock. Who's there? Granny. Granny who? Knock knock. Who's there? Aunt.", p: "Aunt you glad I got rid of all the grannies?" },
+      { s: "Knock knock. Who's there? Wanda. Wanda who?", p: "Wanda come over for dinner?" },
+      { s: "Knock knock. Who's there? Sis. Sis who?", p: "Sis the one who took the last cookie!" },
+      { s: "Knock knock. Who's there? Bro. Bro who?", p: "Bro-ke the lock again, sorry!" },
+      { s: "Knock knock. Who's there? Twin. Twin who?", p: "Twin you let me in we'll talk." },
+    ],
+  },
+  whatdo: {
+    animals: [
+      { s: "What do you call a fish wearing a crown?", p: "Your royal haddock-ness." },
+      { s: "What do you call a sleeping bull?", p: "A bulldozer." },
+      { s: "What do you call a bear with no teeth?", p: "A gummy bear." },
+      { s: "What do you call a pig that does karate?", p: "A pork chop." },
+      { s: "What do you call a cow on a trampoline?", p: "A milkshake." },
+      { s: "What do you call an alligator in a vest?", p: "An investigator." },
+      { s: "What do you call a dog magician?", p: "A labracadabrador." },
+      { s: "What do you call a duck that loves fireworks?", p: "A firequacker." },
+      { s: "What do you call a snake that works at a hospital?", p: "A nurse with no arms." },
+      { s: "What do you call a tired kangaroo?", p: "A pouch potato." },
+      { s: "What do you call a chicken that crosses the road on Halloween?", p: "A poultry-geist." },
+      { s: "What do you call a horse that lives next door?", p: "Your neigh-bor." },
+      { s: "What do you call a fish in a tuxedo?", p: "Sofishticated." },
+    ],
+    food: [
+      { s: "What do you call cheese that isn't yours?", p: "Nacho cheese." },
+      { s: "What do you call a fake noodle?", p: "An impasta." },
+      { s: "What do you call a sad strawberry?", p: "A blueberry." },
+      { s: "What do you call a hamburger at the beach?", p: "A sandwich." },
+      { s: "What do you call a potato with glasses?", p: "A spec-tater." },
+      { s: "What do you call a French shoe?", p: "A baguette with laces." },
+      { s: "What do you call bread that's been to space?", p: "An unidentified frying object." },
+      { s: "What do you call a snail on a ship?", p: "A snailor." },
+      { s: "What do you call a taco that sings?", p: "A wrap star." },
+    ],
+    school: [
+      { s: "What do you call a teacher without students?", p: "Happy." },
+      { s: "What do you call a pencil with two erasers?", p: "Pointless." },
+      { s: "What do you call a student who reads under a tree?", p: "Branched out." },
+      { s: "What do you call a calendar at school?", p: "A date-tabase." },
+    ],
+    sports: [
+      { s: "What do you call a soccer ball that gets a promotion?", p: "A goal-getter." },
+      { s: "What do you call a basketball player who eats only fruit?", p: "A hoop-fruit." },
+      { s: "What do you call a swimmer in a tuxedo?", p: "A pool party." },
+      { s: "What do you call a sleeping skateboarder?", p: "A board nap." },
+    ],
+    weather: [
+      { s: "What do you call a cloud that's been to school?", p: "Thunder-educated." },
+      { s: "What do you call rain that misses the ground?", p: "Mist." },
+      { s: "What do you call a snowman in July?", p: "A puddle." },
+      { s: "What do you call sun that tells jokes?", p: "A beam of laughter." },
+    ],
+    family: [
+      { s: "What do you call your aunt that everyone agrees with?", p: "A consenting aunt." },
+      { s: "What do you call a grandpa with a clock?", p: "Pop-time." },
+      { s: "What do you call a sibling who won't stop singing?", p: "A bro-pera." },
+      { s: "What do you call a mom who reads minds?", p: "Every mom." },
+    ],
+  },
+  riddle: {
+    animals: [
+      { s: "What animal is always at a baseball game?", p: "A bat." },
+      { s: "I have feathers but cannot fly, I cluck and lay eggs nearby. What am I?", p: "A chicken." },
+      { s: "Which fish is the most famous?", p: "The starfish." },
+      { s: "I have a mane but I'm no horse, I roar but I don't curse. What am I?", p: "A lion." },
+      { s: "What bird is always sad?", p: "The blue jay." },
+    ],
+    food: [
+      { s: "I'm yellow and curved, monkeys love me. What am I?", p: "A banana." },
+      { s: "I'm round, I'm hot, and I have many slices. What am I?", p: "A pizza." },
+      { s: "What kind of room has no doors and no windows?", p: "A mushroom." },
+      { s: "I'm cold and creamy and come in many flavors. What am I?", p: "Ice cream." },
+    ],
+    school: [
+      { s: "What has a spine but no bones?", p: "A book." },
+      { s: "I have keys but open no locks. What am I?", p: "A piano (or a keyboard)." },
+      { s: "What gets sharper the more you use it?", p: "Your brain." },
+      { s: "I am full of holes but still hold water. What am I?", p: "A sponge." },
+    ],
+    sports: [
+      { s: "What ball never bounces?", p: "An eyeball." },
+      { s: "What runs but never walks?", p: "Water." },
+      { s: "Which sport is always in the bath?", p: "Squash." },
+    ],
+    weather: [
+      { s: "What goes up when the rain comes down?", p: "An umbrella." },
+      { s: "I'm white, I'm cold, and I can stack tall. What am I?", p: "A snowman." },
+      { s: "I flash but have no camera. I crash but break nothing. What am I?", p: "Lightning and thunder." },
+    ],
+    family: [
+      { s: "Who is your mother's brother's son to you?", p: "Your cousin." },
+      { s: "What do you have that's yours but others use more?", p: "Your name." },
+      { s: "I live in your house and remember everything you did. What am I?", p: "A photo album." },
+    ],
+  },
+  pun: {
+    animals: [
+      { s: "I used to be a banker, but I lost interest. So I joined the zoo —", p: "now I count toucans." },
+      { s: "The duck told a great joke about water.", p: "It really quacked me up." },
+      { s: "The bee got married last week.", p: "It was a buzz-tiful ceremony." },
+      { s: "The bear walked into a bar and ordered a drink with a long ............ pause.", p: "The bartender asked why the big paws." },
+      { s: "I'm reading a book about anti-gravity.", p: "It's impossible to put down." },
+    ],
+    food: [
+      { s: "I tried to catch some fog yesterday.", p: "Mist." },
+      { s: "Two peanuts walked into a park.", p: "One was a-salted." },
+      { s: "The bread couldn't sleep at night.", p: "It kept loafing around." },
+      { s: "I told my wife she was drawing her eyebrows too high.", p: "She looked surprised." },
+      { s: "Did you hear about the cheese factory that exploded?", p: "Da-brie everywhere." },
+    ],
+    school: [
+      { s: "The math teacher called in sick with algebra.", p: "Turns out she had too many problems." },
+      { s: "I wrote a song about a tortilla.", p: "Actually, it's more of a wrap." },
+      { s: "The geometry teacher's parrot died.", p: "Polygon." },
+      { s: "I'm reading a book on the history of glue.", p: "I just can't seem to put it down." },
+    ],
+    sports: [
+      { s: "The soccer player brought string to the game.", p: "He wanted to tie the score." },
+      { s: "I quit my job at the helium factory.", p: "I won't be spoken to in that tone." },
+      { s: "The bicycle couldn't stand on its own.", p: "It was two tired." },
+    ],
+    weather: [
+      { s: "The hurricane gave a great talk.", p: "It blew the audience away." },
+      { s: "The snowflake refused to apologize.", p: "It was a cold case." },
+      { s: "The sun went to school.", p: "It got really bright." },
+      { s: "I don't trust stairs.", p: "They're always up to something." },
+    ],
+    family: [
+      { s: "I asked my dog what's two minus two.", p: "He said nothing." },
+      { s: "My grandpa has the heart of a lion.", p: "And a lifetime ban from the zoo." },
+      { s: "My sister bet me I couldn't make a car out of spaghetti.", p: "You should've seen the look on her face when I drove pasta." },
+    ],
+  },
+  whydid: {
+    animals: [
+      { s: "Why did the chicken cross the road?", p: "To get to the other side." },
+      { s: "Why did the cow cross the road?", p: "To get to the udder side." },
+      { s: "Why did the spider go to the computer?", p: "To check its website." },
+      { s: "Why did the elephant bring a suitcase to the jungle?", p: "It was packing its trunk." },
+      { s: "Why did the bee get married?", p: "Because he found his honey." },
+      { s: "Why did the frog take the bus to work?", p: "Because his car got toad away." },
+      { s: "Why did the turkey join the band?", p: "It already had the drumsticks." },
+    ],
+    food: [
+      { s: "Why did the tomato turn red?", p: "Because it saw the salad dressing!" },
+      { s: "Why did the cookie go to the doctor?", p: "It was feeling crumby." },
+      { s: "Why did the banana go to the doctor?", p: "It wasn't peeling well." },
+      { s: "Why did the orange stop rolling down the hill?", p: "It ran out of juice." },
+      { s: "Why did the grape stop in the middle of the road?", p: "It ran out of juice." },
+    ],
+    school: [
+      { s: "Why did the math book look sad?", p: "It had too many problems." },
+      { s: "Why did the student eat his homework?", p: "The teacher said it was a piece of cake." },
+      { s: "Why did the kid bring a ladder to school?", p: "Because it was high school." },
+      { s: "Why did the pencil go to bed?", p: "Because it was tired of being sharpened." },
+      { s: "Why did nobody talk to the circle?", p: "Because there was no point." },
+    ],
+    sports: [
+      { s: "Why did the basketball player go to jail?", p: "Because he shot the ball." },
+      { s: "Why did the golfer wear two pairs of pants?", p: "In case he got a hole in one." },
+      { s: "Why did the bicycle fall over?", p: "It was two-tired." },
+      { s: "Why did the baseball player bring rope to the game?", p: "He wanted to tie the game." },
+    ],
+    weather: [
+      { s: "Why did the sun go to school?", p: "To get a little brighter." },
+      { s: "Why did the cloud break up with the rain?", p: "It needed some space." },
+      { s: "Why did the snowman call his dog Frost?", p: "Because Frost bites." },
+      { s: "Why did the lightning go to the doctor?", p: "It was feeling shocked." },
+    ],
+    family: [
+      { s: "Why did the dad take a ruler to bed?", p: "To see how long he slept." },
+      { s: "Why did the mom bring scissors to the dance?", p: "To cut a rug." },
+      { s: "Why did the baby cookie cry?", p: "Because its mom was a wafer so long." },
+      { s: "Why did the grandpa put wheels on his rocking chair?", p: "He wanted to rock and roll." },
+    ],
+  },
+};
+
+/* Classic joke-of-the-day bank — ~50 curated kid-safe groaners. */
+const CLASSICS = [
+  { s: "Why don't scientists trust atoms?", p: "Because they make up everything." },
+  { s: "What do you call fake spaghetti?", p: "An impasta." },
+  { s: "Why did the scarecrow win an award?", p: "Because he was outstanding in his field." },
+  { s: "How do you organize a space party?", p: "You planet." },
+  { s: "Why don't eggs tell jokes?", p: "They'd crack each other up." },
+  { s: "What did one wall say to the other?", p: "I'll meet you at the corner." },
+  { s: "Why did the bicycle fall over?", p: "It was two-tired." },
+  { s: "Why did the math book look sad?", p: "It had too many problems." },
+  { s: "What's orange and sounds like a parrot?", p: "A carrot." },
+  { s: "Why don't skeletons fight each other?", p: "They don't have the guts." },
+  { s: "What do you call a dinosaur with an extensive vocabulary?", p: "A thesaurus." },
+  { s: "Why did the cookie cry?", p: "Because his mother was a wafer too long." },
+  { s: "Why did the golfer wear two pairs of pants?", p: "In case he got a hole in one." },
+  { s: "How does the moon cut its hair?", p: "Eclipse it." },
+  { s: "What's a vampire's favorite fruit?", p: "A blood orange." },
+  { s: "What did one ocean say to the other ocean?", p: "Nothing — it just waved." },
+  { s: "What kind of shoes do ninjas wear?", p: "Sneakers." },
+  { s: "Why did the computer go to the doctor?", p: "Because it had a virus." },
+  { s: "How do you make a tissue dance?", p: "Put a little boogie in it." },
+  { s: "What do you call a sleeping bull?", p: "A bulldozer." },
+  { s: "What did the grape do when it got stepped on?", p: "It let out a little wine." },
+  { s: "What did the buffalo say when his son left?", p: "Bison." },
+  { s: "What time is it when an elephant sits on your fence?", p: "Time to get a new fence." },
+  { s: "Why was six afraid of seven?", p: "Because seven eight nine." },
+  { s: "What's brown and sticky?", p: "A stick." },
+  { s: "Why did the picture go to jail?", p: "It was framed." },
+  { s: "What do you call an alligator in a vest?", p: "An investigator." },
+  { s: "What do you call cheese that isn't yours?", p: "Nacho cheese." },
+  { s: "Why can't a bicycle stand up by itself?", p: "It's two tired." },
+  { s: "What did the janitor say when he jumped out of the closet?", p: "Supplies!" },
+  { s: "What do you call a fish with no eyes?", p: "Fsh." },
+  { s: "How does a penguin build its house?", p: "Igloos it together." },
+  { s: "Why did the banana go to the doctor?", p: "It wasn't peeling well." },
+  { s: "What do you call a bear with no teeth?", p: "A gummy bear." },
+  { s: "Why don't oysters share their pearls?", p: "Because they're shellfish." },
+  { s: "What's a dog's favorite breakfast?", p: "Pooched eggs." },
+  { s: "Why do bees have sticky hair?", p: "Because they use honeycombs." },
+  { s: "What do you call a snowman in July?", p: "A puddle." },
+  { s: "What did one plate say to the other?", p: "Dinner is on me." },
+  { s: "Why did the tomato turn red?", p: "It saw the salad dressing." },
+  { s: "What did the zero say to the eight?", p: "Nice belt!" },
+  { s: "Why was the math book sad?", p: "It had too many problems." },
+  { s: "What do you get from a pampered cow?", p: "Spoiled milk." },
+  { s: "Why don't melons get married?", p: "Because they cantaloupe." },
+  { s: "What do you call a duck that gets all A's?", p: "A wise quacker." },
+  { s: "How do trees get on the internet?", p: "They log in." },
+  { s: "What did the ocean say to the boat?", p: "Nothing — it just waved." },
+  { s: "Why did the kid put his money in the freezer?", p: "He wanted cold hard cash." },
+  { s: "What kind of music do mummies listen to?", p: "Wrap music." },
+  { s: "Why did the kid bring string to the gym?", p: "To tie the score." },
+];
+
+/* =====================================================================
+ * STATE + STORAGE
+ * ===================================================================== */
+
+const STORE_KEY = 'joke-lab-v1';
+const STATE = {
+  cat: 'knock',
+  topic: 'animals',
+  selectedSeed: null,
+  jokes: [],          // {id, setup, punch, category, topic, author, rating, date}
+  bookPage: 0,
+  bookFilter: 'all',
+};
+const PAGE_SIZE = 5;
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (Array.isArray(s.jokes)) STATE.jokes = s.jokes;
+    }
+  } catch (e) { /* ignore */ }
+}
+function saveState() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ jokes: STATE.jokes }));
+  } catch (e) { /* ignore */ }
+}
+
+/* =====================================================================
+ * DETERMINISTIC AI RATER
+ *  - Surprise: words in punch not in setup / total punch words
+ *  - Punch: shorter punch = better (capped)
+ *  - Length-fit: setup ~1.5x to 4x punch ideal
+ *  Sum, normalize to 1-5 stars. Feedback string picks the weakest axis.
+ * ===================================================================== */
+
+function tokenize(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9'\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function rateJoke(setup, punch) {
+  const setupTokens = tokenize(setup);
+  const punchTokens = tokenize(punch);
+
+  if (!setupTokens.length || !punchTokens.length) {
+    return {
+      stars: 1,
+      surprise: 0, punch: 0, fit: 0,
+      feedback: "Add a setup and a punchline so we can give it a real score!"
+    };
+  }
+
+  const setupSet = new Set(setupTokens);
+  const novelCount = punchTokens.filter(w => !setupSet.has(w)).length;
+  const surpriseRatio = novelCount / punchTokens.length; // 0..1
+
+  // Surprise score (0..1). Reward novelty, but a punch made entirely of brand
+  // new common words is fine — no penalty for full novelty.
+  const surprise = Math.min(1, surpriseRatio * 1.1);
+
+  // Punch score: ideal is ~3-7 words. Long punches get penalized.
+  const pw = punchTokens.length;
+  let punchScore;
+  if (pw <= 2) punchScore = 0.55;          // very short, sometimes too thin
+  else if (pw <= 7) punchScore = 1.0;      // sweet spot
+  else if (pw <= 12) punchScore = 0.75;
+  else if (pw <= 20) punchScore = 0.5;
+  else punchScore = 0.25;
+
+  // Length-fit: ratio of setup length to punch length
+  const ratio = setupTokens.length / pw;
+  let fit;
+  if (ratio >= 1.5 && ratio <= 4) fit = 1.0;
+  else if (ratio >= 1.0 && ratio < 1.5) fit = 0.7;
+  else if (ratio > 4 && ratio <= 7) fit = 0.7;
+  else if (ratio < 1.0) fit = 0.4;     // punch longer than setup — unusual
+  else fit = 0.5;                       // very lopsided setup
+
+  // Combine with weights and map to 1..5 stars
+  const composite = (surprise * 0.45 + punchScore * 0.35 + fit * 0.20);
+  // composite is in [0..1]. Map so a typical decent joke ~3-4 stars.
+  let stars = Math.round(1 + composite * 4);
+  if (stars < 1) stars = 1;
+  if (stars > 5) stars = 5;
+
+  // Find the weakest axis to drive the feedback line
+  const axes = [
+    { key: 'surprise', score: surprise },
+    { key: 'punch',    score: punchScore },
+    { key: 'fit',      score: fit },
+  ];
+  axes.sort((a, b) => a.score - b.score);
+  const weakest = axes[0];
+
+  const POS = [
+    "Great twist! ", "Love this one. ", "Solid groaner! ",
+    "Snappy work. ", "That's a keeper. "
+  ];
+  const TIPS = {
+    surprise: [
+      "Try a punchline word that didn't appear in the setup yet.",
+      "Surprise the listener — swap one punch word for something unexpected.",
+      "What if the punchline went somewhere the setup didn't hint at?",
+    ],
+    punch: [
+      "Try trimming the punchline by a word or two — short hits harder.",
+      "Cut a filler word from the punchline if you can.",
+      "Shorter punchline = bigger laugh. Try squeezing it.",
+    ],
+    fit: [
+      "Try making the setup a bit longer than the punchline.",
+      "The setup and punchline are close in length — pad the setup or trim the punch.",
+      "Classic shape: setup 2x-3x the length of the punch. Adjust either side.",
+    ],
+  };
+
+  // Deterministic-ish picks (based on text length so same joke -> same line)
+  const hash = (setupTokens.length * 7 + punchTokens.length * 13) % 3;
+  let feedback;
+  if (stars >= 4) {
+    feedback = POS[(setupTokens.length + punchTokens.length) % POS.length].trim();
+    if (stars === 4) {
+      feedback += " " + TIPS[weakest.key][hash];
+    } else {
+      feedback += " 5-star groaner.";
+    }
+  } else if (stars === 3) {
+    feedback = "Pretty good. " + TIPS[weakest.key][hash];
+  } else {
+    feedback = "Workshop it! " + TIPS[weakest.key][hash];
+  }
+
+  return {
+    stars,
+    surprise: Math.round(surprise * 100),
+    punch: Math.round(punchScore * 100),
+    fit: Math.round(fit * 100),
+    feedback,
+  };
+}
+
+/* =====================================================================
+ * UTILITIES
+ * ===================================================================== */
+
+function $(id) { return document.getElementById(id); }
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    if (k === 'class') e.className = attrs[k];
+    else if (k === 'html') e.innerHTML = attrs[k];
+    else if (k.startsWith('on') && typeof attrs[k] === 'function') {
+      e.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
+    } else {
+      e.setAttribute(k, attrs[k]);
+    }
+  }
+  if (children) {
+    (Array.isArray(children) ? children : [children]).forEach(c => {
+      if (c == null) return;
+      if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+      else e.appendChild(c);
+    });
+  }
+  return e;
+}
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+}
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function uid() { return 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+/* =====================================================================
+ * RENDER: Tabs
+ * ===================================================================== */
+
+function showTab(name) {
+  document.querySelectorAll('nav.tabs button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === name);
+  });
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.toggle('active', p.id === 'page-' + name);
+  });
+  if (name === 'book') renderBook();
+}
+
+/* =====================================================================
+ * RENDER: Joke of the Day
+ *  Picks a stable joke for today's date from CLASSICS.
+ * ===================================================================== */
+
+function jotdForToday() {
+  const d = new Date();
+  const key = d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate();
+  const idx = key % CLASSICS.length;
+  return CLASSICS[idx];
+}
+
+function renderJOTD() {
+  const j = jotdForToday();
+  $('jotd').innerHTML = '';
+  const root = $('jotd');
+  root.appendChild(el('div', { class: 'ribbon' }, '😄 Joke of the day'));
+  root.appendChild(el('div', { class: 'setup' }, j.s));
+  const punch = el('div', { class: 'punch', style: 'display:none' }, j.p);
+  root.appendChild(punch);
+  const actions = el('div', { class: 'actions' });
+  const revealBtn = el('button', {
+    class: 'secondary',
+    onclick: () => {
+      if (punch.style.display === 'none') {
+        punch.style.display = 'block';
+        revealBtn.textContent = 'Hide punchline';
+      } else {
+        punch.style.display = 'none';
+        revealBtn.textContent = 'Reveal punchline';
+      }
+    }
+  }, 'Reveal punchline');
+  actions.appendChild(revealBtn);
+  actions.appendChild(el('button', {
+    class: 'ghost',
+    onclick: () => presentJoke({ setup: j.s, punch: j.p, category: 'classic', author: 'Classic', date: new Date().toISOString(), rating: 5 })
+  }, '🎤 Present mode'));
+  root.appendChild(actions);
+}
+
+/* =====================================================================
+ * RENDER: Category + topic pickers
+ * ===================================================================== */
+
+function renderCatGrid() {
+  const grid = $('catGrid');
+  grid.innerHTML = '';
+  CATEGORIES.forEach(c => {
+    const p = el('button', {
+      class: 'pill' + (STATE.cat === c.id ? ' active' : ''),
+      onclick: () => { STATE.cat = c.id; renderCatGrid(); clearSeedsAndEditor(); }
+    }, [el('span', { class: 'ico' }, c.ico), c.label]);
+    grid.appendChild(p);
+  });
+}
+
+function renderTopicGrid() {
+  const grid = $('topicGrid');
+  grid.innerHTML = '';
+  TOPICS.forEach(t => {
+    const p = el('button', {
+      class: 'pill' + (STATE.topic === t.id ? ' active' : ''),
+      onclick: () => { STATE.topic = t.id; renderTopicGrid(); clearSeedsAndEditor(); }
+    }, [el('span', { class: 'ico' }, t.ico), t.label]);
+    grid.appendChild(p);
+  });
+}
+
+function clearSeedsAndEditor() {
+  $('seeds').innerHTML = '';
+  $('editorWrap').innerHTML = '';
+}
+
+/* =====================================================================
+ * RENDER: Seeds + Editor
+ * ===================================================================== */
+
+function dealSeeds() {
+  const pool = (SEEDS[STATE.cat] && SEEDS[STATE.cat][STATE.topic]) || [];
+  if (!pool.length) {
+    $('seeds').innerHTML = '<div class="empty-state">No seeds for that combo — try a different topic.</div>';
+    return;
+  }
+  const count = Math.min(4, pool.length);
+  const picked = shuffle(pool).slice(0, count);
+
+  const seeds = $('seeds');
+  seeds.innerHTML = '';
+  picked.forEach((seed, i) => {
+    const card = el('div', { class: 'seed-card' });
+    card.appendChild(el('div', { class: 'label' }, 'Seed #' + (i + 1)));
+    card.appendChild(el('div', { class: 'setup-line' }, seed.s));
+    card.appendChild(el('div', { class: 'punch-line' }, seed.p));
+    const useBtn = el('button', {
+      class: 'use-btn',
+      onclick: () => openEditor(seed)
+    }, '✏️ Edit this one');
+    card.appendChild(useBtn);
+    seeds.appendChild(card);
+  });
+}
+
+function openEditor(seed) {
+  STATE.selectedSeed = seed;
+  const cat = CATEGORIES.find(c => c.id === STATE.cat);
+  const topic = TOPICS.find(t => t.id === STATE.topic);
+
+  const wrap = $('editorWrap');
+  wrap.innerHTML = '';
+  const editor = el('div', { class: 'editor' });
+  editor.appendChild(el('h3', null,
+    `${cat.ico} ${cat.label} about ${topic.label.toLowerCase()}`));
+  editor.appendChild(el('p', { class: 'hint' },
+    'Edit it together! Kid suggests the joke, parent suggests a twist. Tap "Rate" to see how the rater scores it.'));
+
+  editor.appendChild(el('label', { for: 'setupBox' }, 'Setup'));
+  const setupBox = el('textarea', { id: 'setupBox', rows: '2' });
+  setupBox.value = seed.s;
+  editor.appendChild(setupBox);
+
+  editor.appendChild(el('label', { for: 'punchBox' }, 'Punchline'));
+  const punchBox = el('textarea', { id: 'punchBox', rows: '2' });
+  punchBox.value = seed.p;
+  editor.appendChild(punchBox);
+
+  const row = el('div', { class: 'row' });
+  const authorWrap = el('div');
+  authorWrap.appendChild(el('label', { for: 'authorSel' }, 'Who wrote it?'));
+  const authorSel = el('select', { id: 'authorSel' });
+  ['Together', 'Kid', 'Parent'].forEach(a => {
+    const o = el('option', { value: a }, a);
+    authorSel.appendChild(o);
+  });
+  authorWrap.appendChild(authorSel);
+  row.appendChild(authorWrap);
+  editor.appendChild(row);
+
+  // Action buttons
+  const actions = el('div', { class: 'editor-actions' });
+  actions.appendChild(el('button', {
+    class: 'ghost',
+    onclick: () => { setupBox.value = seed.s; punchBox.value = seed.p; toast('Reset to seed.'); }
+  }, '↺ Reset to seed'));
+  actions.appendChild(el('button', {
+    class: 'secondary',
+    onclick: () => runRating()
+  }, '⭐ Rate this joke'));
+  actions.appendChild(el('button', {
+    class: 'primary',
+    onclick: () => saveCurrentJoke()
+  }, '📖 Save to Joke Book'));
+  editor.appendChild(actions);
+
+  // Rating placeholder
+  const ratingArea = el('div', { id: 'ratingArea' });
+  editor.appendChild(ratingArea);
+
+  wrap.appendChild(editor);
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function currentJokeText() {
+  const s = ($('setupBox') || {}).value || '';
+  const p = ($('punchBox') || {}).value || '';
+  return { setup: s.trim(), punch: p.trim() };
+}
+
+function runRating() {
+  const { setup, punch } = currentJokeText();
+  const r = rateJoke(setup, punch);
+  const area = $('ratingArea');
+  area.innerHTML = '';
+  const card = el('div', { class: 'rating-card' });
+  const starsStr = '⭐'.repeat(r.stars) + '☆'.repeat(5 - r.stars);
+  card.appendChild(el('div', { class: 'stars' }, starsStr));
+  const bd = el('div', { class: 'breakdown' });
+  bd.appendChild(el('span', null, `Surprise ${r.surprise}%`));
+  bd.appendChild(el('span', null, `Punch ${r.punch}%`));
+  bd.appendChild(el('span', null, `Length-fit ${r.fit}%`));
+  card.appendChild(bd);
+  card.appendChild(el('div', { class: 'feedback' }, r.feedback));
+  area.appendChild(card);
+  return r;
+}
+
+function saveCurrentJoke() {
+  const { setup, punch } = currentJokeText();
+  if (!setup || !punch) { toast('Add a setup and a punchline first!'); return; }
+  const r = rateJoke(setup, punch);
+  const author = (($('authorSel') || {}).value) || 'Together';
+  const joke = {
+    id: uid(),
+    setup, punch,
+    category: STATE.cat,
+    topic: STATE.topic,
+    author,
+    rating: r.stars,
+    date: new Date().toISOString(),
+  };
+  STATE.jokes.unshift(joke);
+  saveState();
+  toast('Saved to Joke Book! 📖');
+  runRating(); // refresh rating display so they see stars
+}
+
+/* =====================================================================
+ * RENDER: Joke Book
+ * ===================================================================== */
+
+function renderBook() {
+  const meta = $('bookMeta');
+  meta.textContent = `${STATE.jokes.length} joke${STATE.jokes.length === 1 ? '' : 's'} in your family collection`;
+
+  // Rebuild filter dropdown
+  const filter = $('bookFilter');
+  const currentVal = filter.value || STATE.bookFilter;
+  const cats = Array.from(new Set(STATE.jokes.map(j => j.category)));
+  filter.innerHTML = '<option value="all">All categories</option>';
+  cats.forEach(c => {
+    const meta = CATEGORIES.find(x => x.id === c);
+    const label = meta ? `${meta.ico} ${meta.label}` : c;
+    const o = el('option', { value: c }, label);
+    filter.appendChild(o);
+  });
+  filter.value = currentVal;
+  filter.onchange = () => { STATE.bookFilter = filter.value; STATE.bookPage = 0; renderBook(); };
+
+  const list = $('bookList');
+  list.innerHTML = '';
+
+  const filtered = STATE.jokes.filter(j =>
+    STATE.bookFilter === 'all' || j.category === STATE.bookFilter);
+
+  if (!filtered.length) {
+    list.appendChild(el('div', { class: 'empty-state' }, [
+      el('div', { class: 'big-emoji' }, '📖'),
+      el('p', null, 'Your joke book is empty. Head back to the Lab and save your first joke!')
+    ]));
+    $('bookPagination').innerHTML = '';
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (STATE.bookPage >= totalPages) STATE.bookPage = totalPages - 1;
+  const start = STATE.bookPage * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+  pageItems.forEach(j => list.appendChild(renderJokePage(j)));
+
+  // Pagination
+  const pag = $('bookPagination');
+  pag.innerHTML = '';
+  const prev = el('button', {
+    onclick: () => { if (STATE.bookPage > 0) { STATE.bookPage--; renderBook(); } }
+  }, '← Prev');
+  prev.disabled = STATE.bookPage === 0;
+  const next = el('button', {
+    onclick: () => { if (STATE.bookPage < totalPages - 1) { STATE.bookPage++; renderBook(); } }
+  }, 'Next →');
+  next.disabled = STATE.bookPage >= totalPages - 1;
+  pag.appendChild(prev);
+  pag.appendChild(el('span', null, `Page ${STATE.bookPage + 1} of ${totalPages}`));
+  pag.appendChild(next);
+}
+
+function renderJokePage(j) {
+  const cat = CATEGORIES.find(c => c.id === j.category);
+  const topic = TOPICS.find(t => t.id === j.topic);
+  const stars = '⭐'.repeat(j.rating || 0);
+
+  const page = el('div', { class: 'joke-page' });
+  const tags = el('div', { class: 'tag-row' });
+  if (cat) tags.appendChild(el('span', { class: 'tag' }, cat.ico + ' ' + cat.label));
+  if (topic) tags.appendChild(el('span', { class: 'tag' }, topic.ico + ' ' + topic.label));
+  tags.appendChild(el('span', { class: 'tag' }, '✍️ ' + (j.author || 'Together')));
+  tags.appendChild(el('span', { class: 'tag' }, '📅 ' + formatDate(j.date)));
+  tags.appendChild(el('span', { class: 'tag stars-mini' }, stars));
+  page.appendChild(tags);
+
+  page.appendChild(el('div', { class: 'setup-line' }, j.setup));
+  page.appendChild(el('div', { class: 'punch-line' }, j.punch));
+
+  const actions = el('div', { class: 'joke-actions' });
+  actions.appendChild(el('button', {
+    onclick: () => presentJoke(j)
+  }, '🎤 Present'));
+  actions.appendChild(el('button', {
+    onclick: () => {
+      const r = rateJoke(j.setup, j.punch);
+      toast(`${'⭐'.repeat(r.stars)} — ${r.feedback}`);
+    }
+  }, '🔄 Re-rate'));
+  actions.appendChild(el('button', {
+    onclick: () => {
+      if (confirm('Delete this joke?')) {
+        STATE.jokes = STATE.jokes.filter(x => x.id !== j.id);
+        saveState();
+        renderBook();
+      }
+    }
+  }, '🗑 Delete'));
+  page.appendChild(actions);
+
+  return page;
+}
+
+/* =====================================================================
+ * PRESENT MODE
+ * ===================================================================== */
+
+function presentJoke(j) {
+  $('presentSetup').textContent = j.setup;
+  $('presentPunch').textContent = j.punch;
+  const cat = CATEGORIES.find(c => c.id === j.category);
+  const auth = j.author || '';
+  const metaParts = [];
+  if (cat) metaParts.push(cat.label);
+  if (auth) metaParts.push('by ' + auth);
+  $('presentMeta').textContent = metaParts.join(' • ');
+  const overlay = $('presentOverlay');
+  overlay.classList.remove('revealed');
+  overlay.classList.add('on');
+}
+
+function setupPresentOverlay() {
+  $('revealBtn').addEventListener('click', () => {
+    $('presentOverlay').classList.add('revealed');
+  });
+  $('closePresent').addEventListener('click', () => {
+    $('presentOverlay').classList.remove('on');
+    $('presentOverlay').classList.remove('revealed');
+  });
+  document.addEventListener('keydown', (e) => {
+    const overlay = $('presentOverlay');
+    if (!overlay.classList.contains('on')) return;
+    if (e.key === 'Escape') {
+      overlay.classList.remove('on'); overlay.classList.remove('revealed');
+    } else if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      overlay.classList.add('revealed');
+    }
+  });
+}
+
+/* =====================================================================
+ * BOOT
+ * ===================================================================== */
+
+function init() {
+  loadState();
+
+  // Tabs
+  document.querySelectorAll('nav.tabs button').forEach(b => {
+    b.addEventListener('click', () => showTab(b.dataset.tab));
+  });
+
+  // Deal seeds
+  $('dealBtn').addEventListener('click', dealSeeds);
+
+  // Reset button
+  $('resetBtn').addEventListener('click', () => {
+    if (confirm('Erase the entire family joke book? This cannot be undone.')) {
+      STATE.jokes = [];
+      saveState();
+      renderBook();
+      toast('Joke book erased.');
+    }
+  });
+
+  renderCatGrid();
+  renderTopicGrid();
+  renderJOTD();
+  setupPresentOverlay();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
