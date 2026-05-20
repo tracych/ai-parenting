@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>History Time Machine ⏳</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { min-height: 100%; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body {
+    background: linear-gradient(135deg, #fdf6e3 0%, #e8d8c4 50%, #c9b896 100%);
+    color: #2b2118;
+    padding: 14px;
+    min-height: 100vh;
+  }
+  #app { max-width: 1200px; margin: 0 auto; }
+
+  header {
+    background: linear-gradient(135deg, #3d2817 0%, #5c3a21 100%);
+    color: #fdf6e3;
+    border-radius: 18px; padding: 16px 22px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    margin-bottom: 14px; flex-wrap: wrap; gap: 12px;
+  }
+  h1 { font-size: clamp(1.4rem, 4vw, 2.2rem); letter-spacing: 0.5px; }
+  h1 .hourglass { display: inline-block; animation: tilt 3s ease-in-out infinite; }
+  @keyframes tilt {
+    0%, 100% { transform: rotate(-15deg); }
+    50% { transform: rotate(15deg); }
+  }
+  h2 { font-size: 1.25rem; color: #3d2817; margin-bottom: 10px; }
+  h3 { font-size: 1.05rem; color: #5c3a21; margin: 6px 0; }
+  p  { line-height: 1.55; color: #3d2817; }
+  .muted { color: #7a6450; font-size: 0.88rem; }
+
+  .btn {
+    font-family: inherit; font-weight: 700;
+    font-size: 0.95rem; padding: 10px 16px;
+    border: none; border-radius: 12px;
+    cursor: pointer; color: white;
+    background: #b8763d;
+    box-shadow: 0 3px 0 #8a5728;
+    transition: transform 0.08s, box-shadow 0.08s, filter 0.1s;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #8a5728; }
+  .btn.amber  { background: #d4a04a; box-shadow: 0 3px 0 #a17529; color: #2b2118; }
+  .btn.teal   { background: #2a8b8e; box-shadow: 0 3px 0 #1b5f61; }
+  .btn.plum   { background: #7a3b6e; box-shadow: 0 3px 0 #54284c; }
+  .btn.green  { background: #4a8b4a; box-shadow: 0 3px 0 #2e5e2e; }
+  .btn.ghost  { background: rgba(253,246,227,0.15); box-shadow: none; color: #fdf6e3; border: 2px solid rgba(253,246,227,0.4); }
+  .btn.ghost:active { transform: translateY(2px); }
+  .btn.small  { font-size: 0.82rem; padding: 7px 12px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .mode-tabs {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .mode-tabs .btn { flex: 1 1 auto; min-width: 140px; }
+  .mode-tabs .btn.inactive { opacity: 0.55; transform: scale(0.97); }
+
+  .card {
+    background: #fffdf7; border-radius: 16px; padding: 18px;
+    box-shadow: 0 4px 14px rgba(60, 40, 20, 0.15);
+    border: 1px solid #e8d8c4;
+    margin-bottom: 14px;
+  }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    margin-bottom: 12px;
+  }
+  label { font-size: 0.88rem; color: #5c3a21; font-weight: 600; }
+  select, input[type=number], input[type=range] {
+    font-family: inherit; font-size: 0.92rem; padding: 7px 10px;
+    border: 2px solid #c9b896; border-radius: 9px; background: white;
+    cursor: pointer; color: #2b2118;
+  }
+
+  /* TIMELINE */
+  .timeline-wrap {
+    overflow-x: auto; overflow-y: hidden;
+    background: linear-gradient(180deg, #fdf6e3 0%, #f3e6ce 100%);
+    border-radius: 14px; padding: 8px 0;
+    border: 2px solid #c9b896;
+    -webkit-overflow-scrolling: touch;
+  }
+  .timeline-wrap::-webkit-scrollbar { height: 10px; }
+  .timeline-wrap::-webkit-scrollbar-track { background: #e8d8c4; border-radius: 5px; }
+  .timeline-wrap::-webkit-scrollbar-thumb { background: #b8763d; border-radius: 5px; }
+  svg.timeline { display: block; }
+  .era-band { opacity: 0.7; }
+  .civ-lane { fill: rgba(0,0,0,0.03); }
+  .civ-lane.alt { fill: rgba(0,0,0,0.06); }
+  .civ-label { font-size: 12px; font-weight: 700; fill: #3d2817; }
+  .year-tick { stroke: #8a7355; stroke-width: 1; }
+  .year-text { font-size: 10px; fill: #5c3a21; }
+  .event-dot { cursor: pointer; transition: transform 0.15s; }
+  .event-dot:hover { transform: scale(1.4); transform-origin: center; }
+  .event-tooltip {
+    position: absolute; background: #2b2118; color: #fdf6e3;
+    padding: 8px 12px; border-radius: 8px; font-size: 0.85rem;
+    pointer-events: none; max-width: 240px; z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    display: none;
+  }
+  .era-label { font-size: 10px; font-weight: 700; fill: #fdf6e3; }
+
+  /* SORT IT mode */
+  .sort-stage {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .sort-cards {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    min-height: 100px;
+    padding: 12px; background: #f3e6ce; border-radius: 12px;
+    border: 2px dashed #b8763d;
+  }
+  .sort-slots {
+    display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto;
+    padding: 12px; background: #2a8b8e22; border-radius: 12px;
+    border: 2px dashed #2a8b8e;
+    min-height: 130px;
+  }
+  .event-card {
+    background: white; border-radius: 12px; padding: 10px 12px;
+    width: 160px; min-height: 110px;
+    box-shadow: 0 3px 8px rgba(60,40,20,0.15);
+    border: 2px solid #c9b896;
+    cursor: grab; user-select: none;
+    display: flex; flex-direction: column; gap: 4px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    touch-action: none;
+  }
+  .event-card:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(60,40,20,0.22); }
+  .event-card.dragging { opacity: 0.5; }
+  .event-card .emoji { font-size: 1.6rem; }
+  .event-card .civ { font-size: 0.72rem; font-weight: 700; color: #b8763d; text-transform: uppercase; letter-spacing: 0.5px; }
+  .event-card .name { font-size: 0.85rem; font-weight: 700; color: #2b2118; line-height: 1.2; }
+  .event-card .year { font-size: 0.75rem; color: #5c3a21; font-style: italic; }
+  .event-card.revealed .year { font-weight: 700; color: #b8763d; }
+  .event-card.correct { border-color: #4a8b4a; background: #e8f5e8; }
+  .event-card.wrong   { border-color: #c44; background: #fde8e8; }
+  .slot-arrow { align-self: center; color: #2a8b8e; font-weight: 700; font-size: 1.4rem; }
+
+  /* MEANWHILE mode */
+  .meanwhile-hero {
+    background: linear-gradient(135deg, #b8763d 0%, #d4a04a 100%);
+    color: #fffdf7; border-radius: 14px; padding: 20px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(60,40,20,0.2);
+  }
+  .meanwhile-hero .emoji { font-size: 3rem; display: block; margin-bottom: 8px; }
+  .meanwhile-hero .civ { font-size: 0.85rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
+  .meanwhile-hero .name { font-size: 1.4rem; font-weight: 800; margin: 4px 0; }
+  .meanwhile-hero .year { font-size: 1rem; font-weight: 700; }
+  .meanwhile-hero .desc { font-size: 0.95rem; margin-top: 6px; opacity: 0.95; }
+
+  .meanwhile-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .meanwhile-card {
+    background: white; border-radius: 14px; padding: 14px;
+    border: 2px solid #c9b896; min-height: 130px;
+    display: flex; flex-direction: column; gap: 6px;
+    box-shadow: 0 3px 8px rgba(60,40,20,0.12);
+    position: relative;
+    transition: transform 0.2s;
+  }
+  .meanwhile-card.hidden-card { cursor: pointer; align-items: center; justify-content: center; background: linear-gradient(135deg, #5c3a21 0%, #3d2817 100%); color: #fdf6e3; }
+  .meanwhile-card.hidden-card:hover { transform: translateY(-2px); }
+  .meanwhile-card.hidden-card .q-mark { font-size: 2.4rem; }
+  .meanwhile-card.hidden-card .hint { font-size: 0.85rem; opacity: 0.8; }
+  .meanwhile-card .emoji { font-size: 2rem; }
+  .meanwhile-card .civ { font-size: 0.75rem; font-weight: 700; color: #b8763d; text-transform: uppercase; }
+  .meanwhile-card .name { font-size: 0.95rem; font-weight: 700; color: #2b2118; }
+  .meanwhile-card .year { font-size: 0.8rem; color: #5c3a21; font-style: italic; }
+  .meanwhile-card .desc { font-size: 0.82rem; color: #3d2817; line-height: 1.4; }
+  .bookmark-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: transparent; border: none; cursor: pointer;
+    font-size: 1.2rem; opacity: 0.4;
+  }
+  .bookmark-btn.saved { opacity: 1; }
+
+  /* YEAR EXPLORER */
+  .year-input-row {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .year-input-row input[type=number] {
+    font-size: 1.5rem; font-weight: 700; width: 130px; text-align: center;
+    color: #b8763d;
+  }
+  .year-input-row input[type=range] {
+    flex: 1; min-width: 200px;
+  }
+  .year-display {
+    font-size: 2rem; font-weight: 800; color: #b8763d;
+    text-align: center; margin: 8px 0;
+  }
+  .era-pill {
+    display: inline-block; padding: 4px 12px; border-radius: 14px;
+    font-size: 0.8rem; font-weight: 700; color: white;
+    margin-left: 8px;
+  }
+  .snapshot-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .snapshot-card {
+    background: white; border-radius: 14px; padding: 14px;
+    border-left: 6px solid #b8763d;
+    box-shadow: 0 3px 8px rgba(60,40,20,0.12);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .snapshot-card .civ-name { font-size: 1rem; font-weight: 800; color: #2b2118; }
+  .snapshot-card .event-emoji { font-size: 1.6rem; }
+  .snapshot-card .event-name { font-size: 0.9rem; font-weight: 700; color: #3d2817; }
+  .snapshot-card .event-year { font-size: 0.8rem; color: #b8763d; font-weight: 700; }
+  .snapshot-card .event-desc { font-size: 0.82rem; color: #3d2817; line-height: 1.35; }
+  .snapshot-card .quiet { font-size: 0.82rem; color: #8a7355; font-style: italic; }
+
+  /* GALLERY */
+  .gallery-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+  }
+  .gallery-item {
+    background: linear-gradient(135deg, #fdf6e3 0%, #f3e6ce 100%);
+    border-radius: 12px; padding: 10px; border: 2px solid #d4a04a;
+    font-size: 0.85rem;
+  }
+  .gallery-item .pair-civ { font-weight: 700; color: #b8763d; }
+
+  /* FEEDBACK */
+  .toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: #2b2118; color: #fdf6e3;
+    padding: 12px 22px; border-radius: 12px;
+    font-weight: 700; z-index: 1000;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(8px); }
+
+  .score-pill {
+    display: inline-block; padding: 6px 14px; border-radius: 14px;
+    background: #d4a04a; color: #2b2118; font-weight: 700;
+    margin-right: 8px;
+  }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+    font-size: 0.75rem;
+  }
+  .legend-item {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 10px;
+    background: #f3e6ce;
+  }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+  .intro-card {
+    background: linear-gradient(135deg, #fdf6e3 0%, #e8d8c4 100%);
+    border-left: 6px solid #b8763d;
+    padding: 14px 16px; border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .intro-card p { font-size: 0.92rem; }
+
+  @media (max-width: 600px) {
+    .event-card { width: 140px; min-height: 100px; }
+    .meanwhile-hero .name { font-size: 1.15rem; }
+    h1 { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <h1><span class="hourglass">⏳</span> History Time Machine</h1>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn ghost small" id="btn-gallery">⭐ My Mind-Blown</button>
+      <button class="btn ghost small" id="btn-help">?</button>
+    </div>
+  </header>
+
+  <div class="mode-tabs">
+    <button class="btn teal"   data-mode="sort">🔀 Sort it!</button>
+    <button class="btn amber"  data-mode="meanwhile">🌍 Meanwhile, in…</button>
+    <button class="btn plum"   data-mode="year">🎯 Year Explorer</button>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <label>Difficulty:
+        <select id="difficulty">
+          <option value="younger">Younger (millennia apart, easy)</option>
+          <option value="older" selected>Older (centuries apart, tricky)</option>
+        </select>
+      </label>
+      <span class="muted" id="event-count"></span>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="card">
+    <h2>The Timeline of Everything</h2>
+    <p class="muted" id="timeline-hint">Scroll horizontally → hover or tap an event dot. Each lane is one civilization. Color bands = eras.</p>
+    <div class="timeline-wrap" id="timeline-wrap">
+      <svg class="timeline" id="timeline"></svg>
+    </div>
+    <div class="legend" id="era-legend"></div>
+  </div>
+
+  <!-- SORT IT MODE -->
+  <div id="mode-sort" class="card" style="display:none;">
+    <h2>🔀 Sort it! — Drag into chronological order</h2>
+    <p class="muted">Drag the event cards (oldest on the left, most recent on the right). Then press <b>Check</b>.</p>
+    <div class="controls" style="margin-top:10px;">
+      <button class="btn green" id="sort-new">🎲 New Round</button>
+      <button class="btn teal" id="sort-check">✓ Check Order</button>
+      <span class="score-pill">Score: <span id="sort-score">0</span></span>
+      <span class="score-pill" style="background:#2a8b8e; color:white;">Best: <span id="sort-best">0</span></span>
+    </div>
+    <div class="sort-stage">
+      <div>
+        <h3>📦 Card pile (drag from here)</h3>
+        <div class="sort-cards" id="sort-pile"></div>
+      </div>
+      <div>
+        <h3>⏳ Timeline (oldest → newest)</h3>
+        <div class="sort-slots" id="sort-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEANWHILE MODE -->
+  <div id="mode-meanwhile" class="card" style="display:none;">
+    <h2>🌍 Meanwhile, in…</h2>
+    <p class="muted">A famous event from history. Now reveal what was happening <i>at the same time</i> across the world.</p>
+    <div class="controls" style="margin-top:10px;">
+      <button class="btn green" id="meanwhile-new">🎲 New Event</button>
+    </div>
+    <div id="meanwhile-stage"></div>
+  </div>
+
+  <!-- YEAR EXPLORER -->
+  <div id="mode-year" class="card" style="display:none;">
+    <h2>🎯 Year Explorer</h2>
+    <p class="muted">Pick any year. See what was happening across the world.</p>
+    <div class="year-input-row">
+      <input type="number" id="year-input" min="-3000" max="2025" value="0" step="1">
+      <input type="range" id="year-slider" min="-3000" max="2025" value="0" step="1">
+      <button class="btn amber small" id="year-rand">🎲 Random</button>
+    </div>
+    <div class="year-display" id="year-display">Year 0 <span class="era-pill" id="era-pill"></span></div>
+    <div class="snapshot-grid" id="snapshot-grid"></div>
+  </div>
+
+  <!-- GALLERY -->
+  <div id="gallery-card" class="card" style="display:none;">
+    <h2>⭐ My Mind-Blown Moments</h2>
+    <p class="muted">Simultaneities you bookmarked. Click ⭐ in "Meanwhile, in…" to save.</p>
+    <div class="gallery-grid" id="gallery-grid"></div>
+    <button class="btn small" id="gallery-clear" style="margin-top:10px; background:#888; box-shadow:0 3px 0 #555;">Clear all</button>
+  </div>
+
+  <!-- HELP -->
+  <div id="help-card" class="intro-card" style="display:none;">
+    <h2>How to use the Time Machine</h2>
+    <p><b>The big idea:</b> History isn't a single line. While Rome built the Colosseum, the Maya were inventing rubber, and Tang China was perfecting block printing. Everything was happening at once, everywhere.</p>
+    <p style="margin-top:8px;"><b>🔀 Sort it!</b> — App scrambles event cards from different civilizations. You drag them into the right order.</p>
+    <p><b>🌍 Meanwhile, in…</b> — Pick an event. The app reveals three other things happening on Earth at the same moment. No score — just wow.</p>
+    <p><b>🎯 Year Explorer</b> — Type a year. See a snapshot per civilization. Try 1000 CE. Try 500 BCE. Try 1492.</p>
+  </div>
+
+  <p class="muted" style="text-align:center; padding: 12px;">
+    All offline. No tracking. <span id="event-bank-info"></span>
+  </p>
+</div>
+
+<div class="event-tooltip" id="tooltip"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ============================================================
+// EVENT BANK — ~95 events across 13+ civilizations
+// Years: negative = BCE, positive = CE
+// ============================================================
+
+const CIVS = [
+  { id: 'egypt',    name: 'Ancient Egypt',        color: '#d4a04a' },
+  { id: 'meso',     name: 'Mesopotamia',          color: '#a86b3d' },
+  { id: 'indus',    name: 'Indus / India',        color: '#c97b5b' },
+  { id: 'china',    name: 'China',                color: '#c0392b' },
+  { id: 'greece',   name: 'Greece',               color: '#5b8bb8' },
+  { id: 'rome',     name: 'Rome',                 color: '#7a3b6e' },
+  { id: 'maya',     name: 'Maya',                 color: '#2a8b8e' },
+  { id: 'inca',     name: 'Inca / Andes',         color: '#8b6f9c' },
+  { id: 'islam',    name: 'Islamic Golden Age',   color: '#3e7d4e' },
+  { id: 'africa',   name: 'Africa (Mali/Aksum)',  color: '#7a5230' },
+  { id: 'europe',   name: 'Medieval/Modern Europe', color: '#4a6a8a' },
+  { id: 'americas', name: 'Modern Americas',      color: '#b85c5c' },
+  { id: 'global',   name: 'Global / Modern',      color: '#3d3d5c' }
+];
+
+const ERAS = [
+  { name: 'Stone/Early',  from: -3000, to: -1200, color: '#8a7355' },
+  { name: 'Bronze Age',   from: -1200, to: -800,  color: '#a8763d' },
+  { name: 'Iron / Classical', from: -800, to: 476, color: '#5b8b9c' },
+  { name: 'Medieval',     from: 476,   to: 1450, color: '#7a3b6e' },
+  { name: 'Renaissance',  from: 1450,  to: 1750, color: '#d4a04a' },
+  { name: 'Industrial',   from: 1750,  to: 1900, color: '#5c5c3a' },
+  { name: 'Modern',       from: 1900,  to: 2025, color: '#3d3d5c' }
+];
+
+const EVENTS = [
+  // EGYPT
+  { y: -2700, civ:'egypt', name:'Step Pyramid of Djoser built', emoji:'🛕', desc:"Egypt's first pyramid — a stack of stone slabs designed by the architect Imhotep." },
+  { y: -2560, civ:'egypt', name:'Great Pyramid of Giza finished', emoji:'🔺', desc:"Built for Pharaoh Khufu using 2.3 million stone blocks. Tallest building on Earth for 3,800 years." },
+  { y: -1500, civ:'egypt', name:'Queen Hatshepsut rules Egypt', emoji:'👑', desc:"One of Egypt's most powerful pharaohs — and a woman who often wore a fake beard at ceremonies." },
+  { y: -1323, civ:'egypt', name:'Tutankhamun is buried', emoji:'⚱️', desc:"The boy-king dies at 19 and is sealed in a tomb filled with gold — undiscovered until 1922." },
+  { y: -1274, civ:'egypt', name:'Battle of Kadesh', emoji:'🐎', desc:"Egypt and the Hittite Empire fight to a draw, then sign history's first known peace treaty." },
+  { y: -51,   civ:'egypt', name:'Cleopatra becomes pharaoh', emoji:'🐍', desc:"Last ruler of ancient Egypt. Spoke nine languages and outsmarted Roman generals." },
+
+  // MESOPOTAMIA
+  { y: -3000, civ:'meso',  name:'Cuneiform writing invented', emoji:'📜', desc:"Sumerians press wedge-shapes into clay tablets — the world's first known writing system." },
+  { y: -2500, civ:'meso',  name:'Royal Tombs of Ur', emoji:'⚱️', desc:"Sumerian kings buried with golden helmets, lyres, and (sadly) attendants." },
+  { y: -1754, civ:'meso',  name:"Hammurabi's Code carved", emoji:'⚖️', desc:"Babylonian king writes 282 laws on a stone pillar — 'an eye for an eye' comes from here." },
+  { y: -612,  civ:'meso',  name:'Nineveh falls', emoji:'🏛️', desc:"The mighty Assyrian capital is destroyed — a turning point for the ancient Near East." },
+  { y: -600,  civ:'meso',  name:'Hanging Gardens of Babylon', emoji:'🌿', desc:"Legendary terraced gardens, one of the Seven Wonders — possibly built for a homesick queen." },
+
+  // INDUS / INDIA
+  { y: -2600, civ:'indus', name:'Indus Valley cities thrive', emoji:'🏙️', desc:"Mohenjo-Daro and Harappa have grid streets, sewers, and indoor plumbing — 4,500 years ago." },
+  { y: -1500, civ:'indus', name:'Rigveda hymns composed', emoji:'🪔', desc:"Oldest sacred texts of India, sung aloud for centuries before being written down." },
+  { y: -528,  civ:'indus', name:'Buddha reaches enlightenment', emoji:'🧘', desc:"Siddhartha Gautama sits under the Bodhi tree and founds Buddhism." },
+  { y: -261,  civ:'indus', name:'Emperor Ashoka adopts non-violence', emoji:'🦁', desc:"After a brutal war, Ashoka converts to Buddhism and spreads peace across his empire." },
+  { y: 499,   civ:'indus', name:'Aryabhata calculates π and zero', emoji:'🔢', desc:"Indian mathematician uses the number zero and figures the Earth rotates on an axis." },
+  { y: 1631,  civ:'indus', name:'Taj Mahal begun', emoji:'🕌', desc:"Mughal emperor Shah Jahan builds a marble tomb for his wife. Takes 22 years." },
+
+  // CHINA
+  { y: -1600, civ:'china', name:'Shang Dynasty bronze casting', emoji:'🏺', desc:"Chinese craftsmen pour molten bronze into giant ritual vessels covered in dragons." },
+  { y: -1200, civ:'china', name:'Oracle bones inscribed', emoji:'🦴', desc:"Priests heat turtle shells until they crack, then read the cracks to predict the future." },
+  { y: -551,  civ:'china', name:'Confucius is born', emoji:'📚', desc:"A teacher whose ideas about kindness, family, and learning still shape East Asia." },
+  { y: -221,  civ:'china', name:'Great Wall of China begun', emoji:'🧱', desc:"Emperor Qin Shi Huang connects existing walls into one massive barrier." },
+  { y: -210,  civ:'china', name:'Terracotta Army built', emoji:'🗿', desc:"8,000 life-sized clay soldiers buried with the first Chinese emperor to guard him in the afterlife." },
+  { y: 105,   civ:'china', name:'Paper invented in Han China', emoji:'📄', desc:"Cai Lun perfects a way to pulp tree bark and rags into thin sheets — changes the world." },
+  { y: 868,   civ:'china', name:'First printed book (Diamond Sutra)', emoji:'📖', desc:"Tang China uses carved wooden blocks to print a Buddhist scroll — 600 years before Gutenberg." },
+  { y: 1088,  civ:'china', name:'Magnetic compass for ships', emoji:'🧭', desc:"Song-dynasty sailors use magnetized needles to navigate — revolutionizing seafaring." },
+  { y: 1405,  civ:'china', name:'Zheng He sails huge treasure fleet', emoji:'⛵', desc:"Chinese admiral commands ships 5x bigger than European ones, reaches Africa and Arabia." },
+  { y: 1644,  civ:'china', name:'Qing Dynasty begins', emoji:'🐉', desc:"The Manchu people take over China and rule for almost 270 years — the last dynasty." },
+
+  // GREECE
+  { y: -1450, civ:'greece', name:'Minoan civilization peaks on Crete', emoji:'🐂', desc:"Palace of Knossos, bull-leaping rituals, and Europe's earliest writing." },
+  { y: -776,  civ:'greece', name:'First Olympic Games', emoji:'🏅', desc:"Greek city-states pause wars to compete in running, wrestling, and chariot races." },
+  { y: -508,  civ:'greece', name:'Athens invents democracy', emoji:'🗳️', desc:"Citizens (only free men, though) vote on city laws — a totally new idea." },
+  { y: -432,  civ:'greece', name:'Parthenon completed', emoji:'🏛️', desc:"Marble temple to Athena built atop the Acropolis in just 15 years." },
+  { y: -399,  civ:'greece', name:'Socrates put on trial', emoji:'🤔', desc:"The annoying-question philosopher is sentenced to drink poison for 'corrupting youth'." },
+  { y: -323,  civ:'greece', name:'Alexander the Great dies', emoji:'⚔️', desc:"By age 32 he had conquered from Greece to India. Then a fever ended it all." },
+
+  // ROME
+  { y: -753,  civ:'rome',  name:'Rome founded (legend)', emoji:'🐺', desc:"Twin brothers Romulus and Remus, raised by a wolf, found a small city by the Tiber." },
+  { y: -509,  civ:'rome',  name:'Roman Republic begins', emoji:'🏛️', desc:"Romans kick out their last king and invent a republic with elected senators." },
+  { y: -44,   civ:'rome',  name:'Julius Caesar assassinated', emoji:'🗡️', desc:"Stabbed 23 times by senators on the Ides of March. 'Et tu, Brute?'" },
+  { y: 80,    civ:'rome',  name:'Colosseum opens in Rome', emoji:'🏟️', desc:"50,000-seat stadium for gladiator fights, animal hunts, and mock sea battles." },
+  { y: 122,   civ:'rome',  name:"Hadrian's Wall built", emoji:'🧱', desc:"73-mile stone wall across Britain to keep northern tribes out." },
+  { y: 313,   civ:'rome',  name:'Christianity legalized', emoji:'✝️', desc:"Emperor Constantine ends persecution and converts — a turning point for Western religion." },
+  { y: 476,   civ:'rome',  name:'Western Roman Empire falls', emoji:'💥', desc:"The last emperor in Rome is deposed by a Germanic king. End of an era." },
+
+  // MAYA
+  { y: -1600, civ:'maya',  name:'Maya invent rubber', emoji:'⚽', desc:"Mesoamericans mix latex with vines to make bouncing rubber balls — 3,500 years ago." },
+  { y: -400,  civ:'maya',  name:'Maya develop the number zero', emoji:'⭕', desc:"Independently from India, the Maya use zero as a placeholder in their counting." },
+  { y: 250,   civ:'maya',  name:'Classic Maya cities flourish', emoji:'🌳', desc:"Tikal, Palenque, and Copán — huge stone pyramids in the jungle, ruled by god-kings." },
+  { y: 615,   civ:'maya',  name:'King Pakal rules Palenque', emoji:'🗿', desc:"Built temples covered in carved star-maps. His tomb has a famous astronaut-looking lid." },
+  { y: 900,   civ:'maya',  name:'Mysterious Maya collapse', emoji:'🌫️', desc:"Most southern cities are abandoned within decades. Drought? War? Still debated." },
+
+  // INCA / ANDES
+  { y: -900,  civ:'inca',  name:'Chavín culture in the Andes', emoji:'🐆', desc:"Pre-Inca Andean people build stone temples decorated with jaguars and cosmic gods." },
+  { y: 600,   civ:'inca',  name:'Nazca Lines drawn in Peru', emoji:'🕊️', desc:"Giant pictures of monkeys, birds, and spiders scraped into the desert — only visible from the sky." },
+  { y: 1438,  civ:'inca',  name:'Inca Empire begins expansion', emoji:'🏔️', desc:"Emperor Pachacuti builds the biggest empire in pre-Columbian Americas in just decades." },
+  { y: 1450,  civ:'inca',  name:'Machu Picchu built', emoji:'⛰️', desc:"Royal Inca retreat on a mountaintop — perfectly fitted stones, no mortar, no wheels." },
+  { y: 1532,  civ:'inca',  name:'Inca Empire falls to Spain', emoji:'⚔️', desc:"168 Spanish soldiers, helped by smallpox and rivals, topple an empire of 12 million." },
+
+  // ISLAMIC GOLDEN AGE
+  { y: 622,   civ:'islam', name:'Prophet Muhammad migrates to Medina', emoji:'🕌', desc:"The Hijra — start of the Islamic calendar and the rise of Islam." },
+  { y: 762,   civ:'islam', name:'Baghdad founded', emoji:'🏙️', desc:"Caliph al-Mansur builds a round city that becomes the world's center of learning." },
+  { y: 820,   civ:'islam', name:'Al-Khwarizmi invents algebra', emoji:'➕', desc:"Persian mathematician writes 'Al-Jabr' — that's where the word algebra comes from." },
+  { y: 1025,  civ:'islam', name:'Ibn Sina writes Canon of Medicine', emoji:'⚕️', desc:"Persian doctor's encyclopedia is used as a medical textbook for 600 years." },
+  { y: 1258,  civ:'islam', name:'Baghdad sacked by Mongols', emoji:'🐎', desc:"Mongol armies destroy the city — the Tigris ran black with ink from thrown books." },
+
+  // AFRICA (beyond Egypt)
+  { y: 100,   civ:'africa', name:'Kingdom of Aksum rises', emoji:'🐫', desc:"Ethiopian empire mints its own coins and is one of four great powers of the ancient world." },
+  { y: 1100,  civ:'africa', name:'Great Zimbabwe built', emoji:'🗿', desc:"Massive stone city in southern Africa — walls 11 meters tall, built without mortar." },
+  { y: 1324,  civ:'africa', name:'Mansa Musa pilgrimage to Mecca', emoji:'💰', desc:"Mali emperor spends so much gold on the journey it crashes the economies of Egypt for years." },
+  { y: 1591,  civ:'africa', name:'Songhai Empire falls', emoji:'🏛️', desc:"West African empire, home to Timbuktu's libraries, conquered by Morocco." },
+
+  // EUROPE (medieval / renaissance / industrial)
+  { y: 800,   civ:'europe', name:'Charlemagne crowned emperor', emoji:'👑', desc:"Frankish king united much of western Europe — reborn 'Holy Roman Empire'." },
+  { y: 1066,  civ:'europe', name:'Norman conquest of England', emoji:'🏹', desc:"William of Normandy invades and wins at the Battle of Hastings." },
+  { y: 1215,  civ:'europe', name:'Magna Carta signed', emoji:'📜', desc:"English barons force King John to agree that even the king must obey the law." },
+  { y: 1347,  civ:'europe', name:'Black Death sweeps Europe', emoji:'🐀', desc:"Plague kills roughly a third of Europe in just four years." },
+  { y: 1440,  civ:'europe', name:'Gutenberg printing press', emoji:'🖨️', desc:"Movable metal type lets books be printed cheaply — Europe's information revolution." },
+  { y: 1503,  civ:'europe', name:'Mona Lisa painted', emoji:'🎨', desc:"Leonardo da Vinci begins his most famous portrait — and keeps tweaking it for years." },
+  { y: 1543,  civ:'europe', name:'Copernicus: Earth orbits the Sun', emoji:'☀️', desc:"Polish astronomer publishes the heliocentric model — Earth is NOT the center." },
+  { y: 1687,  civ:'europe', name:'Newton publishes laws of motion', emoji:'🍎', desc:"Gravity, motion, the math of the universe — all in one book (the Principia)." },
+  { y: 1789,  civ:'europe', name:'French Revolution begins', emoji:'🇫🇷', desc:"Parisians storm the Bastille prison. King and queen lose more than their crowns." },
+  { y: 1837,  civ:'europe', name:'Queen Victoria takes throne', emoji:'👸', desc:"Reigns for 63 years over Britain's empire, which becomes the largest in history." },
+  { y: 1859,  civ:'europe', name:'Darwin: On the Origin of Species', emoji:'🐢', desc:"Evolution by natural selection — a new explanation for how life developed." },
+
+  // AMERICAS (modern)
+  { y: 1492,  civ:'americas', name:'Columbus reaches the Caribbean', emoji:'⛵', desc:"Italian sailor lands in the Bahamas thinking he's near India. Worlds collide." },
+  { y: 1776,  civ:'americas', name:'U.S. Declaration of Independence', emoji:'📜', desc:"Thirteen American colonies declare themselves free from British rule." },
+  { y: 1804,  civ:'americas', name:'Haiti wins independence', emoji:'🇭🇹', desc:"First successful slave revolution in history — and the first free Black republic." },
+  { y: 1865,  civ:'americas', name:'U.S. Civil War ends; slavery abolished', emoji:'🕊️', desc:"After 4 years of war, the 13th Amendment ends slavery in the United States." },
+  { y: 1903,  civ:'americas', name:'Wright Brothers first flight', emoji:'✈️', desc:"Two bicycle mechanics in North Carolina fly a powered plane for 12 seconds." },
+  { y: 1969,  civ:'americas', name:'Apollo 11 lands on the Moon', emoji:'🌕', desc:"Neil Armstrong steps off a ladder onto another world. Half a billion people watching." },
+
+  // GLOBAL / MODERN
+  { y: 1914,  civ:'global', name:'World War I begins', emoji:'🪖', desc:"An assassination in Sarajevo triggers four years of trench warfare across Europe." },
+  { y: 1928,  civ:'global', name:'Penicillin discovered', emoji:'💊', desc:"Alexander Fleming notices mold killing bacteria in a petri dish — first antibiotic." },
+  { y: 1945,  civ:'global', name:'World War II ends', emoji:'🕊️', desc:"After 6 years and 70 million dead, the war ends with atomic bombs over Japan." },
+  { y: 1947,  civ:'global', name:'India gains independence', emoji:'🇮🇳', desc:"After Gandhi's non-violent movement, Britain leaves and India becomes free." },
+  { y: 1969,  civ:'global', name:'ARPANET — the early internet', emoji:'💻', desc:"First message sent between two computers — the seed of today's internet." },
+  { y: 1989,  civ:'global', name:'Berlin Wall falls', emoji:'🧱', desc:"Crowds tear down the wall dividing East and West Berlin — Cold War winding down." },
+  { y: 2007,  civ:'global', name:'iPhone released', emoji:'📱', desc:"Touchscreen smartphones suddenly become a thing — and never stop being a thing." },
+  { y: 2020,  civ:'global', name:'COVID-19 pandemic', emoji:'🦠', desc:"A new coronavirus circles the globe in weeks. The world locks down." },
+  { y: 2022,  civ:'global', name:'ChatGPT launches publicly', emoji:'🤖', desc:"AI you can chat with reaches 100 million users in two months — fastest tech adoption ever." }
+];
+
+// Verify count
+console.log('Events:', EVENTS.length);
+
+const TOTAL_YEARS = 2025 - (-3000); // 5025
+const Y_FROM = -3000, Y_TO = 2025;
+
+// ============================================================
+// STATE
+// ============================================================
+let currentMode = 'sort';
+let difficulty = 'older';
+let sortRound = null;
+let sortBest = parseInt(localStorage.getItem('htm-sort-best') || '0', 10);
+let bookmarks = JSON.parse(localStorage.getItem('htm-bookmarks') || '[]');
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmtYear(y) {
+  if (y < 0) return Math.abs(y) + ' BCE';
+  return y + ' CE';
+}
+function eraFor(y) {
+  for (const e of ERAS) if (y >= e.from && y < e.to) return e;
+  return ERAS[ERAS.length-1];
+}
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function toast(msg, ms=1800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ============================================================
+// TIMELINE
+// ============================================================
+function renderTimeline() {
+  const svg = document.getElementById('timeline');
+  const LANE_H = 28;
+  const TOP = 36;
+  const PX_PER_YEAR = 0.5; // 5025 * 0.5 = ~2500 px wide
+  const W = Math.floor(TOTAL_YEARS * PX_PER_YEAR) + 120;
+  const LEFT = 110;
+  const H = TOP + CIVS.length * LANE_H + 30;
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  let s = '';
+  // era bands
+  ERAS.forEach(era => {
+    const x1 = LEFT + (era.from - Y_FROM) * PX_PER_YEAR;
+    const x2 = LEFT + (era.to   - Y_FROM) * PX_PER_YEAR;
+    s += `<rect class="era-band" x="${x1}" y="0" width="${x2-x1}" height="${TOP-6}" fill="${era.color}"/>`;
+    s += `<text class="era-label" x="${(x1+x2)/2}" y="20" text-anchor="middle">${era.name}</text>`;
+  });
+
+  // civ lanes
+  CIVS.forEach((civ, i) => {
+    const y = TOP + i * LANE_H;
+    s += `<rect class="civ-lane ${i%2?'alt':''}" x="0" y="${y}" width="${W}" height="${LANE_H}"/>`;
+    s += `<text class="civ-label" x="6" y="${y + LANE_H/2 + 4}">${civ.name}</text>`;
+    s += `<line x1="${LEFT}" y1="${y + LANE_H/2}" x2="${W-20}" y2="${y + LANE_H/2}" stroke="${civ.color}" stroke-width="2" opacity="0.4"/>`;
+  });
+
+  // year ticks every 500 years
+  for (let y = Y_FROM; y <= Y_TO; y += 500) {
+    const x = LEFT + (y - Y_FROM) * PX_PER_YEAR;
+    s += `<line class="year-tick" x1="${x}" y1="${TOP-4}" x2="${x}" y2="${TOP + CIVS.length*LANE_H + 4}"/>`;
+    s += `<text class="year-text" x="${x}" y="${TOP + CIVS.length*LANE_H + 18}" text-anchor="middle">${fmtYear(y)}</text>`;
+  }
+
+  // event dots
+  EVENTS.forEach((ev, idx) => {
+    const civIdx = CIVS.findIndex(c => c.id === ev.civ);
+    if (civIdx < 0) return;
+    const y = TOP + civIdx * LANE_H + LANE_H/2;
+    const x = LEFT + (ev.y - Y_FROM) * PX_PER_YEAR;
+    const civColor = CIVS[civIdx].color;
+    s += `<g class="event-dot" data-idx="${idx}">
+      <circle cx="${x}" cy="${y}" r="9" fill="${civColor}" stroke="#fffdf7" stroke-width="1.5"/>
+      <text x="${x}" y="${y+4}" text-anchor="middle" font-size="10">${ev.emoji}</text>
+    </g>`;
+  });
+
+  svg.innerHTML = s;
+
+  // tooltips
+  const tip = document.getElementById('tooltip');
+  svg.querySelectorAll('.event-dot').forEach(g => {
+    const idx = +g.dataset.idx;
+    const ev = EVENTS[idx];
+    function show(e) {
+      tip.innerHTML = `<b>${ev.emoji} ${ev.name}</b><br><span style="opacity:0.8;">${fmtYear(ev.y)} — ${CIVS.find(c=>c.id===ev.civ).name}</span><br>${ev.desc}`;
+      tip.style.display = 'block';
+      const evt = e.touches ? e.touches[0] : e;
+      tip.style.left = Math.min(window.innerWidth - 260, evt.clientX + 12) + 'px';
+      tip.style.top  = (evt.clientY + 12) + 'px';
+    }
+    function hide() { tip.style.display = 'none'; }
+    g.addEventListener('mouseenter', show);
+    g.addEventListener('mousemove', show);
+    g.addEventListener('mouseleave', hide);
+    g.addEventListener('touchstart', (e) => { show(e); setTimeout(hide, 3000); });
+  });
+
+  // legend
+  const legend = document.getElementById('era-legend');
+  legend.innerHTML = ERAS.map(e => `<span class="legend-item"><span class="legend-swatch" style="background:${e.color}"></span>${e.name}</span>`).join('');
+
+  // info
+  document.getElementById('event-count').textContent = `${EVENTS.length} events · ${CIVS.length} civilizations`;
+  document.getElementById('event-bank-info').textContent = `Curated bank: ${EVENTS.length} events across ${CIVS.length} civilizations.`;
+}
+
+// ============================================================
+// MODE SWITCH
+// ============================================================
+function switchMode(m) {
+  currentMode = m;
+  document.querySelectorAll('.mode-tabs .btn').forEach(b => {
+    b.classList.toggle('inactive', b.dataset.mode !== m);
+  });
+  document.getElementById('mode-sort').style.display      = m === 'sort'      ? 'block' : 'none';
+  document.getElementById('mode-meanwhile').style.display = m === 'meanwhile' ? 'block' : 'none';
+  document.getElementById('mode-year').style.display      = m === 'year'      ? 'block' : 'none';
+  if (m === 'sort' && !sortRound) newSortRound();
+  if (m === 'meanwhile' && !document.getElementById('meanwhile-stage').firstChild) newMeanwhile();
+  if (m === 'year') renderYearExplorer(+document.getElementById('year-input').value);
+}
+
+// ============================================================
+// SORT IT mode
+// ============================================================
+function pickSortEvents() {
+  const n = 6;
+  if (difficulty === 'younger') {
+    // events spread across millennia — pick from very different eras
+    const buckets = [
+      EVENTS.filter(e => e.y < -1000),
+      EVENTS.filter(e => e.y >= -1000 && e.y < 0),
+      EVENTS.filter(e => e.y >= 0 && e.y < 800),
+      EVENTS.filter(e => e.y >= 800 && e.y < 1500),
+      EVENTS.filter(e => e.y >= 1500 && e.y < 1900),
+      EVENTS.filter(e => e.y >= 1900)
+    ];
+    return buckets.map(b => b[Math.floor(Math.random()*b.length)]).filter(Boolean);
+  } else {
+    // events closer together — pick from a random ~600-year window
+    let pool = [];
+    let attempts = 0;
+    while (pool.length < n && attempts < 30) {
+      const center = EVENTS[Math.floor(Math.random()*EVENTS.length)].y;
+      pool = EVENTS.filter(e => Math.abs(e.y - center) <= 350);
+      attempts++;
+    }
+    if (pool.length < n) pool = EVENTS;
+    return shuffle(pool).slice(0, n);
+  }
+}
+
+function newSortRound() {
+  const picks = pickSortEvents();
+  sortRound = {
+    events: picks,
+    order: shuffle(picks.slice()),
+    placed: new Array(picks.length).fill(null)
+  };
+  renderSort();
+  document.getElementById('sort-score').textContent = '0';
+  document.getElementById('sort-best').textContent = sortBest;
+}
+
+function renderSort() {
+  const pile = document.getElementById('sort-pile');
+  const line = document.getElementById('sort-line');
+  pile.innerHTML = ''; line.innerHTML = '';
+
+  // pile: events not yet placed
+  sortRound.order.forEach((ev, i) => {
+    if (sortRound.placed.includes(ev)) return;
+    pile.appendChild(makeCard(ev, 'pile', i));
+  });
+
+  // line: slots
+  for (let i = 0; i < sortRound.events.length; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+    slot.dataset.slotIdx = i;
+    slot.style.minWidth = '160px';
+    slot.style.minHeight = '110px';
+    slot.style.border = '2px dashed #2a8b8e88';
+    slot.style.borderRadius = '12px';
+    slot.style.padding = '4px';
+    slot.style.display = 'flex';
+    slot.style.alignItems = 'center';
+    slot.style.justifyContent = 'center';
+    slot.style.background = 'rgba(255,255,255,0.5)';
+    const placed = sortRound.placed[i];
+    if (placed) {
+      slot.appendChild(makeCard(placed, 'slot', i));
+    } else {
+      slot.textContent = i === 0 ? '← oldest' : (i === sortRound.events.length-1 ? 'newest →' : '');
+      slot.style.color = '#2a8b8e88';
+      slot.style.fontSize = '0.8rem';
+    }
+    addDropHandlers(slot);
+    line.appendChild(slot);
+    if (i < sortRound.events.length - 1) {
+      const arr = document.createElement('div');
+      arr.className = 'slot-arrow';
+      arr.textContent = '→';
+      line.appendChild(arr);
+    }
+  }
+  addDropHandlers(pile);
+}
+
+function makeCard(ev, src, idx) {
+  const div = document.createElement('div');
+  div.className = 'event-card';
+  div.dataset.year = ev.y;
+  div.draggable = true;
+  div.innerHTML = `
+    <div class="emoji">${ev.emoji}</div>
+    <div class="civ">${CIVS.find(c=>c.id===ev.civ).name}</div>
+    <div class="name">${ev.name}</div>
+    <div class="year">when?</div>
+  `;
+  div.addEventListener('dragstart', e => {
+    div.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', ev.y);
+    e.dataTransfer.effectAllowed = 'move';
+    window._dragEv = ev;
+  });
+  div.addEventListener('dragend', () => div.classList.remove('dragging'));
+
+  // touch support: simple tap-to-place
+  div.addEventListener('click', () => {
+    if (window._selectedCard === div) {
+      div.style.outline = '';
+      window._selectedCard = null;
+    } else {
+      document.querySelectorAll('.event-card').forEach(c => c.style.outline = '');
+      div.style.outline = '3px solid #b8763d';
+      window._selectedCard = div;
+      window._selectedEv = ev;
+      toast('Now tap a slot to place it');
+    }
+  });
+  return div;
+}
+
+function addDropHandlers(target) {
+  target.addEventListener('dragover', e => { e.preventDefault(); target.style.outline = '3px solid #b8763d'; });
+  target.addEventListener('dragleave', () => target.style.outline = '');
+  target.addEventListener('drop', e => {
+    e.preventDefault();
+    target.style.outline = '';
+    placeCard(target, window._dragEv);
+    window._dragEv = null;
+  });
+  target.addEventListener('click', e => {
+    if (window._selectedCard && window._selectedEv) {
+      placeCard(target, window._selectedEv);
+      window._selectedCard = null;
+      window._selectedEv = null;
+    }
+  });
+}
+
+function placeCard(target, ev) {
+  if (!ev) return;
+  // remove from previous slot if any
+  const prevSlot = sortRound.placed.indexOf(ev);
+  if (prevSlot >= 0) sortRound.placed[prevSlot] = null;
+
+  if (target.dataset.slotIdx !== undefined) {
+    const idx = +target.dataset.slotIdx;
+    const occupant = sortRound.placed[idx];
+    sortRound.placed[idx] = ev;
+    // if slot was occupied, push that one back to pile (nothing needed; renderSort uses .placed)
+    if (occupant) {
+      // try to find first free slot for it? simpler: leave it back in pile
+    }
+  }
+  // else dropping back to pile — just clearing previous slot is enough
+  renderSort();
+}
+
+function checkSort() {
+  if (sortRound.placed.includes(null)) {
+    toast('Place all cards first!');
+    return;
+  }
+  // correct order is sorted by year ascending
+  const correctOrder = sortRound.events.slice().sort((a,b) => a.y - b.y);
+  let score = 0;
+  // reveal years and mark
+  document.querySelectorAll('#sort-line .event-card').forEach(card => {
+    card.classList.add('revealed');
+    const y = +card.dataset.year;
+    card.querySelector('.year').textContent = fmtYear(y);
+  });
+  document.querySelectorAll('#sort-line .slot').forEach((slot, i) => {
+    const card = slot.querySelector('.event-card');
+    if (!card) return;
+    const placed = sortRound.placed[i];
+    if (placed === correctOrder[i]) {
+      card.classList.add('correct');
+      score++;
+    } else {
+      card.classList.add('wrong');
+    }
+  });
+  document.getElementById('sort-score').textContent = score;
+  if (score > sortBest) {
+    sortBest = score;
+    localStorage.setItem('htm-sort-best', sortBest);
+    document.getElementById('sort-best').textContent = sortBest;
+    toast(`🏆 New best: ${score}/${sortRound.events.length}!`);
+  } else {
+    toast(`${score} / ${sortRound.events.length} correct`);
+  }
+}
+
+// ============================================================
+// MEANWHILE mode
+// ============================================================
+function newMeanwhile() {
+  const stage = document.getElementById('meanwhile-stage');
+  // pick a hero event — prefer "famous" ones
+  const hero = EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  // find 3 events within ±150 years from DIFFERENT civilizations
+  const window = difficulty === 'younger' ? 400 : 150;
+  let candidates = EVENTS.filter(e =>
+    e !== hero &&
+    e.civ !== hero.civ &&
+    Math.abs(e.y - hero.y) <= window
+  );
+  // expand window if not enough
+  let w = window;
+  while (candidates.length < 3 && w < 600) {
+    w += 100;
+    candidates = EVENTS.filter(e =>
+      e !== hero &&
+      e.civ !== hero.civ &&
+      Math.abs(e.y - hero.y) <= w
+    );
+  }
+  // dedupe by civ
+  const seenCivs = new Set();
+  const meanwhiles = [];
+  for (const c of shuffle(candidates)) {
+    if (!seenCivs.has(c.civ)) {
+      meanwhiles.push(c);
+      seenCivs.add(c.civ);
+      if (meanwhiles.length === 3) break;
+    }
+  }
+  // fallback: just take any 3 different civs
+  while (meanwhiles.length < 3) {
+    const pool = EVENTS.filter(e => e !== hero && !seenCivs.has(e.civ));
+    if (!pool.length) break;
+    const pick = pool[Math.floor(Math.random()*pool.length)];
+    meanwhiles.push(pick);
+    seenCivs.add(pick.civ);
+  }
+
+  const civName = id => CIVS.find(c => c.id === id).name;
+
+  stage.innerHTML = `
+    <div class="meanwhile-hero">
+      <span class="emoji">${hero.emoji}</span>
+      <div class="civ">${civName(hero.civ)}</div>
+      <div class="name">${hero.name}</div>
+      <div class="year">${fmtYear(hero.y)}</div>
+      <div class="desc">${hero.desc}</div>
+    </div>
+    <h3 style="margin-bottom: 8px;">🌐 Meanwhile, around ${fmtYear(hero.y)}…</h3>
+    <div class="meanwhile-grid">
+      ${meanwhiles.map((e, i) => `
+        <div class="meanwhile-card hidden-card" data-idx="${i}">
+          <span class="q-mark">❓</span>
+          <span class="hint">Click to reveal</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  stage.querySelectorAll('.meanwhile-card').forEach((card, i) => {
+    card.addEventListener('click', () => revealMeanwhile(card, meanwhiles[i], hero));
+  });
+}
+
+function revealMeanwhile(card, ev, hero) {
+  const civName = id => CIVS.find(c => c.id === id).name;
+  const gap = Math.abs(ev.y - hero.y);
+  const gapText = gap === 0 ? 'the same year' : `${gap} year${gap===1?'':'s'} ${ev.y > hero.y ? 'later' : 'earlier'}`;
+  const isBookmarked = bookmarks.some(b => b.hero === hero.name && b.other === ev.name);
+  card.classList.remove('hidden-card');
+  card.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="emoji">${ev.emoji}</span>
+      <div style="flex:1;">
+        <div class="civ">${civName(ev.civ)}</div>
+        <div class="name">${ev.name}</div>
+      </div>
+    </div>
+    <div class="year">${fmtYear(ev.y)} <span style="color:#8a7355;">(${gapText})</span></div>
+    <div class="desc">${ev.desc}</div>
+    <button class="bookmark-btn ${isBookmarked?'saved':''}" title="Mind blown!">⭐</button>
+  `;
+  card.querySelector('.bookmark-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleBookmark(hero, ev, e.target);
+  });
+}
+
+function toggleBookmark(hero, other, btn) {
+  const civName = id => CIVS.find(c => c.id === id).name;
+  const exists = bookmarks.findIndex(b => b.hero === hero.name && b.other === other.name);
+  if (exists >= 0) {
+    bookmarks.splice(exists, 1);
+    btn.classList.remove('saved');
+    toast('Removed bookmark');
+  } else {
+    bookmarks.push({
+      hero: hero.name, heroCiv: civName(hero.civ), heroYear: hero.y, heroEmoji: hero.emoji,
+      other: other.name, otherCiv: civName(other.civ), otherYear: other.y, otherEmoji: other.emoji
+    });
+    btn.classList.add('saved');
+    toast('🤯 Mind-blown saved!');
+  }
+  localStorage.setItem('htm-bookmarks', JSON.stringify(bookmarks));
+}
+
+// ============================================================
+// YEAR EXPLORER
+// ============================================================
+function renderYearExplorer(year) {
+  document.getElementById('year-input').value = year;
+  document.getElementById('year-slider').value = year;
+  const era = eraFor(year);
+  document.getElementById('year-display').innerHTML =
+    `${fmtYear(year)} <span class="era-pill" style="background:${era.color};">${era.name}</span>`;
+  const grid = document.getElementById('snapshot-grid');
+  grid.innerHTML = '';
+  CIVS.forEach(civ => {
+    // find closest event in this civ within ±150 years (or ±400 for ancient stretches)
+    const tol = year < 0 ? 400 : 200;
+    const candidates = EVENTS
+      .filter(e => e.civ === civ.id)
+      .map(e => ({ e, d: Math.abs(e.y - year) }))
+      .sort((a,b) => a.d - b.d);
+    const card = document.createElement('div');
+    card.className = 'snapshot-card';
+    card.style.borderLeftColor = civ.color;
+    let body;
+    if (candidates.length && candidates[0].d <= tol) {
+      const ev = candidates[0].e;
+      const direction = ev.y === year ? 'right now' : (ev.y < year ? `${year - ev.y} years before` : `${ev.y - year} years after`);
+      body = `
+        <div class="civ-name" style="color:${civ.color};">${civ.name}</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <span class="event-emoji">${ev.emoji}</span>
+          <div>
+            <div class="event-name">${ev.name}</div>
+            <div class="event-year">${fmtYear(ev.y)} · ${direction}</div>
+          </div>
+        </div>
+        <div class="event-desc">${ev.desc}</div>
+      `;
+    } else if (candidates.length) {
+      const ev = candidates[0].e;
+      body = `
+        <div class="civ-name" style="color:${civ.color};">${civ.name}</div>
+        <div class="quiet">Nothing big in our event bank right at ${fmtYear(year)}. Nearest: <b>${ev.name}</b> in ${fmtYear(ev.y)}.</div>
+      `;
+    } else {
+      body = `<div class="civ-name" style="color:${civ.color};">${civ.name}</div><div class="quiet">No events in bank.</div>`;
+    }
+    card.innerHTML = body;
+    grid.appendChild(card);
+  });
+}
+
+// ============================================================
+// GALLERY
+// ============================================================
+function renderGallery() {
+  const grid = document.getElementById('gallery-grid');
+  if (!bookmarks.length) {
+    grid.innerHTML = '<p class="muted">No mind-blown moments saved yet. In "Meanwhile, in…" tap the ⭐ on a reveal.</p>';
+    return;
+  }
+  grid.innerHTML = bookmarks.map(b => `
+    <div class="gallery-item">
+      <div>${b.heroEmoji} <span class="pair-civ">${b.heroCiv}</span> · ${fmtYear(b.heroYear)}<br>
+        <b>${b.hero}</b></div>
+      <div style="text-align:center; color:#b8763d; margin: 6px 0; font-weight:700;">↔ at the same time ↔</div>
+      <div>${b.otherEmoji} <span class="pair-civ">${b.otherCiv}</span> · ${fmtYear(b.otherYear)}<br>
+        <b>${b.other}</b></div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// WIRE UP
+// ============================================================
+document.querySelectorAll('.mode-tabs .btn').forEach(b => {
+  b.addEventListener('click', () => switchMode(b.dataset.mode));
+});
+document.getElementById('difficulty').addEventListener('change', e => {
+  difficulty = e.target.value;
+  if (currentMode === 'sort') newSortRound();
+});
+document.getElementById('sort-new').addEventListener('click', newSortRound);
+document.getElementById('sort-check').addEventListener('click', checkSort);
+document.getElementById('meanwhile-new').addEventListener('click', newMeanwhile);
+document.getElementById('year-input').addEventListener('input', e => renderYearExplorer(+e.target.value));
+document.getElementById('year-slider').addEventListener('input', e => renderYearExplorer(+e.target.value));
+document.getElementById('year-rand').addEventListener('click', () => {
+  const ev = EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  renderYearExplorer(ev.y);
+});
+document.getElementById('btn-gallery').addEventListener('click', () => {
+  const card = document.getElementById('gallery-card');
+  const show = card.style.display === 'none';
+  card.style.display = show ? 'block' : 'none';
+  if (show) renderGallery();
+});
+document.getElementById('btn-help').addEventListener('click', () => {
+  const c = document.getElementById('help-card');
+  c.style.display = c.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('gallery-clear').addEventListener('click', () => {
+  if (confirm('Clear all bookmarks?')) {
+    bookmarks = [];
+    localStorage.setItem('htm-bookmarks', '[]');
+    renderGallery();
+  }
+});
+
+// Init
+renderTimeline();
+switchMode('sort');
+renderYearExplorer(1000);
+
+// Auto-scroll timeline to current era on load
+setTimeout(() => {
+  const wrap = document.getElementById('timeline-wrap');
+  // scroll to year 0
+  const PX_PER_YEAR = 0.5;
+  wrap.scrollLeft = (0 - Y_FROM) * PX_PER_YEAR + 110 - wrap.clientWidth/2;
+}, 100);
+</script>
+</body>
+</html>

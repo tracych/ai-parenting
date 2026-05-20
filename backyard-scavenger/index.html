@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Backyard Scavenger — go find stuff outside</title>
+<style>
+  :root {
+    --moss: #4a7a3f;
+    --moss-dark: #2f5128;
+    --moss-soft: #d8ecc8;
+    --bark: #5a3e2b;
+    --sky: #6fb3d4;
+    --sky-soft: #d6ecf5;
+    --sun: #f3b94a;
+    --sun-soft: #ffe9b0;
+    --cream: #fbf6ea;
+    --cream-2: #f3ebd5;
+    --ink: #2c2a26;
+    --ink-soft: #5f594c;
+    --rare: #b6457a;
+    --rare-soft: #f7d5e4;
+    --shadow: 0 4px 12px rgba(60, 50, 30, 0.10);
+    --shadow-lift: 0 8px 22px rgba(60, 50, 30, 0.18);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45;
+    -webkit-tap-highlight-color: transparent;
+  }
+  header {
+    background: linear-gradient(160deg, var(--moss-soft) 0%, var(--sky-soft) 100%);
+    padding: 18px 16px 14px;
+    text-align: center;
+    border-bottom: 3px solid var(--moss);
+  }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 1.55rem;
+    letter-spacing: -0.4px;
+    color: var(--moss-dark);
+  }
+  header .sub {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+  }
+  .badges {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: white;
+    box-shadow: var(--shadow);
+    color: var(--ink);
+  }
+  .badge.streak { background: var(--sun-soft); color: #7a4d0e; }
+  .badge.season { background: var(--moss-soft); color: var(--moss-dark); }
+
+  nav.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 8px 0;
+    flex-wrap: wrap;
+  }
+  nav.tabs button {
+    background: transparent;
+    border: 1.5px solid transparent;
+    color: var(--ink-soft);
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.92rem;
+    transition: all 0.15s ease;
+  }
+  nav.tabs button:hover { background: var(--cream-2); }
+  nav.tabs button.active {
+    background: var(--moss);
+    color: white;
+    font-weight: 600;
+    border-color: var(--moss);
+  }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 14px 12px 100px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+  }
+  .card h2 {
+    margin: 0 0 10px;
+    font-size: 1.1rem;
+    color: var(--moss-dark);
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row.between { justify-content: space-between; }
+
+  .pillgroup { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill {
+    background: var(--cream-2);
+    border: 1.5px solid transparent;
+    color: var(--ink);
+    padding: 7px 13px;
+    border-radius: 999px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.9rem;
+    transition: all 0.1s ease;
+  }
+  .pill.active {
+    background: var(--moss);
+    color: white;
+    border-color: var(--moss-dark);
+    font-weight: 600;
+  }
+  .pill.diff-adventure.active { background: var(--rare); border-color: #872f5b; }
+
+  .btn {
+    background: var(--moss);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .btn:hover { box-shadow: var(--shadow-lift); }
+  .btn:active { transform: translateY(1px); }
+  .btn.big { padding: 14px 24px; font-size: 1.05rem; width: 100%; }
+  .btn.ghost { background: white; color: var(--moss-dark); border: 1.5px solid var(--moss); }
+  .btn.warn { background: #c2492f; }
+  .btn.sun { background: var(--sun); color: #5a3e0e; }
+
+  /* Players */
+  #playersList { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .player-row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--cream-2);
+    padding: 7px 10px;
+    border-radius: 10px;
+  }
+  .player-dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  }
+  .player-row input.name {
+    flex: 1;
+    background: white;
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.92rem;
+  }
+  .player-row button {
+    background: transparent;
+    border: none;
+    color: #b34;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  /* Hunt items */
+  #huntMeta {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 8px; flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .progressbar {
+    flex: 1; min-width: 140px;
+    height: 12px;
+    background: var(--cream-2);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid #e6dec5;
+  }
+  .progressbar > div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--moss) 0%, var(--sky) 100%);
+    width: 0%;
+    transition: width 0.35s ease;
+  }
+  #progressText { font-size: 0.92rem; color: var(--ink-soft); font-weight: 600; }
+
+  .item-list { display: flex; flex-direction: column; gap: 10px; }
+  .item {
+    background: white;
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: var(--shadow);
+    border-left: 5px solid var(--moss);
+    transition: opacity 0.2s ease;
+  }
+  .item.rare { border-left-color: var(--rare); }
+  .item.found { background: #f0f9ea; }
+  .item-top { display: flex; align-items: center; gap: 10px; }
+  .item-emoji { font-size: 2rem; line-height: 1; flex-shrink: 0; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--ink);
+    margin: 0;
+  }
+  .item-cat {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+  .item.rare .item-cat::after {
+    content: " · rare ✨";
+    color: var(--rare);
+    font-weight: 700;
+  }
+
+  .item-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+  .icon-btn {
+    background: var(--cream-2);
+    border: none;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
+  .icon-btn:hover { background: var(--sun-soft); }
+
+  .find-btn {
+    background: var(--moss);
+    color: white;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .item.found .find-btn { background: var(--sun); color: #5a3e0e; }
+  .file-hidden { display: none; }
+
+  .item-hint {
+    display: none;
+    margin-top: 8px;
+    background: var(--sky-soft);
+    border-radius: 10px;
+    padding: 9px 11px;
+    font-size: 0.9rem;
+    color: var(--ink);
+    border-left: 3px solid var(--sky);
+  }
+  .item-hint.show { display: block; }
+
+  .item-photo {
+    display: none;
+    margin-top: 8px;
+    position: relative;
+  }
+  .item-photo.show { display: block; }
+  .item-photo img {
+    width: 100%;
+    max-height: 280px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 2px solid var(--moss);
+  }
+  .item-photo .photo-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+  }
+  .item-photo button.retake {
+    background: transparent;
+    border: 1px solid var(--moss);
+    color: var(--moss-dark);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+
+  .player-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--cream-2);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .player-tag .player-dot { width: 12px; height: 12px; }
+  .assign-select {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 4px 6px;
+    font: inherit;
+    font-size: 0.82rem;
+    margin-top: 6px;
+  }
+
+  /* History */
+  .history-card {
+    background: white;
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+  }
+  .history-thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .history-thumbs img {
+    width: 100%; height: 56px; object-fit: cover; border-radius: 6px;
+  }
+  .history-thumbs .more {
+    background: var(--cream-2);
+    border-radius: 6px;
+    height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+
+  /* Celebration */
+  #celebrate {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #celebrate.show { display: flex; }
+  .celebrate-box {
+    background: white;
+    border-radius: 20px;
+    padding: 26px 22px;
+    text-align: center;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: var(--shadow-lift);
+    position: relative;
+    z-index: 102;
+  }
+  .celebrate-box h2 {
+    margin: 0 0 8px;
+    color: var(--moss-dark);
+    font-size: 1.5rem;
+  }
+  .celebrate-box p { color: var(--ink-soft); margin: 6px 0; }
+  .confetti {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 101;
+    overflow: hidden;
+  }
+  .confetti span {
+    position: absolute;
+    top: -10px;
+    width: 10px; height: 14px;
+    opacity: 0.9;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); }
+  }
+
+  /* Print mode */
+  @media print {
+    @page { margin: 0.5in; }
+    header, nav.tabs, #huntActions, .find-btn, .icon-btn,
+    .item-photo, .assign-select, #celebrate, .confetti,
+    .panel:not(.active), #print-toolbar { display: none !important; }
+    body { background: white; color: black; }
+    main { padding: 0; max-width: none; }
+    .card { box-shadow: none; border: 1px solid #999; page-break-inside: avoid; }
+    .item { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    .item-hint { display: block !important; background: #f5f5f5; }
+    .item-top::before {
+      content: "☐";
+      font-size: 1.6rem;
+      margin-right: 6px;
+      color: black;
+    }
+  }
+
+  .empty {
+    text-align: center;
+    color: var(--ink-soft);
+    padding: 30px 16px;
+    font-style: italic;
+  }
+
+  .footer-note {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    margin-top: 18px;
+    padding: 0 12px;
+  }
+
+  /* Mobile tweaks */
+  @media (max-width: 480px) {
+    header h1 { font-size: 1.3rem; }
+    .item-emoji { font-size: 1.7rem; }
+    .item-name { font-size: 0.96rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔍 Backyard Scavenger</h1>
+  <p class="sub">Go outside. Find stuff. Snap a pic.</p>
+  <div class="badges">
+    <span class="badge streak" id="streakBadge">🔥 0-day streak</span>
+    <span class="badge season" id="seasonBadge">🌱 Spring</span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="setup" class="active">New Hunt</button>
+  <button data-tab="hunt">Hunt Card</button>
+  <button data-tab="history">History</button>
+  <button data-tab="about">About</button>
+</nav>
+
+<main>
+
+  <!-- SETUP PANEL -->
+  <section class="panel active" id="panel-setup">
+    <div class="card">
+      <h2>1. Pick your season</h2>
+      <div class="pillgroup" id="seasonPills">
+        <button class="pill" data-season="spring">🌸 Spring</button>
+        <button class="pill" data-season="summer">☀️ Summer</button>
+        <button class="pill" data-season="fall">🍂 Fall</button>
+        <button class="pill" data-season="winter">❄️ Winter</button>
+      </div>
+      <p class="footer-note" style="text-align:left; margin-top:8px;">
+        Auto-picked from today's date. Tap to override.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>2. Pick difficulty</h2>
+      <div class="pillgroup" id="diffPills">
+        <button class="pill diff-easy" data-diff="easy">🌿 Easy · 10 items</button>
+        <button class="pill diff-adventure" data-diff="adventure">⛰️ Adventure · 20 items</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. Who's playing?</h2>
+      <div id="playersList"></div>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn ghost" id="addPlayerBtn">+ Add player</button>
+        <span class="footer-note" style="margin:0;">Skip for solo. Items can be assigned to anyone.</span>
+      </div>
+    </div>
+
+    <button class="btn big" id="startBtn">🎒 Start the hunt!</button>
+  </section>
+
+  <!-- HUNT PANEL -->
+  <section class="panel" id="panel-hunt">
+    <div id="huntMeta">
+      <div class="progressbar"><div id="progressFill"></div></div>
+      <span id="progressText">0 / 0</span>
+    </div>
+    <div class="row between" id="huntActions" style="margin-bottom:12px;">
+      <button class="btn ghost" id="printBtn">🖨️ Print</button>
+      <button class="btn warn" id="abandonBtn">End hunt</button>
+    </div>
+    <div id="itemList" class="item-list"></div>
+    <p class="empty" id="noHunt">No hunt yet — head to <b>New Hunt</b> to start one.</p>
+  </section>
+
+  <!-- HISTORY PANEL -->
+  <section class="panel" id="panel-history">
+    <div id="historyList"></div>
+    <p class="empty" id="noHistory">No past hunts yet. Go explore!</p>
+  </section>
+
+  <!-- ABOUT PANEL -->
+  <section class="panel" id="panel-about">
+    <div class="card">
+      <h2>About Backyard Scavenger</h2>
+      <p>A pocket-sized excuse to get outside. Pick a season, get a list of stuff to look for, and snap a photo when you find it. Each item has a <b>?</b> button — a quick kid-friendly hint about how to recognize it.</p>
+      <p><b>Family team mode:</b> add a couple of players and assign items to a specific kid (or leave them as "anyone").</p>
+      <p><b>Print mode:</b> hit the 🖨️ Print button on the hunt card for a paper version — useful for car trips, classrooms, or just unplugging.</p>
+      <p><b>Photos stay on this device.</b> Nothing is uploaded — everything lives in your browser's local storage.</p>
+      <hr style="border:none; border-top:1px solid #eee; margin: 14px 0;">
+      <button class="btn warn" id="resetBtn">Reset everything</button>
+    </div>
+  </section>
+
+  <p class="footer-note">Works offline. No login, no GPS, no tracking. Made for muddy hands.</p>
+</main>
+
+<!-- Celebration overlay -->
+<div id="celebrate" role="dialog" aria-modal="true">
+  <div class="confetti" id="confetti"></div>
+  <div class="celebrate-box">
+    <h2>🎉 You found them all!</h2>
+    <p id="celebrateTime">Took you 0 min.</p>
+    <p>Streak: <b id="celebrateStreak">1 day</b> 🔥</p>
+    <button class="btn sun big" id="celebrateClose">Awesome!</button>
+  </div>
+</div>
+
+<script>
+/* ===========================================================================
+   BACKYARD SCAVENGER — single-file vanilla JS
+   =========================================================================== */
+
+const STORE_KEY = 'backyard-scavenger-v1';
+
+/* -------------------- ITEM BANK (60+ items) --------------------
+   Each item: id, name, emoji, category, seasons[], rare (bool), hint
+*/
+const ITEM_BANK = [
+  // PLANTS
+  { id:'p1', name:'Dandelion', emoji:'🌼', cat:'Plants', seasons:['spring','summer'], hint:'Bright yellow flower with a fluffy seed-head when it goes to puff. Almost always growing in grass.' },
+  { id:'p2', name:'Pine needles in pairs', emoji:'🌲', cat:'Plants', seasons:['spring','summer','fall','winter'], hint:'If the leaves are needle-shaped and clustered in pairs (or threes), you might have found a Pine!' },
+  { id:'p3', name:'Maple leaf', emoji:'🍁', cat:'Plants', seasons:['spring','summer','fall'], hint:'Five points like a star. In fall they turn red, orange, or yellow.' },
+  { id:'p4', name:'Oak leaf', emoji:'🍃', cat:'Plants', seasons:['spring','summer','fall'], hint:'Wavy edges with rounded "lobes" — like a big puzzle piece. Often near acorns.' },
+  { id:'p5', name:'Acorn', emoji:'🌰', cat:'Plants', seasons:['fall','winter'], hint:'A little nut wearing a tiny cap. Falls from oak trees. Squirrels love them.' },
+  { id:'p6', name:'Clover (3-leaf)', emoji:'🍀', cat:'Plants', seasons:['spring','summer','fall'], hint:'Three round leaves on one little stem. Look low in the grass — they hide.' },
+  { id:'p7', name:'Mushroom', emoji:'🍄', cat:'Plants', seasons:['spring','summer','fall'], hint:'Look in damp shady spots — under logs, near roots. Look only, don\'t touch or taste!' },
+  { id:'p8', name:'Pine cone', emoji:'🌲', cat:'Plants', seasons:['fall','winter','spring','summer'], hint:'Wooden, layered, scaly. Open cones have already let their seeds fly.' },
+  { id:'p9', name:'Flower with 5 petals', emoji:'🌸', cat:'Plants', seasons:['spring','summer'], hint:'Count the petals! Five is super common — buttercups, wild roses, geraniums.' },
+  { id:'p10', name:'Tall grass', emoji:'🌾', cat:'Plants', seasons:['summer','fall'], hint:'Taller than the lawn — fluffy seedy tops. Often along edges and ditches.' },
+  { id:'p11', name:'Moss patch', emoji:'🟢', cat:'Plants', seasons:['spring','summer','fall','winter'], hint:'Tiny green fuzzy carpet on rocks, bark, or shady soil. Cool and damp to touch.' },
+  { id:'p12', name:'Fern frond', emoji:'🌿', cat:'Plants', seasons:['spring','summer','fall'], hint:'Long leaf made of tiny leaflets — like a feather. Loves shade and damp.' },
+  { id:'p13', name:'Bud on a branch', emoji:'🌱', cat:'Plants', seasons:['spring'], hint:'A tiny tight package on a twig — it\'s a leaf or flower waiting to pop open!' },
+  { id:'p14', name:'Berry (any color)', emoji:'🫐', cat:'Plants', seasons:['summer','fall'], hint:'Small round fruit on a bush. Look only — never eat unknown berries.' },
+  { id:'p15', name:'Spiky seed pod', emoji:'🌰', cat:'Plants', seasons:['fall','winter'], hint:'A sweetgum ball, burdock burr, or chestnut husk — spiky on the outside, seeds inside.', rare:true },
+  { id:'p16', name:'Tree with peeling bark', emoji:'🪵', cat:'Plants', seasons:['spring','summer','fall','winter'], hint:'Birch trees peel like paper. Sycamores look like camouflage. Don\'t pull — just look!', rare:true },
+
+  // BUGS
+  { id:'b1', name:'Ladybug', emoji:'🐞', cat:'Bugs', seasons:['spring','summer','fall'], hint:'Tiny red dome with black spots. They love leaves and stems. Gentle hands only!' },
+  { id:'b2', name:'Ant trail', emoji:'🐜', cat:'Bugs', seasons:['spring','summer','fall'], hint:'A line of ants marching one behind the other — usually headed to food or home.' },
+  { id:'b3', name:'Bee', emoji:'🐝', cat:'Bugs', seasons:['spring','summer'], hint:'Fuzzy yellow-and-black, hanging around flowers. Stay calm and watch — they\'re busy working.' },
+  { id:'b4', name:'Spider web', emoji:'🕸️', cat:'Bugs', seasons:['summer','fall'], hint:'Look in corners of fences, between branches. Morning dew makes them sparkle!' },
+  { id:'b5', name:'Butterfly', emoji:'🦋', cat:'Bugs', seasons:['spring','summer'], hint:'Big colorful wings that open and close. Loves flowers and sunny spots.' },
+  { id:'b6', name:'Worm or worm hole', emoji:'🪱', cat:'Bugs', seasons:['spring','summer','fall'], hint:'Wiggly pink friends, or little holes in dirt with crumbly castings around them.' },
+  { id:'b7', name:'Roly poly (pill bug)', emoji:'🪳', cat:'Bugs', seasons:['spring','summer','fall'], hint:'Hard gray armor — rolls into a ball when touched. Hides under rocks and logs.' },
+  { id:'b8', name:'Grasshopper or cricket', emoji:'🦗', cat:'Bugs', seasons:['summer','fall'], hint:'Long jumping legs. Listen for the chirp — crickets sing with their wings!' },
+  { id:'b9', name:'Dragonfly', emoji:'🪲', cat:'Bugs', seasons:['summer'], hint:'Long body, four see-through wings. Hovers and zips. Often near water.', rare:true },
+  { id:'b10', name:'Snail or slug', emoji:'🐌', cat:'Bugs', seasons:['spring','summer','fall'], hint:'Slow squishy traveler with a shiny trail. Loves damp mornings.', rare:true },
+  { id:'b11', name:'Caterpillar', emoji:'🐛', cat:'Bugs', seasons:['summer','fall'], hint:'Stretchy, many-legged. Munches on leaves. One day it\'ll be a butterfly or moth!', rare:true },
+
+  // WEATHER / SKY
+  { id:'w1', name:'Fluffy white cloud', emoji:'☁️', cat:'Sky', seasons:['spring','summer','fall','winter'], hint:'Like cotton balls — these are called "cumulus." What shape does yours look like?' },
+  { id:'w2', name:'Long wispy cloud', emoji:'🌥️', cat:'Sky', seasons:['spring','summer','fall','winter'], hint:'Thin streaky clouds way up high — those are "cirrus." Made of ice crystals!' },
+  { id:'w3', name:'Plane contrail', emoji:'✈️', cat:'Sky', seasons:['spring','summer','fall','winter'], hint:'A long white line across the sky from a jet — it\'s frozen water trailing behind it.' },
+  { id:'w4', name:'Bird flying', emoji:'🐦', cat:'Sky', seasons:['spring','summer','fall','winter'], hint:'Could be a sparrow, crow, hawk, or seagull. Watch how it flaps vs. glides.' },
+  { id:'w5', name:'Sunset color', emoji:'🌇', cat:'Sky', seasons:['spring','summer','fall','winter'], hint:'Pink, orange, purple — the sun bouncing off clouds. Best in the last 20 minutes of daylight.', rare:true },
+  { id:'w6', name:'Rainbow or rainbow puddle', emoji:'🌈', cat:'Sky', seasons:['spring','summer','fall'], hint:'After rain, look opposite the sun. Or look for oily puddles with rainbow swirls!', rare:true },
+  { id:'w7', name:'Frost on something', emoji:'❄️', cat:'Sky', seasons:['winter'], hint:'White crystal sparkle on grass or windows on cold mornings. It\'s frozen dew!' },
+  { id:'w8', name:'Snowflake', emoji:'❄️', cat:'Sky', seasons:['winter'], hint:'Catch one on a dark mitten and look close — every one is six-sided and different.', rare:true },
+
+  // TEXTURES
+  { id:'t1', name:'Rough bark', emoji:'🪵', cat:'Textures', seasons:['spring','summer','fall','winter'], hint:'Press your hand flat. Some bark is bumpy ridges (oak), some is scaly (pine). All different!' },
+  { id:'t2', name:'Smooth pebble', emoji:'🪨', cat:'Textures', seasons:['spring','summer','fall','winter'], hint:'A rock worn smooth — usually by water or wind over a long, long time.' },
+  { id:'t3', name:'Fuzzy moss', emoji:'🟢', cat:'Textures', seasons:['spring','summer','fall','winter'], hint:'Press gently — moss is soft like tiny carpet. Hugs rocks and damp wood.' },
+  { id:'t4', name:'Prickly leaf or pod', emoji:'🌵', cat:'Textures', seasons:['summer','fall'], hint:'Sharp little spikes — holly leaves, thistles, burrs. Look but don\'t squeeze!' },
+  { id:'t5', name:'Crunchy dry leaf', emoji:'🍂', cat:'Textures', seasons:['fall','winter'], hint:'Step on one! That crunch sound = water has all dried out of the leaf.' },
+  { id:'t6', name:'Squishy mud', emoji:'🟫', cat:'Textures', seasons:['spring','summer','fall'], hint:'Soft, wet dirt that holds a footprint. Best after a rain.' },
+  { id:'t7', name:'Sticky sap', emoji:'🟡', cat:'Textures', seasons:['spring','summer'], hint:'Clear or amber gooey stuff on tree trunks — tree "blood." Don\'t taste, hard to wash off!', rare:true },
+
+  // SOUNDS
+  { id:'s1', name:'Bird call', emoji:'🎵', cat:'Sounds', seasons:['spring','summer','fall','winter'], hint:'Close your eyes for 10 seconds. Tweet? Caw? Coo? How many different birds can you hear?' },
+  { id:'s2', name:'Rustling leaves', emoji:'🌬️', cat:'Sounds', seasons:['summer','fall'], hint:'The wind whispering through branches. Different trees make different sounds!' },
+  { id:'s3', name:'Water sound', emoji:'💧', cat:'Sounds', seasons:['spring','summer','fall','winter'], hint:'Stream, fountain, drip from a roof, sprinkler — any flowing water.' },
+  { id:'s4', name:'Bug buzz', emoji:'🐝', cat:'Sounds', seasons:['summer','fall'], hint:'Bee, fly, mosquito, cicada. That buzz is wings flapping super fast!' },
+  { id:'s5', name:'Squirrel chatter', emoji:'🐿️', cat:'Sounds', seasons:['spring','summer','fall','winter'], hint:'A scolding chirp or rattle from up in a tree — usually telling you to back off.', rare:true },
+
+  // COLORS
+  { id:'c1', name:'5 shades of green', emoji:'🟢', cat:'Colors', seasons:['spring','summer'], hint:'Bright grass-green, dark pine-green, yellow-green moss, blue-green spruce... find five different ones!' },
+  { id:'c2', name:'Something bright red', emoji:'🔴', cat:'Colors', seasons:['spring','summer','fall','winter'], hint:'A berry, a leaf, a flower, a bug — nature loves to use red as a "look at me!"' },
+  { id:'c3', name:'Something yellow', emoji:'🟡', cat:'Colors', seasons:['spring','summer','fall'], hint:'Dandelion, butterfly, fallen leaf — the sunshine color is everywhere.' },
+  { id:'c4', name:'Something purple', emoji:'🟣', cat:'Colors', seasons:['spring','summer','fall'], hint:'Wildflowers, berries, even some leaves turn purple. Harder than red — keep looking!' },
+  { id:'c5', name:'Something white', emoji:'⚪', cat:'Colors', seasons:['spring','summer','fall','winter'], hint:'A daisy, a cloud, a stone, a feather, snow. White hides in plain sight!' },
+  { id:'c6', name:'Something orange', emoji:'🟠', cat:'Colors', seasons:['fall','summer'], hint:'Fall leaves, a pumpkin, a mushroom, a monarch butterfly. Easy in October!' },
+  { id:'c7', name:'Something brown', emoji:'🟤', cat:'Colors', seasons:['spring','summer','fall','winter'], hint:'Bark, soil, acorn, dead leaf, sparrow. Brown is the most common nature color.' },
+
+  // SHAPES / PATTERNS
+  { id:'sh1', name:'Something spiral', emoji:'🌀', cat:'Shapes', seasons:['spring','summer','fall','winter'], hint:'Snail shell, fern shoot, pinecone scales, spider web. Spirals are nature\'s favorite shape!' },
+  { id:'sh2', name:'Something symmetrical', emoji:'🦋', cat:'Shapes', seasons:['spring','summer','fall'], hint:'A leaf, butterfly, or flower where the left and right sides match like a mirror.' },
+  { id:'sh3', name:'Something round', emoji:'⚪', cat:'Shapes', seasons:['spring','summer','fall','winter'], hint:'A berry, pebble, the moon, a dandelion puff — perfect circles hide everywhere.' },
+  { id:'sh4', name:'A heart shape', emoji:'❤️', cat:'Shapes', seasons:['spring','summer','fall'], hint:'Some leaves are heart-shaped (lilac, redbud). Or look in clouds, rocks, puddles!' , rare:true },
+  { id:'sh5', name:'A star shape', emoji:'⭐', cat:'Shapes', seasons:['spring','summer','fall'], hint:'Cut a maple leaf flat — a star! Some flowers have 5 pointed petals too.', rare:true },
+  { id:'sh6', name:'Pattern of stripes', emoji:'🟫', cat:'Shapes', seasons:['spring','summer','fall','winter'], hint:'A bee, a chipmunk, tree bark rings, even cloud bands in the sky.', rare:true },
+
+  // SIGNS OF LIFE
+  { id:'l1', name:'Animal track', emoji:'🐾', cat:'Signs of Life', seasons:['spring','summer','fall','winter'], hint:'Dog, cat, deer, bird, raccoon — look in mud, sand, or snow. Count toes!' },
+  { id:'l2', name:'Feather', emoji:'🪶', cat:'Signs of Life', seasons:['spring','summer','fall','winter'], hint:'A bird left this behind. Note the colors — they tell you what kind.' },
+  { id:'l3', name:'Bird\'s nest', emoji:'🪺', cat:'Signs of Life', seasons:['spring','summer','fall','winter'], hint:'Look up into branch forks. Just look — never touch a nest with eggs or chicks!', rare:true },
+  { id:'l4', name:'Hole in a tree', emoji:'🕳️', cat:'Signs of Life', seasons:['spring','summer','fall','winter'], hint:'Could be a woodpecker, squirrel home, or just where a branch fell off. Mystery!' },
+  { id:'l5', name:'Chewed leaf', emoji:'🍃', cat:'Signs of Life', seasons:['summer','fall'], hint:'A leaf with bite-marks or holes — a caterpillar or bug had lunch here.' },
+];
+
+/* -------------------- STATE -------------------- */
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return defaultState();
+}
+function defaultState() {
+  return {
+    streak: 0,
+    lastCompletedDate: null,   // YYYY-MM-DD
+    currentHunt: null,         // { items, season, diff, startTime, players }
+    history: [],               // [{ date, season, diff, items, durationMs, photos:{itemId: dataURL} }]
+    settings: {
+      season: null,            // null = auto
+      diff: 'easy',
+      players: [],             // [{ id, name, color }]
+    },
+  };
+}
+function saveState() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch (e) { console.warn('Save failed (storage full?)', e); }
+}
+
+/* -------------------- SEASON -------------------- */
+function autoSeason(d = new Date()) {
+  const m = d.getMonth() + 1;
+  if (m >= 3 && m <= 5) return 'spring';
+  if (m >= 6 && m <= 8) return 'summer';
+  if (m >= 9 && m <= 11) return 'fall';
+  return 'winter';
+}
+const SEASON_LABELS = {
+  spring: '🌸 Spring', summer: '☀️ Summer',
+  fall: '🍂 Fall', winter: '❄️ Winter',
+};
+const SEASON_EMOJI = { spring: '🌱', summer: '☀️', fall: '🍂', winter: '❄️' };
+
+/* -------------------- TABS -------------------- */
+document.querySelectorAll('nav.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const t = btn.dataset.tab;
+    document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + t));
+    if (t === 'hunt') renderHunt();
+    if (t === 'history') renderHistory();
+  });
+});
+
+/* -------------------- SETUP UI -------------------- */
+function initSetup() {
+  // Season pills
+  const chosenSeason = state.settings.season || autoSeason();
+  document.querySelectorAll('#seasonPills .pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.season === chosenSeason);
+    p.addEventListener('click', () => {
+      document.querySelectorAll('#seasonPills .pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      state.settings.season = p.dataset.season;
+      saveState();
+      updateSeasonBadge();
+    });
+  });
+  // Diff pills
+  document.querySelectorAll('#diffPills .pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.diff === state.settings.diff);
+    p.addEventListener('click', () => {
+      document.querySelectorAll('#diffPills .pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      state.settings.diff = p.dataset.diff;
+      saveState();
+    });
+  });
+  // Players
+  renderPlayersSetup();
+  document.getElementById('addPlayerBtn').addEventListener('click', () => {
+    const colors = ['#ef6f5e', '#2c8e8e', '#e9b949', '#7b5fb0', '#4a7a3f', '#d46a9f'];
+    const used = state.settings.players.map(p => p.color);
+    const color = colors.find(c => !used.includes(c)) || colors[state.settings.players.length % colors.length];
+    state.settings.players.push({
+      id: 'pl' + Date.now() + Math.random().toString(36).slice(2,6),
+      name: 'Player ' + (state.settings.players.length + 1),
+      color,
+    });
+    saveState();
+    renderPlayersSetup();
+  });
+  document.getElementById('startBtn').addEventListener('click', startHunt);
+}
+
+function renderPlayersSetup() {
+  const list = document.getElementById('playersList');
+  list.innerHTML = '';
+  if (state.settings.players.length === 0) {
+    list.innerHTML = '<p class="footer-note" style="margin:4px 0;">Solo hunt — that\'s fine too!</p>';
+    return;
+  }
+  state.settings.players.forEach((p, idx) => {
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.innerHTML = `
+      <span class="player-dot" style="background:${p.color}"></span>
+      <input class="name" type="text" value="${escapeAttr(p.name)}" maxlength="20" />
+      <button title="Remove" aria-label="Remove player">✕</button>
+    `;
+    row.querySelector('input').addEventListener('input', e => {
+      state.settings.players[idx].name = e.target.value;
+      saveState();
+    });
+    row.querySelector('button').addEventListener('click', () => {
+      state.settings.players.splice(idx, 1);
+      saveState();
+      renderPlayersSetup();
+    });
+    list.appendChild(row);
+  });
+}
+
+/* -------------------- BUILD HUNT -------------------- */
+function buildHuntItems(season, diff) {
+  // Filter by season
+  const pool = ITEM_BANK.filter(i => i.seasons.includes(season));
+  const common = pool.filter(i => !i.rare);
+  const rare = pool.filter(i => i.rare);
+
+  const targetCount = diff === 'adventure' ? 20 : 10;
+  const rareCount = diff === 'adventure' ? 3 : 1;
+
+  // Spread across categories
+  const items = [];
+  const byCat = {};
+  shuffle(common).forEach(i => {
+    byCat[i.cat] = (byCat[i.cat] || []);
+    byCat[i.cat].push(i);
+  });
+  // Round-robin from categories
+  const cats = Object.keys(byCat);
+  let safety = 0;
+  while (items.length < targetCount - rareCount && safety < 200) {
+    safety++;
+    let added = false;
+    for (const c of cats) {
+      if (byCat[c].length && items.length < targetCount - rareCount) {
+        items.push(byCat[c].shift());
+        added = true;
+      }
+    }
+    if (!added) break;
+  }
+  // Add rares
+  const chosenRare = shuffle(rare).slice(0, rareCount);
+  items.push(...chosenRare);
+
+  // Shuffle final order a bit but keep some grouping feel
+  return shuffle(items).map(it => ({
+    ...it,
+    found: false,
+    foundAt: null,
+    assignedTo: 'anyone',
+    photo: null,
+  }));
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startHunt() {
+  const season = state.settings.season || autoSeason();
+  const diff = state.settings.diff || 'easy';
+  const items = buildHuntItems(season, diff);
+  if (items.length === 0) {
+    alert('No items found for this season — try a different one!');
+    return;
+  }
+  state.currentHunt = {
+    season, diff,
+    items,
+    startTime: Date.now(),
+    players: state.settings.players.map(p => ({ ...p })),
+  };
+  saveState();
+  // Switch to hunt tab
+  document.querySelector('nav.tabs button[data-tab="hunt"]').click();
+}
+
+/* -------------------- HUNT UI -------------------- */
+function renderHunt() {
+  const wrap = document.getElementById('itemList');
+  const empty = document.getElementById('noHunt');
+  const actions = document.getElementById('huntActions');
+  const meta = document.getElementById('huntMeta');
+  if (!state.currentHunt) {
+    wrap.innerHTML = '';
+    empty.style.display = 'block';
+    actions.style.display = 'none';
+    meta.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  actions.style.display = 'flex';
+  meta.style.display = 'flex';
+
+  const items = state.currentHunt.items;
+  const found = items.filter(i => i.found).length;
+  document.getElementById('progressText').textContent = `${found} / ${items.length}`;
+  document.getElementById('progressFill').style.width = (items.length ? (found / items.length * 100) : 0) + '%';
+
+  wrap.innerHTML = '';
+  items.forEach((it, idx) => {
+    const el = document.createElement('div');
+    el.className = 'item' + (it.found ? ' found' : '') + (it.rare ? ' rare' : '');
+    el.dataset.idx = idx;
+
+    const players = state.currentHunt.players || [];
+    const assignedPlayer = players.find(p => p.id === it.assignedTo);
+
+    el.innerHTML = `
+      <div class="item-top">
+        <div class="item-emoji">${it.emoji}</div>
+        <div class="item-info">
+          <div class="item-name">${escapeHtml(it.name)}</div>
+          <div class="item-cat">${escapeHtml(it.cat)}</div>
+          ${assignedPlayer ? `<div class="player-tag"><span class="player-dot" style="background:${assignedPlayer.color}"></span>${escapeHtml(assignedPlayer.name)}</div>` : ''}
+        </div>
+        <div class="item-actions">
+          <button class="icon-btn hint-btn" title="What does it look like?" aria-label="Hint">?</button>
+          <button class="find-btn">${it.found ? '✓ Found!' : '📷 Found it!'}</button>
+          <input type="file" class="file-hidden" accept="image/*" capture="environment" />
+        </div>
+      </div>
+      ${players.length ? `
+        <select class="assign-select">
+          <option value="anyone">👥 Anyone</option>
+          ${players.map(p => `<option value="${p.id}" ${p.id===it.assignedTo?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+        </select>
+      ` : ''}
+      <div class="item-hint">${escapeHtml(it.hint)}</div>
+      <div class="item-photo ${it.photo ? 'show' : ''}">
+        ${it.photo ? `<img src="${it.photo}" alt="${escapeAttr(it.name)}" />
+          <div class="photo-meta">
+            <span>${it.foundAt ? formatTime(it.foundAt) : ''}</span>
+            <button class="retake">Retake</button>
+          </div>` : ''}
+      </div>
+    `;
+
+    // Wire up
+    el.querySelector('.hint-btn').addEventListener('click', () => {
+      el.querySelector('.item-hint').classList.toggle('show');
+    });
+    const fileInput = el.querySelector('input[type=file]');
+    el.querySelector('.find-btn').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => handlePhoto(e, idx));
+    const sel = el.querySelector('.assign-select');
+    if (sel) sel.addEventListener('change', e => {
+      state.currentHunt.items[idx].assignedTo = e.target.value;
+      saveState();
+    });
+    const retake = el.querySelector('.retake');
+    if (retake) retake.addEventListener('click', () => fileInput.click());
+
+    wrap.appendChild(el);
+  });
+}
+
+function handlePhoto(e, idx) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  // Downscale to keep storage small
+  resizeImage(f, 900, dataURL => {
+    state.currentHunt.items[idx].photo = dataURL;
+    state.currentHunt.items[idx].found = true;
+    state.currentHunt.items[idx].foundAt = Date.now();
+    saveState();
+    renderHunt();
+    // Check completion
+    const items = state.currentHunt.items;
+    if (items.every(i => i.found)) {
+      completeHunt();
+    }
+  });
+}
+
+function resizeImage(file, maxDim, cb) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height && width > maxDim) {
+        height = Math.round(height * maxDim / width); width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round(width * maxDim / height); height = maxDim;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      try {
+        cb(canvas.toDataURL('image/jpeg', 0.78));
+      } catch (err) {
+        cb(ev.target.result); // fallback: original
+      }
+    };
+    img.onerror = () => cb(ev.target.result);
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* -------------------- COMPLETE / STREAK -------------------- */
+function completeHunt() {
+  const h = state.currentHunt;
+  const durationMs = Date.now() - h.startTime;
+  // Update streak
+  const today = ymd(new Date());
+  const yesterday = ymd(new Date(Date.now() - 86400000));
+  if (state.lastCompletedDate === today) {
+    // already counted today
+  } else if (state.lastCompletedDate === yesterday) {
+    state.streak += 1;
+  } else {
+    state.streak = 1;
+  }
+  state.lastCompletedDate = today;
+
+  // Archive
+  state.history.unshift({
+    date: today,
+    season: h.season,
+    diff: h.diff,
+    items: h.items.map(i => ({
+      id: i.id, name: i.name, emoji: i.emoji, cat: i.cat,
+      photo: i.photo, foundAt: i.foundAt, assignedTo: i.assignedTo,
+    })),
+    durationMs,
+    players: h.players,
+  });
+  // Trim history to 20
+  if (state.history.length > 20) state.history.length = 20;
+  state.currentHunt = null;
+  saveState();
+  updateBadges();
+  showCelebration(durationMs);
+}
+
+function showCelebration(durationMs) {
+  const overlay = document.getElementById('celebrate');
+  document.getElementById('celebrateTime').textContent =
+    'Took you ' + formatDuration(durationMs) + '.';
+  document.getElementById('celebrateStreak').textContent =
+    state.streak + (state.streak === 1 ? ' day' : ' days');
+  overlay.classList.add('show');
+  launchConfetti();
+}
+function launchConfetti() {
+  const root = document.getElementById('confetti');
+  root.innerHTML = '';
+  const colors = ['#ef6f5e','#2c8e8e','#e9b949','#7b5fb0','#4a7a3f','#d46a9f','#6fb3d4'];
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('span');
+    s.style.background = colors[i % colors.length];
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.animationDuration = (2 + Math.random() * 2.5) + 's';
+    s.style.animationDelay = (Math.random() * 0.6) + 's';
+    s.style.transform = `rotate(${Math.random()*360}deg)`;
+    root.appendChild(s);
+  }
+}
+document.getElementById('celebrateClose').addEventListener('click', () => {
+  document.getElementById('celebrate').classList.remove('show');
+  document.getElementById('confetti').innerHTML = '';
+  document.querySelector('nav.tabs button[data-tab="history"]').click();
+});
+
+/* -------------------- HISTORY -------------------- */
+function renderHistory() {
+  const wrap = document.getElementById('historyList');
+  const empty = document.getElementById('noHistory');
+  wrap.innerHTML = '';
+  if (!state.history.length) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  state.history.forEach(h => {
+    const card = document.createElement('div');
+    card.className = 'history-card';
+    const photos = h.items.filter(i => i.photo);
+    const shownThumbs = photos.slice(0, 5);
+    card.innerHTML = `
+      <div class="row between">
+        <div>
+          <b>${SEASON_LABELS[h.season] || h.season}</b> ·
+          ${h.diff === 'adventure' ? '⛰️ Adventure' : '🌿 Easy'}
+        </div>
+        <div style="color: var(--ink-soft); font-size: 0.88rem;">
+          ${h.date} · ${formatDuration(h.durationMs)}
+        </div>
+      </div>
+      <div style="font-size:0.88rem; color: var(--ink-soft); margin-top:4px;">
+        ${h.items.length} items found
+      </div>
+      <div class="history-thumbs">
+        ${shownThumbs.map(p => `<img src="${p.photo}" alt="${escapeAttr(p.name)}" />`).join('')}
+        ${photos.length > 5 ? `<div class="more">+${photos.length - 5}</div>` : ''}
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+/* -------------------- ABANDON / PRINT / RESET -------------------- */
+document.getElementById('abandonBtn').addEventListener('click', () => {
+  if (!confirm('End this hunt? Your photos and progress will be lost (won\'t affect streak).')) return;
+  state.currentHunt = null;
+  saveState();
+  renderHunt();
+  document.querySelector('nav.tabs button[data-tab="setup"]').click();
+});
+document.getElementById('printBtn').addEventListener('click', () => {
+  // Show all hints so they print
+  document.querySelectorAll('.item-hint').forEach(h => h.classList.add('show'));
+  window.print();
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('Reset EVERYTHING — streak, history, current hunt, players? This can\'t be undone.')) return;
+  state = defaultState();
+  saveState();
+  initSetup();
+  renderHunt();
+  renderHistory();
+  updateBadges();
+  document.querySelector('nav.tabs button[data-tab="setup"]').click();
+});
+
+/* -------------------- BADGES -------------------- */
+function updateBadges() {
+  document.getElementById('streakBadge').textContent =
+    `🔥 ${state.streak}-day streak`;
+  updateSeasonBadge();
+}
+function updateSeasonBadge() {
+  const s = state.settings.season || autoSeason();
+  document.getElementById('seasonBadge').textContent = SEASON_LABELS[s];
+}
+
+/* -------------------- HELPERS -------------------- */
+function ymd(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+function formatTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+function formatDuration(ms) {
+  const min = Math.round(ms / 60000);
+  if (min < 1) return 'less than a minute';
+  if (min < 60) return min + ' min';
+  const h = Math.floor(min / 60), m = min % 60;
+  return `${h}h ${m}m`;
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+/* -------------------- INIT -------------------- */
+initSetup();
+updateBadges();
+renderHunt();
+renderHistory();
+
+// If hunt already exists, jump to it
+if (state.currentHunt) {
+  document.querySelector('nav.tabs button[data-tab="hunt"]').click();
+}
+</script>
+</body>
+</html>

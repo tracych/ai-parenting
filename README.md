@@ -1,10 +1,11 @@
 # ai-parenting
 
 A collection of small web apps and experiments built to help with parenting —
-mostly things that teach, entertain, or quietly check whether a kid is actually
-learning vs. just clicking around.
+things that teach, things families can do together, and things that quietly
+check whether a kid is actually learning vs. just clicking around.
 
-All single-file HTML, no build, no dependencies. Just open in a browser.
+All single-file HTML, no build, no dependencies, no backend, no API keys. Just
+open in a browser.
 
 ## Projects by age
 
@@ -28,6 +29,9 @@ All single-file HTML, no build, no dependencies. Just open in a browser.
 - 🦉 [**code-critters**](./code-critters/) — Block-based path puzzles with a
   Socratic Hint Owl that recognizes bug patterns and asks guiding questions
   instead of giving answers.
+- 🎹 [**music-pattern-maker**](./music-pattern-maker/) — Music theory by ear,
+  not by drill. Predict-the-next-note lessons, scale builder, rhythm clap-back,
+  and a Web Audio sandbox where kids compose melodies they can share via URL.
 
 ### Ages 9–11 (upper elementary / tween)
 
@@ -42,6 +46,16 @@ All single-file HTML, no build, no dependencies. Just open in a browser.
   Detective Mode highlights known tells *after* you commit, and calibration
   scoring penalizes overconfidence — teaching metacognition along with the
   visual skill.
+- 🐶 [**periodic-table-pets**](./periodic-table-pets/) — Chemistry as Pokémon.
+  Each element is a cartoon pet whose personality maps to its real properties
+  (reactive alkali metals = excitable puppies, noble gases = aloof cats). Pick
+  two pets to make real "compound babies" (NaCl, H₂O, …) with kid-readable
+  *why* explanations.
+- ⏳ [**history-time-machine**](./history-time-machine/) — Teaches the most
+  under-taught history skill: **simultaneity across civilizations**. Drag
+  scrambled events to the right year, or pick a year and see what was
+  happening in 13 civilizations at once ("while Rome built the Colosseum, the
+  Maya invented rubber and Tang China perfected block printing").
 
 ### Ages 12–14 (middle school)
 
@@ -53,6 +67,10 @@ All single-file HTML, no build, no dependencies. Just open in a browser.
   target output. A deterministic mock-LLM scores rubric hits so it works fully
   offline; optional BYO-key mode compares mock vs. real model output side by
   side.
+- 📖 [**coding-story-builder**](./coding-story-builder/) — Programming as
+  authoring. Drag-and-drop SCENE / CHOICE / IF / LOOP / VARIABLE blocks to
+  build a choose-your-own-adventure, then **export a standalone HTML file**
+  the kid can email to a grandparent. The export is the win.
 
 ### Ages 5–13 (any track)
 
@@ -60,6 +78,36 @@ All single-file HTML, no build, no dependencies. Just open in a browser.
   age tracks (🌱 Sprouts 5–7, 🔍 Explorers 8–10, 🔧 Builders 11–13), each with
   hands-on lessons on training from examples, features, bias, weights, prompts,
   and hallucinations. Built around **predict-then-reveal** interactions.
+
+## 🎉 Family fun — things to do together
+
+Games, rituals, and creative tools designed for the whole family on one shared
+screen. No solo-learning here — these only work when more than one person
+shows up.
+
+- 🎨 [**drawing-telephone**](./drawing-telephone/) — Digital telephone with
+  sketching. One player types a prompt → next draws it → next sees only the
+  drawing and describes it → repeat → animated **reveal slideshow** that walks
+  through the whole hilarious chain. Save favorites to the gallery.
+- 🌙 [**bedtime-story-maker**](./bedtime-story-maker/) — Kid enters their name
+  and 3 silly ingredients (a dragon, a sock, a swimming pool) → a 6-page
+  illustrated bedtime story where **they are the hero**. Read-aloud via the
+  browser's built-in voice. Always ends with the hero safe in bed.
+- 🧱 [**lego-challenge-generator**](./lego-challenge-generator/) — Spin a wheel
+  for endless open-ended build prompts (tallest tower, alien vehicle, build
+  the villain's secret base). Timer mode, Family Battle mode with crowning
+  vote, and a photo gallery of finished builds. Uses what you already own.
+- 🔍 [**backyard-scavenger**](./backyard-scavenger/) — Season-aware outdoor
+  hunt with phone-camera checkoff and curated ID hints. Family team mode,
+  print-friendly paper checklist, daily streak counter. Gets kids outside.
+- ✍️ [**story-stitch**](./story-stitch/) — Round-robin collaborative
+  storytelling for 2–6 players. Idea Spark sidebar + Twist button keep
+  momentum when stuck. Final story renders as a printable illustrated
+  storybook page with margin attributions.
+- 😂 [**joke-lab**](./joke-lab/) — Kid + parent collaborate to invent jokes
+  using setup/punchline templates. Deterministic "AI rater" scores surprise
+  and punchiness. Saves to a growing **Family Joke Book** you can read at
+  dinner.
 
 ### For parents
 
@@ -71,11 +119,16 @@ All single-file HTML, no build, no dependencies. Just open in a browser.
 
 ## Shared design philosophy
 
-All projects here follow the same principle: a kid clicking the right answer
-isn't proof of understanding. Each app is designed so the activities themselves
-generate evidence of comprehension — through multi-representation, prediction,
-failure-mode reasoning, or application to new cases — and surfaces that
-evidence in a parent dashboard where relevant.
+All projects here follow the same principles:
+
+- **Learning apps**: a kid clicking the right answer isn't proof of
+  understanding. Each app generates evidence of comprehension through
+  multi-representation, prediction, failure-mode reasoning, or application
+  to new cases — and surfaces that evidence in a parent dashboard where
+  relevant.
+- **Family-fun apps**: the activity itself is the value. No scoring engine
+  pretending to be magic, no leaderboards, no streaks-as-guilt. Just rituals
+  and games designed to produce shared moments and (often) keepable artifacts.
 
 Single-file HTML, no build, no dependencies, no backend, no required API keys.
 Just open in a browser.

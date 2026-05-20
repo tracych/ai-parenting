@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bedtime Story Maker 🌙</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: 'Iowan Old Style', 'Palatino', 'Georgia', serif;
+    background: radial-gradient(ellipse at top, #2a3a6b 0%, #1a1f4a 50%, #0f1330 100%);
+    color: #f5ead0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* twinkling stars background */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 12% 18%, #fffbe6 99%, transparent 100%),
+      radial-gradient(1px 1px at 38% 72%, #fffbe6 99%, transparent 100%),
+      radial-gradient(1px 1px at 75% 22%, #fffbe6 99%, transparent 100%),
+      radial-gradient(1px 1px at 88% 60%, #fffbe6 99%, transparent 100%),
+      radial-gradient(1px 1px at 22% 88%, #fffbe6 99%, transparent 100%),
+      radial-gradient(2px 2px at 60% 35%, #fff5b8 99%, transparent 100%),
+      radial-gradient(1px 1px at 50% 10%, #fffbe6 99%, transparent 100%),
+      radial-gradient(1px 1px at 8%  55%, #fffbe6 99%, transparent 100%);
+    background-size: 100% 100%;
+    pointer-events: none;
+    z-index: 0;
+    animation: twinkle 6s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle { from { opacity: 0.55; } to { opacity: 1; } }
+
+  #app {
+    position: relative; z-index: 1;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 22px 18px 80px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 5.5vw, 2.8rem);
+    color: #ffd87a;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .tagline {
+    color: #c5d2f0;
+    font-style: italic;
+    font-size: clamp(0.95rem, 2.4vw, 1.1rem);
+    margin-top: 4px;
+  }
+
+  .top-nav {
+    display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+    margin: 14px 0 4px;
+  }
+  .nav-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,216,122,0.4);
+    color: #ffd87a;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: inherit;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .nav-btn:hover { background: rgba(255,216,122,0.18); }
+  .nav-btn.active { background: rgba(255,216,122,0.28); }
+
+  .card {
+    background: rgba(255, 250, 232, 0.97);
+    color: #2a2348;
+    border-radius: 22px;
+    padding: 26px 22px;
+    margin: 16px 0;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45), 0 2px 0 rgba(255,216,122,0.4);
+  }
+  .card h2 {
+    font-size: clamp(1.2rem, 3.4vw, 1.5rem);
+    color: #4a3a8a;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .field-label {
+    display: block;
+    font-size: 0.95rem;
+    color: #5a4a8a;
+    margin: 14px 0 6px;
+    font-weight: 600;
+    font-family: 'Helvetica Neue', system-ui, sans-serif;
+  }
+  input[type="text"] {
+    width: 100%;
+    font-family: inherit;
+    font-size: 1.1rem;
+    padding: 12px 14px;
+    border: 2px solid #d9cda5;
+    border-radius: 14px;
+    background: #fffbe9;
+    color: #2a2348;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus { border-color: #b58a3f; }
+
+  .chips {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+  }
+  .chip {
+    background: #ece3c4;
+    color: #5a4a2a;
+    padding: 5px 11px;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Helvetica Neue', system-ui, sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .chip:hover { background: #ddd0a8; }
+  .chip:active { transform: scale(0.95); }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 22px; }
+  .btn {
+    font-family: 'Helvetica Neue', system-ui, sans-serif;
+    font-size: 1rem;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 22px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #ffd87a, #ffb84a);
+    color: #3a2a0a;
+    box-shadow: 0 4px 14px rgba(255,184,74,0.4);
+  }
+  .btn-primary:hover { box-shadow: 0 6px 20px rgba(255,184,74,0.55); }
+  .btn-primary:active { transform: translateY(2px); }
+  .btn-soft {
+    background: rgba(74, 58, 138, 0.12);
+    color: #4a3a8a;
+  }
+  .btn-soft:hover { background: rgba(74, 58, 138, 0.22); }
+  .btn-ghost {
+    background: transparent;
+    color: #c5d2f0;
+    border: 1px solid rgba(197,210,240,0.4);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.06); }
+
+  /* Story page */
+  .page-card {
+    background: linear-gradient(180deg, #fff8e0 0%, #fbe9c0 100%);
+    color: #2a2348;
+    border-radius: 26px;
+    padding: 0;
+    margin: 16px 0;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    overflow: hidden;
+    position: relative;
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+  }
+  .page-illustration {
+    width: 100%;
+    height: 220px;
+    background: linear-gradient(180deg, #4a5a9a 0%, #7a89c4 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .page-illustration svg { width: 100%; height: 100%; display: block; }
+
+  .page-text {
+    padding: 22px 26px 18px;
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .page-text p {
+    font-size: clamp(1.05rem, 2.7vw, 1.25rem);
+    line-height: 1.7;
+    color: #2a2348;
+    text-align: center;
+    font-style: italic;
+  }
+  .page-text p .hero-name {
+    color: #b58a3f;
+    font-weight: bold;
+    font-style: normal;
+  }
+
+  .page-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 18px 14px;
+    border-top: 1px dashed rgba(74,58,138,0.25);
+    background: rgba(255,255,255,0.3);
+  }
+  .page-num {
+    font-family: 'Helvetica Neue', system-ui, sans-serif;
+    font-size: 0.8rem;
+    color: #6a5a8a;
+    letter-spacing: 1px;
+  }
+  .page-controls { display: flex; gap: 6px; }
+  .icon-btn {
+    background: rgba(74,58,138,0.12);
+    color: #4a3a8a;
+    border: none;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .icon-btn:hover { background: rgba(74,58,138,0.22); }
+  .icon-btn:active { transform: scale(0.92); }
+  .icon-btn.speaking { background: #ffd87a; color: #3a2a0a; animation: pulse-soft 1.2s ease-in-out infinite; }
+  @keyframes pulse-soft { 0%,100% { box-shadow: 0 0 0 0 rgba(255,216,122,0.6); } 50% { box-shadow: 0 0 0 8px rgba(255,216,122,0); } }
+
+  /* page flip animation */
+  .page-card.flipping {
+    animation: page-flip 0.55s ease-in-out;
+  }
+  @keyframes page-flip {
+    0%   { transform: perspective(1200px) rotateY(0deg);    opacity: 1; }
+    50%  { transform: perspective(1200px) rotateY(-25deg); opacity: 0.4; }
+    100% { transform: perspective(1200px) rotateY(0deg);    opacity: 1; }
+  }
+
+  .progress {
+    display: flex; justify-content: center; gap: 6px;
+    margin-top: 10px;
+  }
+  .progress .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    transition: background 0.2s, transform 0.2s;
+  }
+  .progress .dot.active { background: #ffd87a; transform: scale(1.25); }
+  .progress .dot.done { background: rgba(255,216,122,0.55); }
+
+  /* Library list */
+  .library-item {
+    background: rgba(255,250,232,0.9);
+    color: #2a2348;
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin: 10px 0;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px;
+  }
+  .library-item .title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #4a3a8a;
+  }
+  .library-item .meta {
+    font-family: 'Helvetica Neue', system-ui, sans-serif;
+    font-size: 0.82rem;
+    color: #7a6a9a;
+    margin-top: 2px;
+  }
+  .library-item .actions { display: flex; gap: 6px; }
+  .library-item .actions .icon-btn {
+    background: rgba(74,58,138,0.1);
+    width: 34px; height: 34px;
+    font-size: 0.95rem;
+  }
+  .empty {
+    text-align: center; color: #c5d2f0; padding: 24px;
+    font-style: italic;
+  }
+
+  .hint {
+    text-align: center;
+    color: #8a99c0;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    font-family: 'Helvetica Neue', system-ui, sans-serif;
+  }
+
+  @media (max-width: 480px) {
+    .page-illustration { height: 180px; }
+    .page-text { padding: 18px 20px 12px; }
+    .card { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🌙 Bedtime Story Maker</h1>
+    <div class="tagline">A new story, every night — and you're the hero.</div>
+  </header>
+
+  <div class="top-nav">
+    <button class="nav-btn" data-screen="start">New Story</button>
+    <button class="nav-btn" data-screen="library">My Storybook</button>
+  </div>
+
+  <div id="screen"></div>
+</div>
+
+<script>
+"use strict";
+
+// ---------- Storage ----------
+const LS_KEY = "bedtime-story-maker:v1";
+function loadStore() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || { saved: [], lastHero: "", lastIngredients: ["","",""] }; }
+  catch { return { saved: [], lastHero: "", lastIngredients: ["","",""] }; }
+}
+function saveStore(s) { localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+let store = loadStore();
+
+// ---------- Suggestion chips ----------
+const SUGGESTIONS = [
+  "a tiny dragon","a glowing seashell","a swimming pool","a cozy sock","a snowy mountain",
+  "a singing teapot","a friendly whale","a sparkly cape","a chocolate cookie","a paper airplane",
+  "a magic flashlight","a wobbly bicycle","a giant pillow","a curious fox","a treasure map",
+  "a rubber duck","a moonbeam","a marshmallow cloud","a lost mitten","a glowing mushroom"
+];
+
+// ---------- Story templates ----------
+// Each beat has many variants. Substitution tokens:
+//   {hero}  {A} {B} {C}  (ingredients, in lowercase as the user typed them)
+//   {place} {friend} {sound} {smell}
+const BEATS = {
+  setup: [
+    "One soft, starry evening, {hero} was curled up in bed when something tiny rustled by the window.",
+    "It was the quiet hour just before sleep, and {hero} could hear {sound} drifting through the open window.",
+    "The moon peeked through the curtains and tapped gently on {hero}'s pillow, as if to say, \"It's time for an adventure.\"",
+    "{hero} had just brushed their teeth and yawned a wide, soft yawn when something twinkled in the corner of the room.",
+    "On a velvet-blue evening, when the world smelled of {smell}, {hero} noticed a small light blinking under the bed.",
+    "The crickets were tuning their tiny violins outside, and {hero} sat up in bed, eyes shining with curiosity.",
+    "Just as {hero} pulled up the cozy blanket, a soft little knock came from inside the closet — knock, knock, knock.",
+    "{hero}'s nightlight flickered like it was trying to whisper a secret, so of course {hero} leaned in to listen.",
+    "Somewhere far away, a wind chime sang a lullaby, and {hero} felt the whole room tilt gently, like a tiny ship setting sail.",
+    "It had been a long, wonderful day, and {hero} was just settling in when the wallpaper began to swirl into stars."
+  ],
+  wish: [
+    "Out of the shimmer stepped {A}, who whispered, \"I've been looking for you, {hero}. We need your help tonight.\"",
+    "From the glow appeared {A}, blinking sleepily. \"Have you seen {B} anywhere?\" it asked. \"We lost it in the {place}.\"",
+    "A gentle voice giggled, \"{hero}, would you like to visit the {place}? I'll bring {A} along!\"",
+    "Suddenly, {A} popped out and bowed politely. \"There's a wish to be granted in the {place},\" it said, \"and only you can do it.\"",
+    "{A} appeared, looking very serious. \"{hero},\" it said, \"the {place} is missing its lullaby. Will you come help find it?\"",
+    "A tiny envelope drifted onto the pillow. Inside was a note: \"Dear {hero}, please come to the {place}. Bring {A} and {B}. Love, the Moon.\"",
+    "\"Psst,\" said {A}, peeking from behind the curtain. \"Tonight is the night of the great Quiet Parade. Would you like to lead it?\"",
+    "{A} held out a tiny invitation made of paper-thin starlight. \"To {hero},\" it read. \"Come dream with us at the {place}.\""
+  ],
+  journey: [
+    "So {hero} tucked {A} under one arm and {B} under the other, and together they tiptoed out the window onto a path made of moonlight.",
+    "They climbed onto a fluffy cloud-boat. {A} steered, {B} hummed, and {hero} watched the rooftops below shrink to the size of buttons.",
+    "Hand in paw, {hero} and {A} hopped from star to star, while {B} bobbed along like a little balloon behind them.",
+    "{hero} slipped {C} into a pocket for safekeeping, and off they floated, drifting over sleeping houses and silver trees.",
+    "The path led down a slide of warm starlight that smelled faintly of {smell}, and {hero} laughed the soft kind of laugh you only laugh in dreams.",
+    "{A} grew enormous and friendly, and {hero} climbed onto its back. \"Hold on tight!\" it rumbled, and away they soared toward the {place}.",
+    "A gentle wind picked them up — {hero}, {A}, {B}, and even {C} — and carried them like dandelion seeds toward the {place}.",
+    "{hero} skipped along a bridge of glowing pebbles. Each step made a little chime, like {sound}, and {A} skipped right behind."
+  ],
+  surprise: [
+    "When they arrived at the {place}, everything was perfectly still — until {C} suddenly began to glow!",
+    "At the {place}, they met a sleepy {friend} who said, \"I've been waiting for you. Have you brought the {C}?\"",
+    "Right in the middle of the {place} sat {C}, sparkling and shy, as if it had been waiting for {hero} all along.",
+    "Just then, {C} did something quite unexpected — it sang a tiny tune that made {A} and {B} dance in slow, sleepy circles.",
+    "A {friend} popped up and bowed. \"Welcome to the {place}, {hero}! We've been keeping {C} safe for you.\"",
+    "In the heart of the {place}, {C} began to hum, and the hum turned into a glow, and the glow turned into a soft, warm hug.",
+    "Suddenly, a tiny door appeared inside {C}. \"Open me,\" it whispered. Inside was the most beautiful little dream {hero} had ever seen.",
+    "The {place} sparkled, and out from behind {C} stepped a kind old {friend} who knew {hero}'s name without being told."
+  ],
+  resolution: [
+    "Together, {hero}, {A}, {B}, and the {friend} cradled {C} until it twinkled like a sleepy firefly. The whole {place} sighed a happy sigh.",
+    "{hero} found exactly the right thing to say. \"It's okay,\" they whispered. And just like that, everything in the {place} felt safe again.",
+    "With a soft wave of {A}, a careful tuck of {B}, and one gentle squeeze of {C}, {hero} fixed everything — easy as a yawn.",
+    "{hero} shared the little dream with everyone, and the whole {place} glowed warm and gold, like the inside of a hug.",
+    "\"You did it, {hero},\" the {friend} smiled. \"The {place} can sleep peacefully tonight, because of you.\"",
+    "Everyone danced one slow, sleepy dance around {C}, and the {place} settled in for the most peaceful night it had had in ages.",
+    "{hero} hummed a little song — the kind only {hero} knows — and {A}, {B}, and {C} all snuggled in together, perfectly content."
+  ],
+  goodnight: [
+    "Then the same path of moonlight carried {hero} home, gently as a feather, right back into the warm covers. {A} waved goodbye from the window. \"Sweet dreams, {hero},\" it whispered. \"Sweet dreams.\"",
+    "The {friend} kissed the top of {hero}'s head. \"Time for bed, brave one.\" And in a blink, {hero} was tucked in again, the blanket soft and warm. The pillow gave a happy little sigh. Goodnight, {hero}. Goodnight.",
+    "{A}, {B}, and {C} hopped into {hero}'s dream-pocket to keep watch. The moon dimmed her light just a little. \"Rest now,\" she said. \"We'll be right here when you wake.\"",
+    "Back in bed, the room felt full of quiet magic. {hero} closed their eyes, and the last thing they heard was {sound}, soft as a kiss on the forehead. Goodnight, sweet {hero}.",
+    "The stars tucked themselves in. The moon pulled up her silver blanket. And {hero}, safe and warm and proud, drifted into the loveliest sleep, with {A}, {B}, and {C} dreaming right alongside.",
+    "Slowly, gently, {hero} floated back through the window and into bed. The pillow was cool, the blanket was warm, and somewhere far away the {friend} was humming the lullaby of the {place}. Sleep tight, little hero. You did wonderfully tonight."
+  ]
+};
+
+const PLACES = [
+  "Velvet Meadow","Lantern Forest","Cloud Harbor","Moon Bakery","Quiet Lagoon",
+  "Pillow Mountains","Lullaby Lighthouse","Whisper Garden","Starfish Cove","Marshmallow Hills",
+  "Glow-Worm Grove","Sleepy River","Twilight Treehouse","Snowflake Library","Dreamfruit Orchard"
+];
+const FRIENDS = [
+  "owl in a knitted scarf","turtle with a tiny lantern","fox who paints with starlight",
+  "moon-mouse","cloud baker","sleepy bear in pajamas","whale who collects lullabies",
+  "firefly conductor","kind old willow tree","badger librarian","hedgehog tea-maker",
+  "deer with bells on her antlers"
+];
+const SOUNDS = [
+  "a faraway music box","the slow ticking of a friendly clock","tiny chimes in the breeze",
+  "the soft purr of a sleeping cat","a humming kettle","gentle rain on the roof",
+  "the whispering pages of a storybook","a quiet harmonica far away","a lullaby on the wind"
+];
+const SMELLS = [
+  "warm vanilla","fresh bread","clean cotton","cocoa and cinnamon","summer rain",
+  "honey toast","lavender","pine needles","apple cake","sleepy chamomile tea"
+];
+
+// ---------- Helpers ----------
+function pick(arr, seed) {
+  // simple seeded pick
+  return arr[Math.floor(seed * arr.length) % arr.length];
+}
+function rand() { return Math.random(); }
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+function substitute(template, ctx) {
+  return template
+    .replace(/\{hero\}/g, `<span class="hero-name">${escapeHTML(ctx.hero)}</span>`)
+    .replace(/\{A\}/g, escapeHTML(ctx.A))
+    .replace(/\{B\}/g, escapeHTML(ctx.B))
+    .replace(/\{C\}/g, escapeHTML(ctx.C))
+    .replace(/\{place\}/g, escapeHTML(ctx.place))
+    .replace(/\{friend\}/g, escapeHTML(ctx.friend))
+    .replace(/\{sound\}/g, escapeHTML(ctx.sound))
+    .replace(/\{smell\}/g, escapeHTML(ctx.smell));
+}
+function plainSub(template, ctx) {
+  // version without HTML wrapping, used for speech
+  return template
+    .replace(/\{hero\}/g, ctx.hero)
+    .replace(/\{A\}/g, ctx.A)
+    .replace(/\{B\}/g, ctx.B)
+    .replace(/\{C\}/g, ctx.C)
+    .replace(/\{place\}/g, ctx.place)
+    .replace(/\{friend\}/g, ctx.friend)
+    .replace(/\{sound\}/g, ctx.sound)
+    .replace(/\{smell\}/g, ctx.smell);
+}
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function generateStory(hero, ingredients) {
+  const [A, B, C] = ingredients.map(x => x.trim().toLowerCase());
+  const ctx = {
+    hero: capitalize(hero.trim()) || "the brave little dreamer",
+    A: A || "a soft cloud",
+    B: B || "a tiny star",
+    C: C || "a glowing seashell",
+    place: PLACES[Math.floor(rand() * PLACES.length)],
+    friend: FRIENDS[Math.floor(rand() * FRIENDS.length)],
+    sound: SOUNDS[Math.floor(rand() * SOUNDS.length)],
+    smell: SMELLS[Math.floor(rand() * SMELLS.length)],
+  };
+  const beats = ["setup","wish","journey","surprise","resolution","goodnight"];
+  const pages = beats.map(beat => {
+    const choices = BEATS[beat];
+    const tpl = choices[Math.floor(rand() * choices.length)];
+    return {
+      beat,
+      html: substitute(tpl, ctx),
+      text: plainSub(tpl, ctx)
+    };
+  });
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    hero: ctx.hero,
+    ingredients: [ctx.A, ctx.B, ctx.C],
+    context: ctx,
+    pages,
+    createdAt: new Date().toISOString(),
+    title: `${ctx.hero} and the ${capitalize(ctx.C.replace(/^(a|an|the)\s+/i,""))}`
+  };
+}
+
+// ---------- Illustrations (inline SVG) ----------
+// Each page renders an SVG scene. We weave in the 3 ingredients across the pages
+// so they visually appear. We use small motif renderers keyed off keywords.
+const MOTIFS = [
+  { keys: ["dragon"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><ellipse cx="0" cy="6" rx="22" ry="10" fill="#7ac46f"/><circle cx="14" cy="-2" r="9" fill="#8fd17a"/><circle cx="17" cy="-3" r="1.5" fill="#222"/><path d="M19 0 q4 -2 6 2" stroke="#222" stroke-width="1.5" fill="none"/><path d="M-2 -2 q-4 -10 4 -12 q4 6 -4 12" fill="#5fa356"/><path d="M-18 4 q-6 4 -10 0" stroke="#7ac46f" stroke-width="3" fill="none"/></g>` },
+  { keys: ["sock","mitten"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><path d="M-8 -16 h16 v22 q0 8 -8 8 h-12 q-4 0 -4 -4 v-4 h8 z" fill="#e88aa8" stroke="#a85a78" stroke-width="1.2"/><path d="M-8 -10 h16" stroke="#fff" stroke-width="1.5"/><path d="M-8 -6 h16" stroke="#fff" stroke-width="1.5"/></g>` },
+  { keys: ["pool","whale","seashell","duck","lagoon","cove","ocean","sea","river","water"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><ellipse cx="0" cy="6" rx="28" ry="6" fill="#6ec1e4"/><path d="M-22 6 q5 -3 10 0 t10 0 t10 0" stroke="#fff" stroke-width="1.2" fill="none" opacity="0.7"/><ellipse cx="-10" cy="-2" rx="6" ry="3" fill="#ffd87a" opacity="0.7"/></g>` },
+  { keys: ["cookie","cake","bread","toast"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><circle cx="0" cy="0" r="14" fill="#d49a5c" stroke="#a87038" stroke-width="1.5"/><circle cx="-5" cy="-3" r="2" fill="#5a3a1a"/><circle cx="4" cy="2" r="2" fill="#5a3a1a"/><circle cx="-2" cy="6" r="1.6" fill="#5a3a1a"/><circle cx="6" cy="-5" r="1.6" fill="#5a3a1a"/></g>` },
+  { keys: ["star","sparkle","starlight","moonbeam","glow"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><path d="M0 -12 L3 -3 L12 -3 L5 3 L8 12 L0 7 L-8 12 L-5 3 L-12 -3 L-3 -3 Z" fill="#ffe89a" stroke="#d9a93a" stroke-width="1"/></g>` },
+  { keys: ["cloud","marshmallow","pillow"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><ellipse cx="-8" cy="0" rx="10" ry="7" fill="#fff"/><ellipse cx="4" cy="-2" rx="12" ry="8" fill="#fff"/><ellipse cx="12" cy="3" rx="8" ry="6" fill="#fff"/></g>` },
+  { keys: ["bicycle","bike"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})" stroke="#5a4a8a" stroke-width="1.6" fill="none"><circle cx="-10" cy="4" r="7"/><circle cx="10" cy="4" r="7"/><path d="M-10 4 L0 -6 L10 4 M0 -6 L4 -10"/></g>` },
+  { keys: ["fox","bear","whale","owl","mouse","cat","hedgehog","badger","deer","turtle"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><ellipse cx="0" cy="4" rx="14" ry="9" fill="#d9a060"/><circle cx="0" cy="-4" r="9" fill="#e8b070"/><circle cx="-3" cy="-5" r="1.2" fill="#222"/><circle cx="3" cy="-5" r="1.2" fill="#222"/><path d="M-2 -2 q2 1.5 4 0" stroke="#222" stroke-width="1" fill="none"/><path d="M-7 -10 L-4 -6 M7 -10 L4 -6" stroke="#d9a060" stroke-width="2"/></g>` },
+  { keys: ["flashlight","lantern","light","lamp"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><rect x="-5" y="-2" width="10" height="14" rx="2" fill="#7a6a4a"/><path d="M-7 -2 L-12 -10 L12 -10 L7 -2 Z" fill="#ffe89a" opacity="0.85"/><circle cx="0" cy="-6" r="2" fill="#fff"/></g>` },
+  { keys: ["map","letter","note","envelope","paper"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><rect x="-12" y="-9" width="24" height="18" rx="2" fill="#fffbe9" stroke="#a87038" stroke-width="1.2"/><path d="M-12 -9 L0 2 L12 -9" stroke="#a87038" stroke-width="1.2" fill="none"/></g>` },
+  { keys: ["teapot","kettle"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><path d="M-12 0 q0 -10 12 -10 q12 0 12 10 q0 8 -12 8 q-12 0 -12 -8 z" fill="#d49a5c"/><path d="M12 -3 q6 0 6 4" stroke="#d49a5c" stroke-width="3" fill="none"/><circle cx="0" cy="-10" r="2" fill="#a87038"/></g>` },
+  { keys: ["cape","scarf","blanket"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><path d="M-14 -8 q14 6 28 0 L24 14 q-12 6 -24 0 Z" fill="#c45a78"/><path d="M-14 -8 q14 6 28 0" stroke="#fff" stroke-width="1.5" fill="none"/></g>` },
+  { keys: ["mushroom","mushrooms"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><path d="M-12 0 q0 -14 12 -14 q12 0 12 14 z" fill="#e07070"/><circle cx="-5" cy="-6" r="2" fill="#fff"/><circle cx="5" cy="-9" r="1.6" fill="#fff"/><rect x="-3" y="0" width="6" height="10" fill="#f3e3c4"/></g>` },
+  { keys: ["mountain","snow"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><path d="M-22 12 L-4 -14 L8 4 L14 -6 L24 12 Z" fill="#7a89c4"/><path d="M-8 -8 L-4 -14 L0 -6 Z M10 -2 L14 -6 L18 0 Z" fill="#fff"/></g>` },
+  { keys: ["airplane","plane","kite"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><path d="M-14 4 L14 -4 L8 4 L14 8 Z" fill="#fffbe9" stroke="#a87038" stroke-width="1.2"/></g>` },
+  { keys: ["treasure","gem","crystal"], render: (x,y,s)=>`<g transform="translate(${x},${y}) scale(${s})"><path d="M-10 -4 L-6 -10 L6 -10 L10 -4 L0 10 Z" fill="#a4d8e0" stroke="#3a7a8a" stroke-width="1.2"/></g>` }
+];
+function motifFor(ingredient) {
+  const t = ingredient.toLowerCase();
+  for (const m of MOTIFS) {
+    if (m.keys.some(k => t.includes(k))) return m.render;
+  }
+  // fallback: a little glowing orb
+  return (x,y,s) => `<g transform="translate(${x},${y}) scale(${s})"><circle cx="0" cy="0" r="10" fill="#ffd87a" opacity="0.9"/><circle cx="0" cy="0" r="14" fill="#ffd87a" opacity="0.25"/></g>`;
+}
+
+function makeIllustration(pageIndex, story) {
+  const total = story.pages.length;
+  const ratio = pageIndex / Math.max(1, total - 1);
+  // sky color shifts over pages: dusk -> deep night -> warm dawn glow at end
+  const skies = [
+    ["#5a6aaa","#a8b8e0"], // setup: dusk
+    ["#3a4a9a","#6a7ac4"], // wish: deeper
+    ["#2a3a8a","#5a6ab4"], // journey
+    ["#3a2a7a","#7a5ac4"], // surprise: magical purple
+    ["#4a3a6a","#a89ad0"], // resolution: gentle
+    ["#2a2348","#5a4a8a"]  // goodnight: cozy night
+  ];
+  const [c1, c2] = skies[pageIndex] || skies[skies.length - 1];
+
+  // moon position drifts across
+  const moonX = 60 + ratio * 540;
+  const moonY = 50 - Math.sin(ratio * Math.PI) * 15;
+
+  // hills / ground for some pages
+  const showGround = pageIndex >= 1 && pageIndex <= 4;
+  const showBed = pageIndex === 0 || pageIndex === story.pages.length - 1;
+
+  // which ingredients to feature on this page
+  const features = [];
+  if (pageIndex === 1) features.push({ ing: story.ingredients[0], x: 140, y: 150, s: 1.2 });
+  else if (pageIndex === 2) {
+    features.push({ ing: story.ingredients[0], x: 120, y: 140, s: 1 });
+    features.push({ ing: story.ingredients[1], x: 480, y: 150, s: 1 });
+  }
+  else if (pageIndex === 3) {
+    features.push({ ing: story.ingredients[2], x: 300, y: 140, s: 1.3 });
+  }
+  else if (pageIndex === 4) {
+    features.push({ ing: story.ingredients[0], x: 130, y: 150, s: 0.9 });
+    features.push({ ing: story.ingredients[1], x: 300, y: 150, s: 0.9 });
+    features.push({ ing: story.ingredients[2], x: 470, y: 150, s: 0.9 });
+  }
+  else if (pageIndex === 5) {
+    features.push({ ing: story.ingredients[1], x: 500, y: 90, s: 0.7 });
+  }
+
+  const motifSVG = features.map(f => motifFor(f.ing)(f.x, f.y, f.s)).join("");
+
+  // stars
+  let stars = "";
+  for (let i = 0; i < 18; i++) {
+    const sx = (i * 37 + pageIndex * 17) % 600;
+    const sy = (i * 19 + pageIndex * 11) % 90 + 10;
+    const r = (i % 3 === 0) ? 1.6 : 0.9;
+    stars += `<circle cx="${sx}" cy="${sy}" r="${r}" fill="#fffbe6" opacity="${0.6 + (i%4)*0.1}"/>`;
+  }
+
+  const ground = showGround ? `
+    <path d="M0 200 Q150 170 300 185 T600 195 L600 220 L0 220 Z" fill="#3a4a7a" opacity="0.85"/>
+    <path d="M0 210 Q200 188 400 200 T600 205 L600 220 L0 220 Z" fill="#2a3358" opacity="0.9"/>
+  ` : "";
+
+  const bed = showBed ? `
+    <g transform="translate(220,150)">
+      <rect x="0" y="20" width="160" height="40" rx="6" fill="#a87038"/>
+      <rect x="0" y="10" width="160" height="20" rx="8" fill="#e8d8b0"/>
+      <rect x="10" y="-2" width="50" height="20" rx="6" fill="#fffbe9"/>
+      <ellipse cx="80" cy="20" rx="65" ry="8" fill="#c45a78"/>
+      <path d="M10 18 q70 -8 140 0" stroke="#a04060" stroke-width="1.5" fill="none"/>
+    </g>
+  ` : "";
+
+  return `
+    <svg viewBox="0 0 600 220" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="sky-${pageIndex}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${c1}"/>
+          <stop offset="100%" stop-color="${c2}"/>
+        </linearGradient>
+      </defs>
+      <rect width="600" height="220" fill="url(#sky-${pageIndex})"/>
+      ${stars}
+      <circle cx="${moonX}" cy="${moonY}" r="22" fill="#fff5b8" opacity="0.95"/>
+      <circle cx="${moonX - 6}" cy="${moonY - 4}" r="18" fill="${c1}" opacity="0.55"/>
+      ${ground}
+      ${bed}
+      ${motifSVG}
+    </svg>
+  `;
+}
+
+// ---------- Speech ----------
+let currentUtterance = null;
+function stopSpeech() {
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+  currentUtterance = null;
+  document.querySelectorAll(".icon-btn.speaking").forEach(b => b.classList.remove("speaking"));
+}
+function speakText(text, btn) {
+  if (!window.speechSynthesis) return;
+  stopSpeech();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.85;
+  u.pitch = 1.0;
+  u.volume = 1.0;
+  // try to pick a calmer voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v => /female|samantha|karen|moira|tessa|fiona|serena/i.test(v.name))
+                 || voices.find(v => /en-/i.test(v.lang));
+  if (preferred) u.voice = preferred;
+  if (btn) btn.classList.add("speaking");
+  u.onend = () => { if (btn) btn.classList.remove("speaking"); currentUtterance = null; };
+  u.onerror = () => { if (btn) btn.classList.remove("speaking"); currentUtterance = null; };
+  currentUtterance = u;
+  window.speechSynthesis.speak(u);
+}
+// preload voices
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => {};
+  window.speechSynthesis.getVoices();
+}
+
+// ---------- Screens ----------
+const root = document.getElementById("screen");
+let currentScreen = "start";
+let activeStory = null;
+let activePage = 0;
+
+function setNav(name) {
+  document.querySelectorAll(".nav-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.screen === name);
+  });
+}
+document.querySelectorAll(".nav-btn").forEach(b => {
+  b.addEventListener("click", () => {
+    stopSpeech();
+    showScreen(b.dataset.screen);
+  });
+});
+
+function showScreen(name, data) {
+  currentScreen = name;
+  setNav(name);
+  if (name === "start") renderStart();
+  else if (name === "story") renderStory();
+  else if (name === "library") renderLibrary();
+}
+
+function renderStart() {
+  const last = store;
+  root.innerHTML = `
+    <div class="card">
+      <h2>Let's make tonight's story ✨</h2>
+      <label class="field-label" for="hero">Who is the hero?</label>
+      <input id="hero" type="text" placeholder="Your child's name…" value="${escapeHTML(last.lastHero || "")}" maxlength="30"/>
+
+      <label class="field-label">What three things should be in the story?</label>
+      <input id="ing0" type="text" placeholder="ingredient 1 (e.g. a tiny dragon)" value="${escapeHTML(last.lastIngredients[0] || "")}" maxlength="40"/>
+      <input id="ing1" type="text" placeholder="ingredient 2 (e.g. a cozy sock)" value="${escapeHTML(last.lastIngredients[1] || "")}" style="margin-top:8px;" maxlength="40"/>
+      <input id="ing2" type="text" placeholder="ingredient 3 (e.g. a swimming pool)" value="${escapeHTML(last.lastIngredients[2] || "")}" style="margin-top:8px;" maxlength="40"/>
+
+      <div class="field-label" style="margin-top:14px;">Need ideas? Tap to add:</div>
+      <div class="chips" id="chips"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="make-btn">🌙 Tuck me in & tell the story</button>
+      </div>
+      <div class="hint">Tip: silly ingredients make the best stories. Try "a wobbly bicycle" + "a marshmallow cloud" + "a singing teapot".</div>
+    </div>
+  `;
+  const chips = document.getElementById("chips");
+  SUGGESTIONS.forEach(s => {
+    const c = document.createElement("button");
+    c.className = "chip";
+    c.textContent = s;
+    c.onclick = () => fillNextEmpty(s);
+    chips.appendChild(c);
+  });
+  document.getElementById("make-btn").onclick = onMakeStory;
+}
+
+function fillNextEmpty(text) {
+  for (const id of ["ing0","ing1","ing2"]) {
+    const el = document.getElementById(id);
+    if (!el.value.trim()) { el.value = text; el.focus(); return; }
+  }
+  // all full: replace last
+  document.getElementById("ing2").value = text;
+}
+
+function onMakeStory() {
+  const hero = document.getElementById("hero").value.trim();
+  const ings = [
+    document.getElementById("ing0").value.trim(),
+    document.getElementById("ing1").value.trim(),
+    document.getElementById("ing2").value.trim()
+  ];
+  if (!hero) { document.getElementById("hero").focus(); return; }
+  // any missing ingredients get a friendly default chosen at random
+  for (let i = 0; i < 3; i++) {
+    if (!ings[i]) ings[i] = SUGGESTIONS[Math.floor(Math.random()*SUGGESTIONS.length)];
+  }
+  store.lastHero = hero;
+  store.lastIngredients = ings.slice();
+  saveStore(store);
+  activeStory = generateStory(hero, ings);
+  activePage = 0;
+  showScreen("story");
+}
+
+function renderStory() {
+  if (!activeStory) { showScreen("start"); return; }
+  const s = activeStory;
+  const total = s.pages.length;
+  const page = s.pages[activePage];
+  const isSaved = store.saved.some(x => x.id === s.id);
+
+  let dots = "";
+  for (let i = 0; i < total; i++) {
+    const cls = i === activePage ? "active" : (i < activePage ? "done" : "");
+    dots += `<span class="dot ${cls}"></span>`;
+  }
+
+  root.innerHTML = `
+    <div class="page-card" id="page-card">
+      <div class="page-illustration">${makeIllustration(activePage, s)}</div>
+      <div class="page-text"><p>${page.html}</p></div>
+      <div class="page-footer">
+        <span class="page-num">Page ${activePage + 1} of ${total}</span>
+        <div class="page-controls">
+          <button class="icon-btn" id="prev-btn" title="Previous page" ${activePage===0?"disabled style=\"opacity:0.35;cursor:default;\"":""}>◀</button>
+          <button class="icon-btn" id="speak-btn" title="Read aloud">🔊</button>
+          <button class="icon-btn" id="next-btn" title="Next page" ${activePage===total-1?"disabled style=\"opacity:0.35;cursor:default;\"":""}>▶</button>
+        </div>
+      </div>
+    </div>
+    <div class="progress">${dots}</div>
+    <div class="btn-row">
+      <button class="btn btn-soft" id="save-btn">${isSaved ? "💛 Saved" : "💛 Save story"}</button>
+      <button class="btn btn-soft" id="reroll-btn">🎲 New story (same ingredients)</button>
+      <button class="btn btn-ghost" id="back-btn">← Change ingredients</button>
+    </div>
+    <div class="hint" style="margin-top:14px;">
+      <em>"${escapeHTML(s.title)}"</em>
+    </div>
+  `;
+  const prev = document.getElementById("prev-btn");
+  const next = document.getElementById("next-btn");
+  const speak = document.getElementById("speak-btn");
+  if (prev && activePage > 0) prev.onclick = () => goToPage(activePage - 1);
+  if (next && activePage < total - 1) next.onclick = () => goToPage(activePage + 1);
+  speak.onclick = () => {
+    if (speak.classList.contains("speaking")) { stopSpeech(); return; }
+    speakText(s.pages[activePage].text, speak);
+  };
+  document.getElementById("save-btn").onclick = onSaveStory;
+  document.getElementById("reroll-btn").onclick = () => {
+    stopSpeech();
+    activeStory = generateStory(s.hero, s.ingredients);
+    activePage = 0;
+    renderStory();
+  };
+  document.getElementById("back-btn").onclick = () => { stopSpeech(); showScreen("start"); };
+}
+
+function goToPage(idx) {
+  stopSpeech();
+  const card = document.getElementById("page-card");
+  if (card) {
+    card.classList.add("flipping");
+    setTimeout(() => {
+      activePage = idx;
+      renderStory();
+    }, 270);
+  } else {
+    activePage = idx;
+    renderStory();
+  }
+}
+
+function onSaveStory() {
+  if (!activeStory) return;
+  const exists = store.saved.findIndex(x => x.id === activeStory.id);
+  if (exists >= 0) {
+    store.saved.splice(exists, 1);
+  } else {
+    // dedupe: keep most recent 50
+    store.saved.unshift({
+      id: activeStory.id,
+      title: activeStory.title,
+      hero: activeStory.hero,
+      ingredients: activeStory.ingredients,
+      pages: activeStory.pages,
+      createdAt: activeStory.createdAt
+    });
+    if (store.saved.length > 50) store.saved = store.saved.slice(0, 50);
+  }
+  saveStore(store);
+  renderStory();
+}
+
+function renderLibrary() {
+  const items = store.saved;
+  let body = "";
+  if (!items.length) {
+    body = `<div class="empty">No saved stories yet.<br/>Make one tonight and tap 💛 Save to keep it for re-reading.</div>`;
+  } else {
+    body = items.map(it => {
+      const d = new Date(it.createdAt);
+      const date = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      return `
+        <div class="library-item">
+          <div>
+            <div class="title">${escapeHTML(it.title)}</div>
+            <div class="meta">${escapeHTML(it.hero)} · ${escapeHTML(it.ingredients.join(" · "))} · ${date}</div>
+          </div>
+          <div class="actions">
+            <button class="icon-btn" data-id="${it.id}" data-act="open" title="Re-read">📖</button>
+            <button class="icon-btn" data-id="${it.id}" data-act="delete" title="Remove">🗑</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+  root.innerHTML = `
+    <div class="card">
+      <h2>My Storybook 📚</h2>
+      <div style="margin-top:10px;">${body}</div>
+    </div>
+  `;
+  root.querySelectorAll(".icon-btn[data-act]").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      const act = btn.dataset.act;
+      if (act === "open") {
+        const item = store.saved.find(x => x.id === id);
+        if (item) {
+          activeStory = JSON.parse(JSON.stringify(item));
+          activeStory.context = activeStory.context || {};
+          activePage = 0;
+          showScreen("story");
+        }
+      } else if (act === "delete") {
+        store.saved = store.saved.filter(x => x.id !== id);
+        saveStore(store);
+        renderLibrary();
+      }
+    };
+  });
+}
+
+// ---------- Init ----------
+showScreen("start");
+window.addEventListener("beforeunload", stopSpeech);
+</script>
+</body>
+</html>
